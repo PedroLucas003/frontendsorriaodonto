@@ -77,7 +77,7 @@ const RegisterUser = () => {
   const fetchUsuarios = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await api.get("/auth/users", {
+      const response = await api.get("/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsuarios(response.data);
