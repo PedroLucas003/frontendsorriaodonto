@@ -33,7 +33,6 @@ const RegisterUser = () => {
     valor: "",
     modalidadePagamento: "",
     profissional: "",
-    image: null,
     procedimentos: []
   });
 
@@ -208,9 +207,6 @@ const RegisterUser = () => {
     setError("");
   };
 
-  const handleFileChange = (e) => {
-    setFormData(prev => ({ ...prev, image: e.target.files[0] }));
-  };
 
   const validateForm = () => {
     const requiredFields = {
@@ -382,36 +378,36 @@ const RegisterUser = () => {
     if (!validateForm()) return;
   
     const token = localStorage.getItem("token");
-    const formDataToSend = new FormData();
-  
+    
+    // Cria um objeto com os dados formatados para envio
+    const dadosParaEnvio = {};
+    
     // Lista de campos que não devem ser enviados
-    const camposNaoEnviar = ['procedimentos'];
-  
+    const camposNaoEnviar = ['procedimentos', 'image'];
+    
     Object.keys(formData).forEach((key) => {
       if (camposNaoEnviar.includes(key)) return;
       
-      if (key === "image") {
-        if (formData[key]) formDataToSend.append(key, formData[key]);
-      } else {
-        let value = formData[key];
+      let value = formData[key];
   
-        if (key === "cpf" || key === "telefone") {
-          value = String(value).replace(/\D/g, "");
-        } else if (key === "valor") {
-          value = String(value).replace(/[^\d,]/g, "").replace(",", ".");
-        }
+      // Formatação dos campos especiais
+      if (key === "cpf" || key === "telefone") {
+        value = String(value).replace(/\D/g, "");
+      } else if (key === "valor") {
+        value = String(value).replace(/[^\d,]/g, "").replace(",", ".");
+      }
   
-        if (
-          (key === "password" || key === "confirmPassword") &&
-          !value &&
-          editandoId
-        ) {
-          return;
-        }
+      // Ignora password vazio em edição
+      if (
+        (key === "password" || key === "confirmPassword") &&
+        !value &&
+        editandoId
+      ) {
+        return;
+      }
   
-        if (value !== null && value !== undefined) {
-          formDataToSend.append(key, value);
-        }
+      if (value !== null && value !== undefined) {
+        dadosParaEnvio[key] = value;
       }
     });
   
@@ -419,11 +415,11 @@ const RegisterUser = () => {
       if (editandoId) {
         const response = await api.put(
           `/api/users/${editandoId}`,
-          formDataToSend,
+          dadosParaEnvio,
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
+              "Content-Type": "application/json",
             },
           }
         );
@@ -431,10 +427,10 @@ const RegisterUser = () => {
         setFormData(response.data.user);
         setModoVisualizacao(false);
       } else {
-        await api.post("/api/register/user", formDataToSend, {
+        await api.post("/api/register/user", dadosParaEnvio, {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         });
         alert("Usuário cadastrado com sucesso!");
@@ -938,20 +934,6 @@ const RegisterUser = () => {
               />
               {fieldErrors.profissional && <span className="field-error">{fieldErrors.profissional}</span>}
             </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h2>Upload de Imagem</h2>
-          <div className="form-group">
-            <label htmlFor="image">Imagem</label>
-            <input
-              type="file"
-              id="image"
-              name="image"
-              accept=".png, .jpg, .jpeg"
-              onChange={handleFileChange}
-            />
           </div>
         </div>
 
