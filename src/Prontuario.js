@@ -3,7 +3,7 @@ import api from "./api/api";
 import styles from "./Prontuario.module.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FaFilePdf } from "react-icons/fa"; // Importando o ícone de PDF
+import { FaFilePdf } from "react-icons/fa";
 
 function Prontuario() {
   const [cpf, setCpf] = useState("");
@@ -16,7 +16,8 @@ function Prontuario() {
       .replace(/\D/g, "")
       .replace(/(\d{3})(\d)/, "$1.$2")
       .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+      .substring(0, 14);
   };
 
   const handleSubmit = async (e) => {
@@ -40,107 +41,136 @@ function Prontuario() {
       gerarPDF(response.data);
     } catch (err) {
       setEnviado(false);
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Erro ao buscar prontuário.");
-      }
+      setError(err.response?.data?.message || "Erro ao buscar prontuário.");
     }
+  };
+
+  const formatarValor = (valor) => {
+    if (valor === undefined || valor === null) return "-";
+    const num = typeof valor === 'string' ? 
+      parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
+      valor;
+    return isNaN(num) ? valor : num.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
   };
 
   const gerarPDF = (dados) => {
     const doc = new jsPDF();
 
+    // Cabeçalho
     doc.setFontSize(18);
     doc.text("Clínica Sorria Odonto", 105, 15, { align: "center" });
-
     doc.setFontSize(10);
     doc.text("CNPJ: 37.115.451/0001-84", 105, 22, { align: "center" });
-
     doc.setFontSize(14);
     doc.text("Prontuário do Paciente", 105, 30, { align: "center" });
 
+    // Seções do prontuário
     const secoes = {
       "Dados Pessoais": [
-        "nomeCompleto", "email", "cpf", "telefone", "endereco", "dataNascimento", "image"
+        { campo: "Nome Completo", valor: dados.nomeCompleto },
+        { campo: "E-mail", valor: dados.email },
+        { campo: "CPF", valor: formatarCPF(dados.cpf) },
+        { campo: "Telefone", valor: dados.telefone },
+        { campo: "Endereço", valor: dados.endereco },
+        { campo: "Data de Nascimento", valor: dados.dataNascimento ? new Date(dados.dataNascimento).toLocaleDateString("pt-BR") : "-" }
       ],
-      "Saúde": [
-        "detalhesDoencas", "quaisRemedios", "quaisAnestesias", "alergiaMedicamento"
+      "Histórico de Saúde": [
+        { campo: "Detalhes de Doenças", valor: dados.detalhesDoencas },
+        { campo: "Medicamentos em Uso", valor: dados.quaisRemedios },
+        { campo: "Alergia a Medicamentos", valor: dados.quaisMedicamentos },
+        { campo: "Alergia a Anestesias", valor: dados.quaisAnestesias }
       ],
       "Hábitos": [
-        "habitos.frequenciaFumo", "habitos.frequenciaAlcool"
+        { campo: "Frequência de Fumo", valor: dados.habitos?.frequenciaFumo || "-" },
+        { campo: "Frequência de Álcool", valor: dados.habitos?.frequenciaAlcool || "-" }
       ],
       "Exames": [
-        "exames.exameSangue", "exames.coagulacao", "exames.cicatrizacao"
+        { campo: "Exame de Sangue", valor: dados.exames?.exameSangue || "-" },
+        { campo: "Coagulação", valor: dados.exames?.coagulacao || "-" },
+        { campo: "Cicatrização", valor: dados.exames?.cicatrizacao || "-" }
       ],
-      "Histórico Médico e Odontológico": [
-        "historicoCirurgia", "historicoOdontologico", "sangramentoPosProcedimento", "respiracao", "peso"
-      ],
-      "Procedimento": [
-        "procedimento", "denteFace", "profissional", "dataProcedimento", "modalidadePagamento", "valor"
+      "Histórico Médico": [
+        { campo: "Histórico Cirúrgico", valor: dados.historicoCirurgia },
+        { campo: "Histórico Odontológico", valor: dados.historicoOdontologico || "-" },
+        { campo: "Sangramento Pós-Procedimento", valor: dados.sangramentoPosProcedimento || "-" },
+        { campo: "Respiração", valor: dados.respiracao || "-" },
+        { campo: "Peso (kg)", valor: dados.peso || "-" }
       ]
     };
 
     let y = 40;
 
+    // Adiciona as seções principais
     for (const secao in secoes) {
-      const campos = secoes[secao];
-      const linhas = [];
-
-      campos.forEach((campo) => {
-        if (campo === "password") return;
-
-        let valor;
-        if (campo.includes(".")) {
-          const [grupo, subcampo] = campo.split(".");
-          valor = dados[grupo]?.[subcampo];
-        } else {
-          valor = dados[campo];
-        }
-
-        if (campo === "cpf" && valor) {
-          valor = formatarCPF(valor);
-        }
-
-        if (campo.toLowerCase().includes("data") && valor) {
-          valor = new Date(valor).toLocaleDateString("pt-BR");
-        }
-
-        if (campo === "valor" && valor) {
-          valor = `R$ ${valor.toFixed(2).replace(".", ",")}`;
-        }
-
-        linhas.push([formatarCampo(campo), valor || "-"]);
+      doc.setFontSize(12);
+      doc.text(secao, 14, y);
+      
+      const linhas = secoes[secao].map(item => [item.campo, item.valor || "-"]);
+      
+      autoTable(doc, {
+        startY: y + 5,
+        head: [["Campo", "Valor"]],
+        body: linhas,
+        theme: "grid",
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 10 },
+        margin: { left: 14, right: 14 },
       });
+      
+      y = doc.lastAutoTable.finalY + 10;
+    }
 
-      if (linhas.length > 0) {
-        doc.setFontSize(12);
-        doc.text(secao, 14, y);
+    // Adiciona seção de Procedimentos
+    doc.addPage();
+    y = 20;
+    doc.setFontSize(14);
+    doc.text("Histórico de Procedimentos", 105, y, { align: "center" });
+    y += 10;
+
+    if (dados.procedimentos && dados.procedimentos.length > 0) {
+      dados.procedimentos.forEach((proc, index) => {
+        const dataFormatada = proc.dataProcedimento ? 
+          new Date(proc.dataProcedimento).toLocaleDateString("pt-BR") : "-";
+        
+        const procedimentoData = [
+          ["Tipo", proc.isPrincipal ? "Procedimento Principal" : `Procedimento #${index + 1}`],
+          ["Data", dataFormatada],
+          ["Procedimento", proc.procedimento || "-"],
+          ["Dente/Face", proc.denteFace || "-"],
+          ["Valor", formatarValor(proc.valor)],
+          ["Modalidade", proc.modalidadePagamento || "-"],
+          ["Profissional", proc.profissional || "-"]
+        ];
+
         autoTable(doc, {
-          startY: y + 2,
+          startY: y,
           head: [["Campo", "Valor"]],
-          body: linhas,
+          body: procedimentoData,
           theme: "grid",
           headStyles: { fillColor: [41, 128, 185] },
           styles: { fontSize: 10 },
           margin: { left: 14, right: 14 },
         });
+
         y = doc.lastAutoTable.finalY + 10;
-      }
+        
+        // Adiciona nova página se necessário
+        if (y > 250 && index < dados.procedimentos.length - 1) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+    } else {
+      doc.text("Nenhum procedimento registrado", 14, y);
     }
 
+    // Gera o PDF
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     window.open(url);
-  };
-
-  const formatarCampo = (campo) => {
-    return campo
-      .replace(/\./g, " > ")
-      .replace(/([A-Z])/g, " $1")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (l) => l.toUpperCase())
-      .trim();
   };
 
   return (
@@ -152,6 +182,7 @@ function Prontuario() {
           placeholder="CPF"
           value={cpf}
           onChange={(e) => setCpf(formatarCPF(e.target.value))}
+          maxLength={14}
         />
         <input
           type="password"
