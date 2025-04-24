@@ -307,7 +307,7 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
   
-      // Formata os dados para envio (mantido igual)
+      // Formata os dados para envio
       const dadosParaEnvio = {
         dataProcedimento: procedimentoData.dataProcedimento,
         procedimento: procedimentoData.procedimento,
@@ -317,7 +317,7 @@ const RegisterUser = () => {
         profissional: procedimentoData.profissional
       };
   
-      // Chamada à API (mantida igual)
+      // Chamada à API
       const response = await api.put(
         `/api/users/${editandoId}/procedimento`,
         dadosParaEnvio,
@@ -329,32 +329,27 @@ const RegisterUser = () => {
         }
       );
   
-      // Mantendo EXATAMENTE sua lógica original de atualização do estado
-      setFormData(prev => {
-        const novoProcedimento = {
-          ...response.data.user.historicoProcedimentos.slice(-1)[0], // Pega o último procedimento
-          isPrincipal: false
-        };
+      // Atualiza o estado com os dados completos do usuário retornados pelo backend
+      setFormData(prev => ({
+        ...prev,
+        procedimentos: [
+          {
+            dataProcedimento: prev.dataProcedimento,
+            procedimento: prev.procedimento,
+            denteFace: prev.denteFace,
+            valor: prev.valor,
+            modalidadePagamento: prev.modalidadePagamento,
+            profissional: prev.profissional,
+            isPrincipal: true
+          },
+          ...(response.data.user.historicoProcedimentos || []).map(p => ({ 
+            ...p, 
+            isPrincipal: false 
+          }))
+        ].sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento))
+      }));
   
-        return {
-          ...prev, // Mantém todos os campos existentes
-          procedimentos: [
-            {
-              dataProcedimento: prev.dataProcedimento,
-              procedimento: prev.procedimento,
-              denteFace: prev.denteFace,
-              valor: prev.valor,
-              modalidadePagamento: prev.modalidadePagamento,
-              profissional: prev.profissional,
-              isPrincipal: true
-            },
-            ...(prev.procedimentos?.filter(p => !p.isPrincipal) || []),
-            novoProcedimento
-          ]
-        };
-      });
-  
-      // Reseta o formulário (mantido igual)
+      // Reseta o formulário
       setShowProcedimentoForm(false);
       setProcedimentoData({
         dataProcedimento: "",
@@ -371,6 +366,7 @@ const RegisterUser = () => {
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
