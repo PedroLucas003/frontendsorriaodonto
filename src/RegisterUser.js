@@ -113,22 +113,39 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-
+  
     if (name === "valor") {
-      const cleanedValue = value.replace(/\D/g, "");
-      const numericValue = parseFloat(cleanedValue) / 100;
-      const formattedValue = numericValue.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
+      // Remove tudo que não é número ou vírgula
+      let cleanedValue = value.replace(/[^\d,]/g, '');
+      
+      // Garante que há no máximo uma vírgula
+      const commaCount = (cleanedValue.match(/,/g) || []).length;
+      if (commaCount > 1) {
+        cleanedValue = cleanedValue.replace(/,/g, ''); // Remove todas as vírgulas
+        cleanedValue = cleanedValue.replace(/(\d{2})$/, ',$1'); // Adiciona uma vírgula antes dos últimos 2 dígitos
+      }
+      
+      // Se não tiver vírgula e tiver mais de 2 dígitos, adiciona automaticamente
+      if (commaCount === 0 && cleanedValue.length > 2) {
+        cleanedValue = cleanedValue.replace(/(\d{2})$/, ',$1');
+      }
+      
+      // Formata como moeda
+      const numericValue = parseFloat(cleanedValue.replace(',', '.')) || 0;
+      const formattedValue = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       });
-
+  
       setProcedimentoData(prev => ({
         ...prev,
-        [name]: isNaN(numericValue) ? "" : formattedValue
+        [name]: formattedValue
       }));
       return;
     }
-
+  
     setProcedimentoData(prev => ({
       ...prev,
       [name]: value
@@ -279,7 +296,7 @@ const RegisterUser = () => {
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
   
-    // Validação básica dos campos (mantido igual)
+    // Validação básica dos campos
     const requiredFields = {
       dataProcedimento: "A data do procedimento é obrigatória",
       procedimento: "O procedimento é obrigatório",
@@ -329,7 +346,7 @@ const RegisterUser = () => {
         }
       );
   
-      // Atualiza o estado com os dados completos do usuário retornados pelo backend
+      // Atualiza o estado com os dados completos
       setFormData(prev => ({
         ...prev,
         procedimentos: [
@@ -346,7 +363,7 @@ const RegisterUser = () => {
             ...p, 
             isPrincipal: false 
           }))
-        ].sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento))
+        ]
       }));
   
       // Reseta o formulário
@@ -491,50 +508,69 @@ const RegisterUser = () => {
     });
   };
 
- const handleEdit = (usuario) => {
-  setEditandoId(usuario._id);
-  setModoVisualizacao(true);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+  const handleEdit = (usuario) => {
+    setEditandoId(usuario._id);
+    setModoVisualizacao(true);
+  
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+    };
+  
+    // Formata o valor para exibição
+    const formatCurrency = (value) => {
+      if (!value) return "";
+      const numericValue = typeof value === 'string' ? 
+        parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) : 
+        value;
+      return isNaN(numericValue) ? "" : numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    };
+  
+    // Criar array de procedimentos combinando o principal e o histórico
+    const procedimentosCompletos = [
+      {
+        dataProcedimento: usuario.dataProcedimento,
+        procedimento: usuario.procedimento,
+        denteFace: usuario.denteFace,
+        valor: formatCurrency(usuario.valor),
+        modalidadePagamento: usuario.modalidadePagamento,
+        profissional: usuario.profissional,
+        isPrincipal: true
+      },
+      ...(usuario.historicoProcedimentos || []).map(p => ({ 
+        ...p, 
+        isPrincipal: false,
+        valor: formatCurrency(p.valor)
+      }))
+    ];
+  
+    setFormData({
+      ...usuario,
+      cpf: formatCPF(usuario.cpf),
+      telefone: formatFone(usuario.telefone),
+      dataNascimento: formatDate(usuario.dataNascimento),
+      dataProcedimento: formatDate(usuario.dataProcedimento),
+      password: "",
+      confirmPassword: "",
+      image: null,
+      historicoCirurgia: usuario.historicoCirurgia || "",
+      historicoOdontologico: usuario.historicoOdontologico || "",
+      exameSangue: usuario.exames?.exameSangue || "",
+      coagulacao: usuario.exames?.coagulacao || "",
+      cicatrizacao: usuario.exames?.cicatrizacao || "",
+      procedimento: usuario.procedimento || "",
+      denteFace: usuario.denteFace || "",
+      valor: formatCurrency(usuario.valor),
+      modalidadePagamento: usuario.modalidadePagamento || "",
+      profissional: usuario.profissional || "",
+      quaisMedicamentos: usuario.quaisMedicamentos || "",
+      procedimentos: procedimentosCompletos
+    });
   };
-
-  // Criar array de procedimentos combinando o principal e o histórico
-  const procedimentosCompletos = [
-    {
-      dataProcedimento: usuario.dataProcedimento,
-      procedimento: usuario.procedimento,
-      denteFace: usuario.denteFace,
-      valor: usuario.valor,
-      modalidadePagamento: usuario.modalidadePagamento,
-      profissional: usuario.profissional,
-      isPrincipal: true
-    },
-    ...(usuario.historicoProcedimentos || []).map(p => ({ ...p, isPrincipal: false }))
-  ].sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento));
-
-  setFormData({
-    ...usuario,
-    cpf: formatCPF(usuario.cpf),
-    telefone: formatFone(usuario.telefone),
-    dataNascimento: formatDate(usuario.dataNascimento),
-    dataProcedimento: formatDate(usuario.dataProcedimento),
-    password: "",
-    confirmPassword: "",
-    image: null,
-    historicoCirurgia: usuario.historicoCirurgia || "",
-    historicoOdontologico: usuario.historicoOdontologico || "",
-    exameSangue: usuario.exames?.exameSangue || "",
-    coagulacao: usuario.exames?.coagulacao || "",
-    cicatrizacao: usuario.exames?.cicatrizacao || "",
-    procedimento: usuario.procedimento || "",
-    denteFace: usuario.denteFace || "",
-    quaisMedicamentos: usuario.quaisMedicamentos || "",
-    procedimentos: procedimentosCompletos
-  });
-};
 
   const handleVoltar = () => {
     setEditandoId(null);
@@ -1078,15 +1114,13 @@ const RegisterUser = () => {
                     })
                     : 'Data não informada';
 
-                  let valorFormatado = 'Valor não informado';
-                  if (proc.valor !== undefined && proc.valor !== null) {
-                    if (typeof proc.valor === 'number') {
-                      valorFormatado = proc.valor.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      });
-                    } else if (typeof proc.valor === 'string') {
-                      const valorNumerico = parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.'));
+                    let valorFormatado = 'Valor não informado';
+                    if (proc.valor !== undefined && proc.valor !== null) {
+                      // Converte para número se for string
+                      const valorNumerico = typeof proc.valor === 'string' ? 
+                        parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
+                        proc.valor;
+                      
                       if (!isNaN(valorNumerico)) {
                         valorFormatado = valorNumerico.toLocaleString('pt-BR', {
                           style: 'currency',
@@ -1096,7 +1130,6 @@ const RegisterUser = () => {
                         valorFormatado = proc.valor;
                       }
                     }
-                  }
 
                   return (
                     <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
