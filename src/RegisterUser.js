@@ -976,8 +976,18 @@ const RegisterUser = () => {
                       type="date"
                       id="dataProcedimento"
                       name="dataProcedimento"
-                      value={procedimentoData.dataProcedimento}
-                      onChange={handleProcedimentoChange}
+                      value={procedimentoData.dataProcedimento ?
+                        new Date(procedimentoData.dataProcedimento).toISOString().split('T')[0] :
+                        ''}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        if (!isNaN(date.getTime())) {
+                          setProcedimentoData(prev => ({
+                            ...prev,
+                            dataProcedimento: date.toISOString()
+                          }));
+                        }
+                      }}
                       className={fieldErrors.dataProcedimento ? 'error-field' : ''}
                     />
                     {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
@@ -1017,23 +1027,24 @@ const RegisterUser = () => {
                       type="text"
                       id="valor"
                       name="valor"
-                      value={procedimentoData.valor || ""}
+                      value={procedimentoData.valorFormatado || ""}
                       onChange={(e) => {
-                        // Remove tudo exceto números e vírgula
-                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                        // Remove tudo exceto números
+                        const rawValue = e.target.value.replace(/\D/g, '');
 
-                        // Formata para o formato brasileiro (R$ 1.234,56)
-                        let formattedValue = rawValue;
-                        if (rawValue.length > 2) {
-                          formattedValue = rawValue.replace(/^(\d+)(\d{2})$/, '$1,$2');
-                          formattedValue = formattedValue.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-                        }
+                        // Converte para centavos (10,00 → 1000)
+                        const numericValue = rawValue ? parseInt(rawValue) / 100 : 0;
 
-                        // Atualiza o estado mantendo o valor bruto (numérico) e o formatado
+                        // Formata para exibição (1000 → "10,00")
+                        const formattedValue = numericValue.toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        });
+
                         setProcedimentoData(prev => ({
                           ...prev,
-                          valor: rawValue.replace(',', '.'), // Armazena como número (ex: "1234.56")
-                          valorFormatado: formattedValue ? `R$ ${formattedValue}` : ""
+                          valor: numericValue, // Armazena como número (10.00)
+                          valorFormatado: formattedValue // Exibe como "10,00"
                         }));
                       }}
                       required
@@ -1108,43 +1119,21 @@ const RegisterUser = () => {
             <div className="procedimentos-list">
               {formData.procedimentos?.length > 0 ? (
                 formData.procedimentos
-                  .sort((a, b) => {
-                    // Ordena para mostrar o principal primeiro e depois os mais recentes
-                    if (a.isPrincipal) return -1;
-                    if (b.isPrincipal) return 1;
-                    return new Date(b.dataProcedimento) - new Date(a.dataProcedimento);
-                  })
+                  .sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento))
                   .map((proc, index) => {
                     const dataFormatada = proc.dataProcedimento
-                      ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })
+                      ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR')
                       : 'Data não informada';
 
-                    let valorFormatado = 'Valor não informado';
-                    if (proc.valor !== undefined && proc.valor !== null) {
-                      const valorNumerico = typeof proc.valor === 'string' ?
-                        parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) :
-                        proc.valor;
-
-                      if (!isNaN(valorNumerico)) {
-                        valorFormatado = valorNumerico.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        });
-                      } else {
-                        valorFormatado = proc.valor;
-                      }
-                    }
+                    const valorFormatado = proc.valor?.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }) || 'Valor não informado';
 
                     return (
-                      <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
+                      <div key={proc._id || index} className="procedimento-item">
                         <div className="procedimento-header">
-                          <h4>
-                            {proc.isPrincipal ? 'Procedimento Principal' : `Procedimento #${index}`}
-                          </h4>
+                          <h4>Procedimento #{index + 1}</h4>
                           <span>{dataFormatada}</span>
                         </div>
                         <div className="procedimento-details">
