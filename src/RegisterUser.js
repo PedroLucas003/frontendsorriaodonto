@@ -113,39 +113,35 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-  
+
     if (name === "valor") {
-      // Remove tudo que não é número ou vírgula
-      let cleanedValue = value.replace(/[^\d,]/g, '');
-      
-      // Garante que há no máximo uma vírgula
-      const commaCount = (cleanedValue.match(/,/g) || []).length;
-      if (commaCount > 1) {
-        cleanedValue = cleanedValue.replace(/,/g, ''); // Remove todas as vírgulas
-        cleanedValue = cleanedValue.replace(/(\d{2})$/, ',$1'); // Adiciona uma vírgula antes dos últimos 2 dígitos
+      // Remove tudo que não é dígito
+      let cleanedValue = value.replace(/\D/g, '');
+
+      // Converte para centavos (assumindo os 2 últimos dígitos são centavos)
+      if (cleanedValue.length > 2) {
+        cleanedValue = cleanedValue.replace(/^0+/, ''); // Remove zeros à esquerda
+        const reais = cleanedValue.slice(0, -2) || '0';
+        const centavos = cleanedValue.slice(-2).padStart(2, '0');
+        cleanedValue = `${reais}.${centavos}`;
+      } else {
+        cleanedValue = `0.${cleanedValue.padStart(2, '0')}`;
       }
-      
-      // Se não tiver vírgula e tiver mais de 2 dígitos, adiciona automaticamente
-      if (commaCount === 0 && cleanedValue.length > 2) {
-        cleanedValue = cleanedValue.replace(/(\d{2})$/, ',$1');
-      }
-      
+
       // Formata como moeda
-      const numericValue = parseFloat(cleanedValue.replace(',', '.')) || 0;
+      const numericValue = parseFloat(cleanedValue);
       const formattedValue = numericValue.toLocaleString('pt-BR', {
         style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        currency: 'BRL'
       });
-  
+
       setProcedimentoData(prev => ({
         ...prev,
         [name]: formattedValue
       }));
       return;
     }
-  
+
     setProcedimentoData(prev => ({
       ...prev,
       [name]: value
@@ -295,7 +291,7 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     // Validação básica dos campos
     const requiredFields = {
       dataProcedimento: "A data do procedimento é obrigatória",
@@ -305,25 +301,25 @@ const RegisterUser = () => {
       modalidadePagamento: "A modalidade de pagamento é obrigatória",
       profissional: "O profissional é obrigatório"
     };
-  
+
     const errors = {};
     let isValid = true;
-  
+
     for (const [field, message] of Object.entries(requiredFields)) {
       if (!procedimentoData[field]) {
         errors[field] = message;
         isValid = false;
       }
     }
-  
+
     if (!isValid) {
       setFieldErrors(errors);
       return;
     }
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       // Formata os dados para envio
       const dadosParaEnvio = {
         dataProcedimento: procedimentoData.dataProcedimento,
@@ -333,7 +329,7 @@ const RegisterUser = () => {
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional
       };
-  
+
       // Chamada à API
       const response = await api.put(
         `/api/users/${editandoId}/procedimento`,
@@ -345,7 +341,7 @@ const RegisterUser = () => {
           }
         }
       );
-  
+
       // Atualiza o estado com os dados completos
       setFormData(prev => ({
         ...prev,
@@ -359,13 +355,13 @@ const RegisterUser = () => {
             profissional: prev.profissional,
             isPrincipal: true
           },
-          ...(response.data.user.historicoProcedimentos || []).map(p => ({ 
-            ...p, 
-            isPrincipal: false 
+          ...(response.data.user.historicoProcedimentos || []).map(p => ({
+            ...p,
+            isPrincipal: false
           }))
         ]
       }));
-  
+
       // Reseta o formulário
       setShowProcedimentoForm(false);
       setProcedimentoData({
@@ -377,7 +373,7 @@ const RegisterUser = () => {
         profissional: ""
       });
       setError("");
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -387,29 +383,29 @@ const RegisterUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!validateForm()) return;
-  
+
     const token = localStorage.getItem("token");
-    
+
     // Cria um objeto com os dados formatados para envio
     const dadosParaEnvio = {};
-    
+
     // Lista de campos que não devem ser enviados
     const camposNaoEnviar = ['procedimentos', 'image'];
-    
+
     Object.keys(formData).forEach((key) => {
       if (camposNaoEnviar.includes(key)) return;
-      
+
       let value = formData[key];
-  
+
       // Formatação dos campos especiais
       if (key === "cpf" || key === "telefone") {
         value = String(value).replace(/\D/g, "");
       } else if (key === "valor") {
         value = String(value).replace(/[^\d,]/g, "").replace(",", ".");
       }
-  
+
       // Ignora password vazio em edição
       if (
         (key === "password" || key === "confirmPassword") &&
@@ -418,12 +414,12 @@ const RegisterUser = () => {
       ) {
         return;
       }
-  
+
       if (value !== null && value !== undefined) {
         dadosParaEnvio[key] = value;
       }
     });
-  
+
     try {
       if (editandoId) {
         const response = await api.put(
@@ -448,7 +444,7 @@ const RegisterUser = () => {
         });
         alert("Usuário cadastrado com sucesso!");
       }
-  
+
       resetForm();
       fetchUsuarios();
     } catch (error) {
@@ -568,6 +564,9 @@ const RegisterUser = () => {
       modalidadePagamento: usuario.modalidadePagamento || "",
       profissional: usuario.profissional || "",
       quaisMedicamentos: usuario.quaisMedicamentos || "",
+      // Garantindo que os campos de fumo e álcool tenham valores válidos
+      frequenciaFumo: usuario.frequenciaFumo || "",
+      frequenciaAlcool: usuario.frequenciaAlcool || "",
       procedimentos: procedimentosCompletos
     });
   };
@@ -1114,45 +1113,44 @@ const RegisterUser = () => {
                     })
                     : 'Data não informada';
 
-                    let valorFormatado = 'Valor não informado';
-                    if (proc.valor !== undefined && proc.valor !== null) {
-                      // Converte para número se for string
-                      const valorNumerico = typeof proc.valor === 'string' ? 
-                        parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
-                        proc.valor;
-                      
-                      if (!isNaN(valorNumerico)) {
-                        valorFormatado = valorNumerico.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        });
-                      } else {
-                        valorFormatado = proc.valor;
-                      }
+                  let valorFormatado = 'Valor não informado';
+                  if (proc.valor !== undefined && proc.valor !== null) {
+                    // Converte para número se for string
+                    const valorNumerico = typeof proc.valor === 'string' ?
+                      parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) :
+                      proc.valor;
+
+                    if (!isNaN(valorNumerico)) {
+                      valorFormatado = valorNumerico.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      });
+                    } else {
+                      valorFormatado = proc.valor;
                     }
+                  }
 
                   return (
                     <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
                       <div className="procedimento-header">
                         <h4>
-                          {proc.isPrincipal ? 'Procedimento Principal' : `Procedimento #${index}`}
-                          {proc.isPrincipal && <span className="badge-principal">Principal</span>}
+                          {proc.isPrincipal ? 'Principal' : `#${index + 1}`}
                         </h4>
                         <span>{dataFormatada}</span>
                       </div>
                       <div className="procedimento-details">
-                        <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
-                        <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
+                        <p><strong>Procedimento:</strong> {proc.procedimento || '-'}</p>
+                        <p><strong>Dente/Face:</strong> {proc.denteFace || '-'}</p>
                         <p><strong>Valor:</strong> {valorFormatado}</p>
-                        <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
-                        <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
+                        <p><strong>Pagamento:</strong> {proc.modalidadePagamento || '-'}</p>
+                        <p><strong>Profissional:</strong> {proc.profissional || '-'}</p>
                       </div>
                     </div>
                   );
                 })
               ) : (
                 <div className="no-procedimentos">
-                  <p>Nenhum procedimento cadastrado ainda.</p>
+                  <p>Nenhum procedimento cadastrado</p>
                 </div>
               )}
             </div>

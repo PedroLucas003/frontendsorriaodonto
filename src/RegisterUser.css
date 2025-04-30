@@ -769,3 +769,29 @@ input[type="number"] {
   background-color: #cccccc;
   cursor: not-allowed;
 }
+.procedimentos-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.procedimento-item {
+  flex: 1 1 300px;
+  min-width: 0;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.procedimento-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.procedimento-details p {
+  margin: 5px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
