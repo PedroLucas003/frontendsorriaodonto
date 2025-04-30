@@ -116,28 +116,10 @@ const RegisterUser = () => {
 
     if (name === "valor") {
       // Remove tudo que não é dígito
-      let cleanedValue = value.replace(/\D/g, '');
-
-      // Converte para centavos (assumindo os 2 últimos dígitos são centavos)
-      if (cleanedValue.length > 2) {
-        cleanedValue = cleanedValue.replace(/^0+/, ''); // Remove zeros à esquerda
-        const reais = cleanedValue.slice(0, -2) || '0';
-        const centavos = cleanedValue.slice(-2).padStart(2, '0');
-        cleanedValue = `${reais}.${centavos}`;
-      } else {
-        cleanedValue = `0.${cleanedValue.padStart(2, '0')}`;
-      }
-
-      // Formata como moeda
-      const numericValue = parseFloat(cleanedValue);
-      const formattedValue = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
 
       setProcedimentoData(prev => ({
         ...prev,
-        [name]: formattedValue
+        [name]: value
       }));
       return;
     }
@@ -291,7 +273,7 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     // Validação básica dos campos
     const requiredFields = {
       dataProcedimento: "A data do procedimento é obrigatória",
@@ -301,25 +283,25 @@ const RegisterUser = () => {
       modalidadePagamento: "A modalidade de pagamento é obrigatória",
       profissional: "O profissional é obrigatório"
     };
-  
+
     const errors = {};
     let isValid = true;
-  
+
     for (const [field, message] of Object.entries(requiredFields)) {
       if (!procedimentoData[field]) {
         errors[field] = message;
         isValid = false;
       }
     }
-  
+
     if (!isValid) {
       setFieldErrors(errors);
       return;
     }
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       // Formata os dados para envio
       const dadosParaEnvio = {
         dataProcedimento: procedimentoData.dataProcedimento,
@@ -329,7 +311,7 @@ const RegisterUser = () => {
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional
       };
-  
+
       // Chamada à API
       await api.put(
         `/api/users/${editandoId}/procedimento`,
@@ -341,7 +323,7 @@ const RegisterUser = () => {
           }
         }
       );
-  
+
       // Atualiza o estado local com o novo procedimento
       const novoProcedimento = {
         _id: Date.now().toString(), // ID temporário até a próxima atualização
@@ -353,7 +335,7 @@ const RegisterUser = () => {
         profissional: procedimentoData.profissional,
         isPrincipal: false
       };
-  
+
       // Atualiza o estado mantendo o procedimento principal e adicionando o novo
       setFormData(prev => ({
         ...prev,
@@ -363,7 +345,7 @@ const RegisterUser = () => {
           ...prev.procedimentos.filter(p => !p.isPrincipal) // Mantém os outros secundários
         ]
       }));
-  
+
       // Reseta o formulário
       setShowProcedimentoForm(false);
       setProcedimentoData({
@@ -375,10 +357,10 @@ const RegisterUser = () => {
         profissional: ""
       });
       setError("");
-  
+
       // Atualiza a lista completa de usuários (opcional)
       fetchUsuarios();
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -512,75 +494,65 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-  
-    const formatDate = (dateString) => {
+
+    // Função de formatação monetária SIMPLIFICADA
+    const formatCurrency = (value) => {
+      if (value === null || value === undefined || value === "") return "R$ 0,00";
+
+      // Converte para número (já está em reais)
+      const numericValue = typeof value === 'string'
+        ? parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'))
+        : Number(value);
+
+      return numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    };
+
+    // Formatação de datas (mantida igual)
+    const formatDateForInput = (dateString) => {
       if (!dateString) return "";
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
     };
-  
-    const formatCurrency = (value) => {
-      if (!value) return "";
-      const numericValue = typeof value === 'string' ?
-        parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) :
-        value;
-      return isNaN(numericValue) ? "" : numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
-    };
-  
-    // Extrair hábitos ou criar objeto padrão se não existir
-    const habitos = usuario.habitos || {
-      frequenciaFumo: "",
-      frequenciaAlcool: ""
-    };
-  
-    // Criar array de procedimentos
+
+    // Processamento dos procedimentos
     const procedimentosCompletos = [
       {
-        dataProcedimento: usuario.dataProcedimento,
+        dataProcedimento: formatDateForInput(usuario.dataProcedimento),
         procedimento: usuario.procedimento,
         denteFace: usuario.denteFace,
-        valor: formatCurrency(usuario.valor),
+        valor: formatCurrency(usuario.valor), // Já formatado em reais
         modalidadePagamento: usuario.modalidadePagamento,
         profissional: usuario.profissional,
         isPrincipal: true
       },
-      ...(usuario.historicoProcedimentos || []).map((p, idx) => ({
+      ...(usuario.historicoProcedimentos || []).map((p) => ({
         ...p,
         isPrincipal: false,
         valor: formatCurrency(p.valor),
-        dataProcedimento: formatDate(p.dataProcedimento)
+        dataProcedimento: formatDateForInput(p.dataProcedimento)
       }))
     ];
-  
+
+    // Atualiza o state
     setFormData({
       ...usuario,
+      // Formatações de campos básicos
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
-      dataNascimento: formatDate(usuario.dataNascimento),
-      dataProcedimento: formatDate(usuario.dataProcedimento),
-      password: "",
-      confirmPassword: "",
-      image: null,
-      historicoCirurgia: usuario.historicoCirurgia || "",
-      historicoOdontologico: usuario.historicoOdontologico || "",
-      exameSangue: usuario.exames?.exameSangue || "",
-      coagulacao: usuario.exames?.coagulacao || "",
-      cicatrizacao: usuario.exames?.cicatrizacao || "",
-      procedimento: usuario.procedimento || "",
-      denteFace: usuario.denteFace || "",
-      valor: formatCurrency(usuario.valor),
-      modalidadePagamento: usuario.modalidadePagamento || "",
-      profissional: usuario.profissional || "",
-      quaisMedicamentos: usuario.quaisMedicamentos || "",
-      // Usando os hábitos extraídos
-      frequenciaFumo: habitos.frequenciaFumo,
-      frequenciaAlcool: habitos.frequenciaAlcool,
+      dataNascimento: formatDateForInput(usuario.dataNascimento),
+      dataProcedimento: formatDateForInput(usuario.dataProcedimento),
+      // Campos monetários (agora trabalhando com valor direto)
+      valor: usuario.valor, // Mantém o valor numérico bruto (1 = R$ 1,00)
+      valorFormatado: formatCurrency(usuario.valor), // Versão formatada para exibição
+      // Outros campos
       procedimentos: procedimentosCompletos,
-      // Garantindo que o objeto habitos completo também esteja no formData
-      habitos: habitos
+      password: "",
+      confirmPassword: ""
     });
   };
 
@@ -1040,13 +1012,31 @@ const RegisterUser = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="valor">Valor *</label>
+                    <label htmlFor="valor">{labels.valor}</label>
                     <input
                       type="text"
                       id="valor"
                       name="valor"
-                      value={procedimentoData.valor}
-                      onChange={handleProcedimentoChange}
+                      value={procedimentoData.valor || ""}
+                      onChange={(e) => {
+                        // Remove tudo exceto números e vírgula
+                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
+
+                        // Formata para o formato brasileiro (R$ 1.234,56)
+                        let formattedValue = rawValue;
+                        if (rawValue.length > 2) {
+                          formattedValue = rawValue.replace(/^(\d+)(\d{2})$/, '$1,$2');
+                          formattedValue = formattedValue.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+                        }
+
+                        // Atualiza o estado mantendo o valor bruto (numérico) e o formatado
+                        setProcedimentoData(prev => ({
+                          ...prev,
+                          valor: rawValue.replace(',', '.'), // Armazena como número (ex: "1234.56")
+                          valorFormatado: formattedValue ? `R$ ${formattedValue}` : ""
+                        }));
+                      }}
+                      required
                       className={fieldErrors.valor ? 'error-field' : ''}
                       placeholder="R$ 0,00"
                     />
