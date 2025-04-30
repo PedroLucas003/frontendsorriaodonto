@@ -514,7 +514,6 @@ const RegisterUser = () => {
       return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
     };
   
-    // Formata o valor para exibição
     const formatCurrency = (value) => {
       if (!value) return "";
       const numericValue = typeof value === 'string' ? 
@@ -526,7 +525,7 @@ const RegisterUser = () => {
       });
     };
   
-    // Criar array de procedimentos combinando o principal e o histórico
+    // Criar array de procedimentos
     const procedimentosCompletos = [
       {
         dataProcedimento: usuario.dataProcedimento,
@@ -537,7 +536,7 @@ const RegisterUser = () => {
         profissional: usuario.profissional,
         isPrincipal: true
       },
-      ...(usuario.historicoProcedimentos || []).map(p => ({ 
+      ...(usuario.historicoProcedimentos || []).map((p, idx) => ({ 
         ...p, 
         isPrincipal: false,
         valor: formatCurrency(p.valor)
@@ -564,7 +563,7 @@ const RegisterUser = () => {
       modalidadePagamento: usuario.modalidadePagamento || "",
       profissional: usuario.profissional || "",
       quaisMedicamentos: usuario.quaisMedicamentos || "",
-      // Garantindo que os campos de fumo e álcool tenham valores válidos
+      // Garante que os campos de seleção tenham valores válidos
       frequenciaFumo: usuario.frequenciaFumo || "",
       frequenciaAlcool: usuario.frequenciaAlcool || "",
       procedimentos: procedimentosCompletos
@@ -1102,58 +1101,57 @@ const RegisterUser = () => {
               </div>
             )}
 
-            <div className="procedimentos-list">
-              {formData.procedimentos?.length > 0 ? (
-                formData.procedimentos.map((proc, index) => {
-                  const dataFormatada = proc.dataProcedimento
-                    ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })
-                    : 'Data não informada';
+<div className="procedimentos-list">
+  {formData.procedimentos?.length > 0 ? (
+    formData.procedimentos.map((proc, index) => {
+      const dataFormatada = proc.dataProcedimento
+        ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+        : 'Data não informada';
 
-                  let valorFormatado = 'Valor não informado';
-                  if (proc.valor !== undefined && proc.valor !== null) {
-                    // Converte para número se for string
-                    const valorNumerico = typeof proc.valor === 'string' ?
-                      parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) :
-                      proc.valor;
+      let valorFormatado = 'Valor não informado';
+      if (proc.valor !== undefined && proc.valor !== null) {
+        const valorNumerico = typeof proc.valor === 'string' ? 
+          parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
+          proc.valor;
+        
+        if (!isNaN(valorNumerico)) {
+          valorFormatado = valorNumerico.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
+        } else {
+          valorFormatado = proc.valor;
+        }
+      }
 
-                    if (!isNaN(valorNumerico)) {
-                      valorFormatado = valorNumerico.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      });
-                    } else {
-                      valorFormatado = proc.valor;
-                    }
-                  }
-
-                  return (
-                    <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
-                      <div className="procedimento-header">
-                        <h4>
-                          {proc.isPrincipal ? 'Principal' : `#${index + 1}`}
-                        </h4>
-                        <span>{dataFormatada}</span>
-                      </div>
-                      <div className="procedimento-details">
-                        <p><strong>Procedimento:</strong> {proc.procedimento || '-'}</p>
-                        <p><strong>Dente/Face:</strong> {proc.denteFace || '-'}</p>
-                        <p><strong>Valor:</strong> {valorFormatado}</p>
-                        <p><strong>Pagamento:</strong> {proc.modalidadePagamento || '-'}</p>
-                        <p><strong>Profissional:</strong> {proc.profissional || '-'}</p>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="no-procedimentos">
-                  <p>Nenhum procedimento cadastrado</p>
-                </div>
-              )}
-            </div>
+      return (
+        <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
+          <div className="procedimento-header">
+            <h4>
+              {proc.isPrincipal ? 'Procedimento 1' : `Procedimento #${index + 1}`}
+            </h4>
+            <span>{dataFormatada}</span>
+          </div>
+          <div className="procedimento-details">
+            <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
+            <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
+            <p><strong>Valor:</strong> {valorFormatado}</p>
+            <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
+            <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
+          </div>
+        </div>
+      );
+    })
+  ) : (
+    <div className="no-procedimentos">
+      <p>Nenhum procedimento cadastrado ainda.</p>
+    </div>
+  )}
+</div>
           </div>
         )}
 
