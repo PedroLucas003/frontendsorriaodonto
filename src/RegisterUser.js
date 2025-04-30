@@ -291,7 +291,7 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-
+  
     // Validação básica dos campos
     const requiredFields = {
       dataProcedimento: "A data do procedimento é obrigatória",
@@ -301,25 +301,25 @@ const RegisterUser = () => {
       modalidadePagamento: "A modalidade de pagamento é obrigatória",
       profissional: "O profissional é obrigatório"
     };
-
+  
     const errors = {};
     let isValid = true;
-
+  
     for (const [field, message] of Object.entries(requiredFields)) {
       if (!procedimentoData[field]) {
         errors[field] = message;
         isValid = false;
       }
     }
-
+  
     if (!isValid) {
       setFieldErrors(errors);
       return;
     }
-
+  
     try {
       const token = localStorage.getItem("token");
-
+  
       // Formata os dados para envio
       const dadosParaEnvio = {
         dataProcedimento: procedimentoData.dataProcedimento,
@@ -329,9 +329,9 @@ const RegisterUser = () => {
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional
       };
-
+  
       // Chamada à API
-      const response = await api.put(
+      await api.put(
         `/api/users/${editandoId}/procedimento`,
         dadosParaEnvio,
         {
@@ -341,27 +341,29 @@ const RegisterUser = () => {
           }
         }
       );
-
-      // Atualiza o estado com os dados completos
+  
+      // Atualiza o estado local com o novo procedimento
+      const novoProcedimento = {
+        _id: Date.now().toString(), // ID temporário até a próxima atualização
+        dataProcedimento: procedimentoData.dataProcedimento,
+        procedimento: procedimentoData.procedimento,
+        denteFace: procedimentoData.denteFace,
+        valor: procedimentoData.valor,
+        modalidadePagamento: procedimentoData.modalidadePagamento,
+        profissional: procedimentoData.profissional,
+        isPrincipal: false
+      };
+  
+      // Atualiza o estado mantendo o procedimento principal e adicionando o novo
       setFormData(prev => ({
         ...prev,
         procedimentos: [
-          {
-            dataProcedimento: prev.dataProcedimento,
-            procedimento: prev.procedimento,
-            denteFace: prev.denteFace,
-            valor: prev.valor,
-            modalidadePagamento: prev.modalidadePagamento,
-            profissional: prev.profissional,
-            isPrincipal: true
-          },
-          ...(response.data.user.historicoProcedimentos || []).map(p => ({
-            ...p,
-            isPrincipal: false
-          }))
+          ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal
+          novoProcedimento, // Adiciona o novo
+          ...prev.procedimentos.filter(p => !p.isPrincipal) // Mantém os outros secundários
         ]
       }));
-
+  
       // Reseta o formulário
       setShowProcedimentoForm(false);
       setProcedimentoData({
@@ -373,7 +375,10 @@ const RegisterUser = () => {
         profissional: ""
       });
       setError("");
-
+  
+      // Atualiza a lista completa de usuários (opcional)
+      fetchUsuarios();
+  
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -507,24 +512,24 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-  
+
     const formatDate = (dateString) => {
       if (!dateString) return "";
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
     };
-  
+
     const formatCurrency = (value) => {
       if (!value) return "";
-      const numericValue = typeof value === 'string' ? 
-        parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) : 
+      const numericValue = typeof value === 'string' ?
+        parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) :
         value;
       return isNaN(numericValue) ? "" : numericValue.toLocaleString('pt-BR', {
         style: 'currency',
         currency: 'BRL'
       });
     };
-  
+
     // Criar array de procedimentos
     const procedimentosCompletos = [
       {
@@ -536,13 +541,14 @@ const RegisterUser = () => {
         profissional: usuario.profissional,
         isPrincipal: true
       },
-      ...(usuario.historicoProcedimentos || []).map((p, idx) => ({ 
-        ...p, 
+      ...(usuario.historicoProcedimentos || []).map((p, idx) => ({
+        ...p,
         isPrincipal: false,
-        valor: formatCurrency(p.valor)
+        valor: formatCurrency(p.valor),
+        dataProcedimento: formatDate(p.dataProcedimento)
       }))
     ];
-  
+
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
@@ -563,9 +569,8 @@ const RegisterUser = () => {
       modalidadePagamento: usuario.modalidadePagamento || "",
       profissional: usuario.profissional || "",
       quaisMedicamentos: usuario.quaisMedicamentos || "",
-      // Garante que os campos de seleção tenham valores válidos
-      frequenciaFumo: usuario.frequenciaFumo || "",
-      frequenciaAlcool: usuario.frequenciaAlcool || "",
+      frequenciaFumo: usuario.habitos?.frequenciaFumo || "",
+      frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "",
       procedimentos: procedimentosCompletos
     });
   };
@@ -1101,57 +1106,64 @@ const RegisterUser = () => {
               </div>
             )}
 
-<div className="procedimentos-list">
-  {formData.procedimentos?.length > 0 ? (
-    formData.procedimentos.map((proc, index) => {
-      const dataFormatada = proc.dataProcedimento
-        ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        })
-        : 'Data não informada';
+            <div className="procedimentos-list">
+              {formData.procedimentos?.length > 0 ? (
+                formData.procedimentos
+                  .sort((a, b) => {
+                    // Ordena para mostrar o principal primeiro e depois os mais recentes
+                    if (a.isPrincipal) return -1;
+                    if (b.isPrincipal) return 1;
+                    return new Date(b.dataProcedimento) - new Date(a.dataProcedimento);
+                  })
+                  .map((proc, index) => {
+                    const dataFormatada = proc.dataProcedimento
+                      ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })
+                      : 'Data não informada';
 
-      let valorFormatado = 'Valor não informado';
-      if (proc.valor !== undefined && proc.valor !== null) {
-        const valorNumerico = typeof proc.valor === 'string' ? 
-          parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
-          proc.valor;
-        
-        if (!isNaN(valorNumerico)) {
-          valorFormatado = valorNumerico.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          });
-        } else {
-          valorFormatado = proc.valor;
-        }
-      }
+                    let valorFormatado = 'Valor não informado';
+                    if (proc.valor !== undefined && proc.valor !== null) {
+                      const valorNumerico = typeof proc.valor === 'string' ?
+                        parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.')) :
+                        proc.valor;
 
-      return (
-        <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
-          <div className="procedimento-header">
-            <h4>
-              {proc.isPrincipal ? 'Procedimento 1' : `Procedimento #${index + 1}`}
-            </h4>
-            <span>{dataFormatada}</span>
-          </div>
-          <div className="procedimento-details">
-            <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
-            <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
-            <p><strong>Valor:</strong> {valorFormatado}</p>
-            <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
-            <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
-          </div>
-        </div>
-      );
-    })
-  ) : (
-    <div className="no-procedimentos">
-      <p>Nenhum procedimento cadastrado ainda.</p>
-    </div>
-  )}
-</div>
+                      if (!isNaN(valorNumerico)) {
+                        valorFormatado = valorNumerico.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        });
+                      } else {
+                        valorFormatado = proc.valor;
+                      }
+                    }
+
+                    return (
+                      <div key={proc._id || index} className={`procedimento-item ${proc.isPrincipal ? 'principal' : ''}`}>
+                        <div className="procedimento-header">
+                          <h4>
+                            {proc.isPrincipal ? 'Procedimento Principal' : `Procedimento #${index}`}
+                          </h4>
+                          <span>{dataFormatada}</span>
+                        </div>
+                        <div className="procedimento-details">
+                          <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
+                          <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
+                          <p><strong>Valor:</strong> {valorFormatado}</p>
+                          <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
+                          <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+              ) : (
+                <div className="no-procedimentos">
+                  <p>Nenhum procedimento cadastrado ainda.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
