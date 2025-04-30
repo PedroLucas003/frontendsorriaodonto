@@ -512,13 +512,13 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-
+  
     const formatDate = (dateString) => {
       if (!dateString) return "";
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
     };
-
+  
     const formatCurrency = (value) => {
       if (!value) return "";
       const numericValue = typeof value === 'string' ?
@@ -529,7 +529,13 @@ const RegisterUser = () => {
         currency: 'BRL'
       });
     };
-
+  
+    // Extrair hábitos ou criar objeto padrão se não existir
+    const habitos = usuario.habitos || {
+      frequenciaFumo: "",
+      frequenciaAlcool: ""
+    };
+  
     // Criar array de procedimentos
     const procedimentosCompletos = [
       {
@@ -548,7 +554,7 @@ const RegisterUser = () => {
         dataProcedimento: formatDate(p.dataProcedimento)
       }))
     ];
-
+  
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
@@ -569,9 +575,12 @@ const RegisterUser = () => {
       modalidadePagamento: usuario.modalidadePagamento || "",
       profissional: usuario.profissional || "",
       quaisMedicamentos: usuario.quaisMedicamentos || "",
-      frequenciaFumo: usuario.habitos?.frequenciaFumo || "",
-      frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "",
-      procedimentos: procedimentosCompletos
+      // Usando os hábitos extraídos
+      frequenciaFumo: habitos.frequenciaFumo,
+      frequenciaAlcool: habitos.frequenciaAlcool,
+      procedimentos: procedimentosCompletos,
+      // Garantindo que o objeto habitos completo também esteja no formData
+      habitos: habitos
     });
   };
 
