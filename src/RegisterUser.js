@@ -273,7 +273,7 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-
+  
     // Validação básica dos campos
     const requiredFields = {
       dataProcedimento: "A data do procedimento é obrigatória",
@@ -283,35 +283,38 @@ const RegisterUser = () => {
       modalidadePagamento: "A modalidade de pagamento é obrigatória",
       profissional: "O profissional é obrigatório"
     };
-
+  
     const errors = {};
     let isValid = true;
-
+  
     for (const [field, message] of Object.entries(requiredFields)) {
       if (!procedimentoData[field]) {
         errors[field] = message;
         isValid = false;
       }
     }
-
+  
     if (!isValid) {
       setFieldErrors(errors);
       return;
     }
-
+  
     try {
       const token = localStorage.getItem("token");
-
-      // Formata os dados para envio
+  
+      // Prepara os dados no formato correto para o backend
       const dadosParaEnvio = {
+        ...procedimentoData,
         dataProcedimento: procedimentoData.dataProcedimento,
-        procedimento: procedimentoData.procedimento,
-        denteFace: procedimentoData.denteFace,
-        valor: procedimentoData.valor.replace(/[^\d,]/g, '').replace(',', '.'),
-        modalidadePagamento: procedimentoData.modalidadePagamento,
-        profissional: procedimentoData.profissional
+        valor: parseFloat(
+          String(procedimentoData.valor).replace(/[^\d,]/g, '').replace(',', '.')
+        ),
+        procedimento: procedimentoData.procedimento.trim(),
+        denteFace: procedimentoData.denteFace.trim(),
+        modalidadePagamento: procedimentoData.modalidadePagamento.trim(),
+        profissional: procedimentoData.profissional.trim()
       };
-
+  
       // Chamada à API
       await api.put(
         `/api/users/${editandoId}/procedimento`,
@@ -323,20 +326,14 @@ const RegisterUser = () => {
           }
         }
       );
-
+  
       // Atualiza o estado local com o novo procedimento
       const novoProcedimento = {
         _id: Date.now().toString(), // ID temporário até a próxima atualização
-        dataProcedimento: procedimentoData.dataProcedimento,
-        procedimento: procedimentoData.procedimento,
-        denteFace: procedimentoData.denteFace,
-        valor: procedimentoData.valor,
-        modalidadePagamento: procedimentoData.modalidadePagamento,
-        profissional: procedimentoData.profissional,
+        ...dadosParaEnvio,
         isPrincipal: false
       };
-
-      // Atualiza o estado mantendo o procedimento principal e adicionando o novo
+  
       setFormData(prev => ({
         ...prev,
         procedimentos: [
@@ -345,7 +342,7 @@ const RegisterUser = () => {
           ...prev.procedimentos.filter(p => !p.isPrincipal) // Mantém os outros secundários
         ]
       }));
-
+  
       // Reseta o formulário
       setShowProcedimentoForm(false);
       setProcedimentoData({
@@ -357,16 +354,15 @@ const RegisterUser = () => {
         profissional: ""
       });
       setError("");
-
-      // Atualiza a lista completa de usuários (opcional)
+  
       fetchUsuarios();
-
+  
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
     }
   };
-
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -986,22 +982,18 @@ const RegisterUser = () => {
                       type="date"
                       id="dataProcedimento"
                       name="dataProcedimento"
-                      value={procedimentoData.dataProcedimento ?
-                        new Date(procedimentoData.dataProcedimento).toISOString().split('T')[0] :
-                        ''}
+                      value={procedimentoData.dataProcedimento || ''}
                       onChange={(e) => {
-                        const date = new Date(e.target.value);
-                        if (!isNaN(date.getTime())) {
-                          setProcedimentoData(prev => ({
-                            ...prev,
-                            dataProcedimento: date.toISOString()
-                          }));
-                        }
+                        setProcedimentoData(prev => ({
+                          ...prev,
+                          dataProcedimento: e.target.value // mantém o formato 'yyyy-mm-dd'
+                        }));
                       }}
                       className={fieldErrors.dataProcedimento ? 'error-field' : ''}
                     />
                     {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
                   </div>
+
 
                   <div className="form-group">
                     <label htmlFor="procedimento">Procedimento *</label>
@@ -1032,36 +1024,27 @@ const RegisterUser = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="valor">{labels.valor}</label>
+                    <label htmlFor="valor">Valor *</label>
                     <input
                       type="text"
                       id="valor"
                       name="valor"
-                      value={procedimentoData.valorFormatado || ""}
+                      value={procedimentoData.valorFormatado || ''}
                       onChange={(e) => {
-                        // Remove tudo exceto números e vírgula
-                        let rawValue = e.target.value.replace(/[^\d,]/g, '');
+                        // Substitui vírgula por ponto e remove outros caracteres
+                        const raw = e.target.value.replace(/[^\d,]/g, '').replace(',', '.');
 
-                        // Garante que temos centavos (00 no final)
-                        if (!rawValue.includes(',')) {
-                          rawValue = rawValue.length > 2
-                            ? rawValue.slice(0, -2) + ',' + rawValue.slice(-2)
-                            : '0,' + rawValue.padStart(2, '0');
-                        }
-
-                        // Converte para número (10,50 → 10.50)
-                        const numericValue = parseFloat(rawValue.replace(',', '.')) || 0;
-
-                        // Formata para exibição (10.50 → "10,50")
-                        const formattedValue = numericValue.toLocaleString('pt-BR', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        });
+                        const numericValue = parseFloat(raw);
+                        const formattedValue = isNaN(numericValue) ? '' :
+                          numericValue.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          });
 
                         setProcedimentoData(prev => ({
                           ...prev,
-                          valor: numericValue, // Armazena como número (10.50)
-                          valorFormatado: formattedValue // Exibe como "10,50"
+                          valor: isNaN(numericValue) ? '' : numericValue,
+                          valorFormatado: formattedValue
                         }));
                       }}
                       required
@@ -1070,6 +1053,7 @@ const RegisterUser = () => {
                     />
                     {fieldErrors.valor && <span className="field-error">{fieldErrors.valor}</span>}
                   </div>
+
 
                   <div className="form-group">
                     <label htmlFor="modalidadePagamento">Modalidade *</label>
