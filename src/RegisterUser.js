@@ -2,6 +2,43 @@ import React, { useState, useEffect } from "react";
 import api from "./api/api";
 import "./RegisterUser.css";
 
+// Funções auxiliares
+function formatDateForInput(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+}
+
+function formatDateForDisplay(dateString) {
+  if (!dateString) return 'Data não informada';
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? 'Data inválida' : 
+    date.toLocaleDateString('pt-BR', {
+      timeZone: 'UTC',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+}
+
+function convertValueToFloat(valor) {
+  if (!valor) return 0;
+  if (typeof valor === 'number') return valor;
+  return parseFloat(valor.toString().replace(/[^\d,]/g, '').replace(',', '.'));
+}
+
+function formatValueForDisplay(valor) {
+  if (valor === null || valor === undefined || valor === '') return 'Valor não informado';
+  const numericValue = typeof valor === 'string' ? 
+    parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
+    Number(valor);
+  return isNaN(numericValue) ? 'Valor inválido' : 
+    numericValue.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+}
+
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -101,29 +138,8 @@ const RegisterUser = () => {
     return `(${cleanedValue.slice(0, 2)}) ${cleanedValue.slice(2, 7)}-${cleanedValue.slice(7)}`;
   };
 
-  const formatValor = (value) => {
-    const cleanedValue = value.replace(/\D/g, "");
-    if (!cleanedValue) return "";
-    const numericValue = parseFloat(cleanedValue) / 100;
-    return numericValue.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
-  };
-
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "valor") {
-      // Remove tudo que não é dígito
-
-      setProcedimentoData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-      return;
-    }
-
     setProcedimentoData(prev => ({
       ...prev,
       [name]: value
@@ -192,16 +208,24 @@ const RegisterUser = () => {
     } else if (name === "telefone") {
       formattedValue = formatFone(value);
     } else if (name === "valor") {
-      formattedValue = formatValor(value);
-    } else {
-      formattedValue = value;
+      const rawValue = value.replace(/[^\d,]/g, '');
+      const numericValue = rawValue ? parseInt(rawValue) / 100 : 0;
+      formattedValue = numericValue.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue,
+        valorFormatado: formattedValue
+      }));
+      return;
     }
 
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     validateField(name, formattedValue);
     setError("");
   };
-
 
   const validateForm = () => {
     const requiredFields = {
@@ -274,77 +298,40 @@ const RegisterUser = () => {
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
   
-    // Validação básica dos campos
-    const requiredFields = {
-      dataProcedimento: "A data do procedimento é obrigatória",
-      procedimento: "O procedimento é obrigatório",
-      denteFace: "Dente/Face é obrigatório",
-      valor: "O valor é obrigatório",
-      modalidadePagamento: "A modalidade de pagamento é obrigatória",
-      profissional: "O profissional é obrigatório"
-    };
-  
     const errors = {};
-    let isValid = true;
-  
-    for (const [field, message] of Object.entries(requiredFields)) {
-      if (!procedimentoData[field]) {
-        errors[field] = message;
-        isValid = false;
-      }
-    }
-  
-    if (!isValid) {
+    if (!procedimentoData.dataProcedimento) errors.dataProcedimento = "Data é obrigatória";
+    if (!procedimentoData.procedimento) errors.procedimento = "Procedimento é obrigatório";
+    if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
+
+    if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
   
     try {
       const token = localStorage.getItem("token");
-  
-      // Prepara os dados no formato correto para o backend
+      
       const dadosParaEnvio = {
         ...procedimentoData,
-        dataProcedimento: procedimentoData.dataProcedimento,
-        valor: parseFloat(
-          String(procedimentoData.valor).replace(/[^\d,]/g, '').replace(',', '.')
-        ),
-        procedimento: procedimentoData.procedimento.trim(),
-        denteFace: procedimentoData.denteFace.trim(),
-        modalidadePagamento: procedimentoData.modalidadePagamento.trim(),
-        profissional: procedimentoData.profissional.trim()
+        valor: convertValueToFloat(procedimentoData.valor),
+        dataProcedimento: procedimentoData.dataProcedimento
       };
-  
-      // Chamada à API
-      await api.put(
-        `/api/users/${editandoId}/procedimento`,
-        dadosParaEnvio,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-  
-      // Atualiza o estado local com o novo procedimento
+
+      await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
       const novoProcedimento = {
-        _id: Date.now().toString(), // ID temporário até a próxima atualização
         ...dadosParaEnvio,
+        _id: Date.now().toString(),
         isPrincipal: false
       };
-  
+
       setFormData(prev => ({
         ...prev,
-        procedimentos: [
-          ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal
-          novoProcedimento, // Adiciona o novo
-          ...prev.procedimentos.filter(p => !p.isPrincipal) // Mantém os outros secundários
-        ]
+        procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-  
-      // Reseta o formulário
-      setShowProcedimentoForm(false);
+
       setProcedimentoData({
         dataProcedimento: "",
         procedimento: "",
@@ -353,99 +340,49 @@ const RegisterUser = () => {
         modalidadePagamento: "",
         profissional: ""
       });
+      setShowProcedimentoForm(false);
       setError("");
-  
       fetchUsuarios();
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
     }
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) return;
 
-    const token = localStorage.getItem("token");
-
-    // Cria um objeto com os dados formatados para envio
-    const dadosParaEnvio = {
-      ...formData,
-      // Garante que o valor seja enviado com ponto decimal
-      valor: typeof formData.valor === 'string'
-        ? parseFloat(formData.valor.replace(',', '.'))
-        : formData.valor,
-      // Formata a data corretamente
-      dataProcedimento: formData.dataProcedimento
-        ? new Date(formData.dataProcedimento).toISOString()
-        : null
-    };
-
-    // Lista de campos que não devem ser enviados
-    const camposNaoEnviar = ['procedimentos', 'image'];
-
-    Object.keys(formData).forEach((key) => {
-      if (camposNaoEnviar.includes(key)) return;
-
-      let value = formData[key];
-
-      // Formatação dos campos especiais
-      if (key === "cpf" || key === "telefone") {
-        value = String(value).replace(/\D/g, "");
-      } else if (key === "valor") {
-        value = String(value).replace(/[^\d,]/g, "").replace(",", ".");
-      }
-
-      // Ignora password vazio em edição
-      if (
-        (key === "password" || key === "confirmPassword") &&
-        !value &&
-        editandoId
-      ) {
-        return;
-      }
-
-      if (value !== null && value !== undefined) {
-        dadosParaEnvio[key] = value;
-      }
-    });
-
     try {
+      const token = localStorage.getItem("token");
+      const dadosParaEnvio = {
+        ...formData,
+        valor: convertValueToFloat(formData.valor),
+        dataProcedimento: formData.dataProcedimento,
+        procedimentos: undefined,
+        image: undefined
+      };
+
       if (editandoId) {
-        const response = await api.put(
-          `/api/users/${editandoId}`,
-          dadosParaEnvio,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        await api.put(`/api/users/${editandoId}`, dadosParaEnvio, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         alert("Usuário atualizado com sucesso!");
-        setFormData(response.data.user);
-        setModoVisualizacao(false);
       } else {
         await api.post("/api/register/user", dadosParaEnvio, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${token}` }
         });
         alert("Usuário cadastrado com sucesso!");
       }
 
       resetForm();
       fetchUsuarios();
+
     } catch (error) {
       console.error("Erro ao salvar usuário:", error);
-      setError(
-        error.response?.data?.message ||
-        "Erro ao salvar usuário. Verifique os dados e tente novamente."
-      );
+      setError(error.response?.data?.message || "Erro ao salvar usuário");
     }
   };
 
@@ -501,61 +438,29 @@ const RegisterUser = () => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
 
-    // Função de formatação monetária SIMPLIFICADA
-    const formatCurrency = (value) => {
-      if (value === null || value === undefined || value === "") return "R$ 0,00";
-
-      // Converte para número (já está em reais)
-      const numericValue = typeof value === 'string'
-        ? parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'))
-        : Number(value);
-
-      return numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    };
-
-    // Formatação de datas (mantida igual)
-    const formatDateForInput = (dateString) => {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
-    };
-
-    // Processamento dos procedimentos
     const procedimentosCompletos = [
       {
-        dataProcedimento: formatDateForInput(usuario.dataProcedimento),
+        dataProcedimento: usuario.dataProcedimento,
         procedimento: usuario.procedimento,
         denteFace: usuario.denteFace,
-        valor: formatCurrency(usuario.valor), // Já formatado em reais
+        valor: usuario.valor,
         modalidadePagamento: usuario.modalidadePagamento,
         profissional: usuario.profissional,
         isPrincipal: true
       },
-      ...(usuario.historicoProcedimentos || []).map((p) => ({
+      ...(usuario.historicoProcedimentos || []).map(p => ({
         ...p,
-        isPrincipal: false,
-        valor: formatCurrency(p.valor),
-        dataProcedimento: formatDateForInput(p.dataProcedimento)
+        isPrincipal: false
       }))
     ];
 
-    // Atualiza o state
     setFormData({
       ...usuario,
-      // Formatações de campos básicos
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: formatDateForInput(usuario.dataNascimento),
       dataProcedimento: formatDateForInput(usuario.dataProcedimento),
-      // Campos monetários (agora trabalhando com valor direto)
-      valor: usuario.valor, // Mantém o valor numérico bruto (1 = R$ 1,00)
-      valorFormatado: formatCurrency(usuario.valor), // Versão formatada para exibição
-      // Outros campos
+      valor: usuario.valor,
       procedimentos: procedimentosCompletos,
       password: "",
       confirmPassword: ""
@@ -604,8 +509,6 @@ const RegisterUser = () => {
     );
   });
 
-
-
   const labels = {
     nomeCompleto: "Nome completo *",
     email: "E-mail *",
@@ -646,10 +549,7 @@ const RegisterUser = () => {
       </div>
 
       {modoVisualizacao && (
-        <button
-          onClick={handleVoltar}
-          className="btn-voltar"
-        >
+        <button onClick={handleVoltar} className="btn-voltar">
           <i className="bi bi-arrow-left"></i> Voltar
         </button>
       )}
@@ -666,11 +566,7 @@ const RegisterUser = () => {
               <div key={key} className="form-group">
                 <label htmlFor={key}>{labels[key]}</label>
                 <input
-                  type={key.includes("password")
-                    ? "password"
-                    : key === "dataNascimento"
-                      ? "date"
-                      : "text"}
+                  type={key.includes("password") ? "password" : key === "dataNascimento" ? "date" : "text"}
                   id={key}
                   name={key}
                   value={formData[key]}
@@ -743,41 +639,79 @@ const RegisterUser = () => {
               {fieldErrors.quaisMedicamentos && <span className="field-error">{fieldErrors.quaisMedicamentos}</span>}
             </div>
 
-            {['quaisAnestesias', 'frequenciaFumo', 'frequenciaAlcool', 'respiracao', 'peso'].map((key) => (
-              <div key={key} className="form-group">
-                <label htmlFor={key}>{labels[key]}</label>
-                {key === 'frequenciaFumo' || key === 'frequenciaAlcool' ? (
-                  <>
-                    <select
-                      id={key}
-                      name={key}
-                      value={formData[key]}
-                      onChange={handleChange}
-                      className={fieldErrors[key] ? 'error-field' : ''}
-                    >
-                      <option value="">Selecione...</option>
-                      {frequencias.map((opcao) => (
-                        <option key={opcao} value={opcao}>{opcao}</option>
-                      ))}
-                    </select>
-                    {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
-                  </>
-                ) : (
-                  <>
-                    <input
-                      type={key === 'peso' ? "number" : "text"}
-                      id={key}
-                      name={key}
-                      value={formData[key]}
-                      onChange={handleChange}
-                      className={fieldErrors[key] ? 'error-field' : ''}
-                      step={key === 'peso' ? "0.1" : undefined}
-                    />
-                    {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
-                  </>
-                )}
-              </div>
-            ))}
+            <div className="form-group">
+              <label htmlFor="quaisAnestesias">{labels.quaisAnestesias}</label>
+              <textarea
+                id="quaisAnestesias"
+                name="quaisAnestesias"
+                value={formData.quaisAnestesias}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
+                rows={3}
+              />
+              {fieldErrors.quaisAnestesias && <span className="field-error">{fieldErrors.quaisAnestesias}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="frequenciaFumo">{labels.frequenciaFumo}</label>
+              <select
+                id="frequenciaFumo"
+                name="frequenciaFumo"
+                value={formData.frequenciaFumo}
+                onChange={handleChange}
+                className={fieldErrors.frequenciaFumo ? 'error-field' : ''}
+              >
+                <option value="">Selecione...</option>
+                {frequencias.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+              {fieldErrors.frequenciaFumo && <span className="field-error">{fieldErrors.frequenciaFumo}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="frequenciaAlcool">{labels.frequenciaAlcool}</label>
+              <select
+                id="frequenciaAlcool"
+                name="frequenciaAlcool"
+                value={formData.frequenciaAlcool}
+                onChange={handleChange}
+                className={fieldErrors.frequenciaAlcool ? 'error-field' : ''}
+              >
+                <option value="">Selecione...</option>
+                {frequencias.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+              {fieldErrors.frequenciaAlcool && <span className="field-error">{fieldErrors.frequenciaAlcool}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="respiracao">{labels.respiracao}</label>
+              <input
+                type="text"
+                id="respiracao"
+                name="respiracao"
+                value={formData.respiracao}
+                onChange={handleChange}
+                className={fieldErrors.respiracao ? 'error-field' : ''}
+              />
+              {fieldErrors.respiracao && <span className="field-error">{fieldErrors.respiracao}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="peso">{labels.peso}</label>
+              <input
+                type="number"
+                id="peso"
+                name="peso"
+                value={formData.peso}
+                onChange={handleChange}
+                step="0.1"
+                className={fieldErrors.peso ? 'error-field' : ''}
+              />
+              {fieldErrors.peso && <span className="field-error">{fieldErrors.peso}</span>}
+            </div>
           </div>
         </div>
 
@@ -873,8 +807,16 @@ const RegisterUser = () => {
                 type="date"
                 id="dataProcedimento"
                 name="dataProcedimento"
-                value={formData.dataProcedimento}
-                onChange={handleChange}
+                value={formatDateForInput(formData.dataProcedimento)}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  if (!isNaN(date.getTime())) {
+                    setFormData(prev => ({
+                      ...prev,
+                      dataProcedimento: date.toISOString()
+                    }));
+                  }
+                }}
                 required
                 className={fieldErrors.dataProcedimento ? 'error-field' : ''}
               />
@@ -917,10 +859,19 @@ const RegisterUser = () => {
                 type="text"
                 id="valor"
                 name="valor"
-                value={formData.valor}
-                onChange={handleChange}
+                value={formatValueForDisplay(formData.valor)}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                  const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    valor: numericValue
+                  }));
+                }}
                 required
                 className={fieldErrors.valor ? 'error-field' : ''}
+                placeholder="R$ 0,00"
               />
               {fieldErrors.valor && <span className="field-error">{fieldErrors.valor}</span>}
             </div>
@@ -986,14 +937,13 @@ const RegisterUser = () => {
                       onChange={(e) => {
                         setProcedimentoData(prev => ({
                           ...prev,
-                          dataProcedimento: e.target.value // mantém o formato 'yyyy-mm-dd'
+                          dataProcedimento: e.target.value
                         }));
                       }}
                       className={fieldErrors.dataProcedimento ? 'error-field' : ''}
                     />
                     {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
                   </div>
-
 
                   <div className="form-group">
                     <label htmlFor="procedimento">Procedimento *</label>
@@ -1005,6 +955,7 @@ const RegisterUser = () => {
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.procedimento ? 'error-field' : ''}
                       placeholder="Digite o procedimento realizado"
+                      required
                     />
                     {fieldErrors.procedimento && <span className="field-error">{fieldErrors.procedimento}</span>}
                   </div>
@@ -1019,6 +970,7 @@ const RegisterUser = () => {
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.denteFace ? 'error-field' : ''}
                       placeholder="Ex: 11, 22, Face Lingual, etc."
+                      required
                     />
                     {fieldErrors.denteFace && <span className="field-error">{fieldErrors.denteFace}</span>}
                   </div>
@@ -1029,22 +981,14 @@ const RegisterUser = () => {
                       type="text"
                       id="valor"
                       name="valor"
-                      value={procedimentoData.valorFormatado || ''}
+                      value={formatValueForDisplay(procedimentoData.valor)}
                       onChange={(e) => {
-                        // Substitui vírgula por ponto e remove outros caracteres
-                        const raw = e.target.value.replace(/[^\d,]/g, '').replace(',', '.');
-
-                        const numericValue = parseFloat(raw);
-                        const formattedValue = isNaN(numericValue) ? '' :
-                          numericValue.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          });
-
+                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
+                        const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+                        
                         setProcedimentoData(prev => ({
                           ...prev,
-                          valor: isNaN(numericValue) ? '' : numericValue,
-                          valorFormatado: formattedValue
+                          valor: numericValue
                         }));
                       }}
                       required
@@ -1054,15 +998,15 @@ const RegisterUser = () => {
                     {fieldErrors.valor && <span className="field-error">{fieldErrors.valor}</span>}
                   </div>
 
-
                   <div className="form-group">
-                    <label htmlFor="modalidadePagamento">Modalidade *</label>
+                    <label htmlFor="modalidadePagamento">Modalidade de Pagamento *</label>
                     <select
                       id="modalidadePagamento"
                       name="modalidadePagamento"
                       value={procedimentoData.modalidadePagamento}
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
+                      required
                     >
                       <option value="">Selecione...</option>
                       {modalidadesPagamento.map((opcao) => (
@@ -1081,6 +1025,7 @@ const RegisterUser = () => {
                       value={procedimentoData.profissional}
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.profissional ? 'error-field' : ''}
+                      required
                     />
                     {fieldErrors.profissional && <span className="field-error">{fieldErrors.profissional}</span>}
                   </div>
@@ -1119,54 +1064,23 @@ const RegisterUser = () => {
 
             <div className="procedimentos-list">
               {formData.procedimentos?.length > 0 ? (
-                [...formData.procedimentos] // Cria uma cópia para não mutar o estado original
-                  .sort((a, b) => {
-                    // Ordena por data (mais recente primeiro)
-                    const dateA = new Date(a.dataProcedimento);
-                    const dateB = new Date(b.dataProcedimento);
-                    return dateB - dateA;
-                  })
-                  .map((proc, index, array) => {
-                    const dataFormatada = proc.dataProcedimento
-                      ? new Date(proc.dataProcedimento).toLocaleDateString('pt-BR', {
-                        timeZone: 'UTC',
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })
-                      : 'Data não informada';
-
-                    // Formata o valor corretamente
-                    let valorFormatado = 'Valor não informado';
-                    if (proc.valor !== undefined && proc.valor !== null) {
-                      const valorNumerico = typeof proc.valor === 'string'
-                        ? parseFloat(proc.valor.replace(/[^\d,]/g, '').replace(',', '.'))
-                        : proc.valor;
-
-                      if (!isNaN(valorNumerico)) {
-                        valorFormatado = valorNumerico.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        });
-                      }
-                    }
-
-                    return (
-                      <div key={proc._id || index} className="procedimento-item">
-                        <div className="procedimento-header">
-                          <h4>Procedimento #{index + 1}</h4>
-                          <span>{dataFormatada}</span>
-                        </div>
-                        <div className="procedimento-details">
-                          <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
-                          <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
-                          <p><strong>Valor:</strong> {valorFormatado}</p>
-                          <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
-                          <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
-                        </div>
+                [...formData.procedimentos]
+                  .sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento))
+                  .map((proc, index) => (
+                    <div key={proc._id || index} className="procedimento-item">
+                      <div className="procedimento-header">
+                        <h4>Procedimento #{index + 1}</h4>
+                        <span>{formatDateForDisplay(proc.dataProcedimento)}</span>
                       </div>
-                    );
-                  })
+                      <div className="procedimento-details">
+                        <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
+                        <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
+                        <p><strong>Valor:</strong> {formatValueForDisplay(proc.valor)}</p>
+                        <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
+                        <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
+                      </div>
+                    </div>
+                  ))
               ) : (
                 <div className="no-procedimentos">
                   <p>Nenhum procedimento cadastrado ainda.</p>
@@ -1180,9 +1094,6 @@ const RegisterUser = () => {
           <span className="btnText">{editandoId ? "Atualizar" : "Cadastrar"}</span>
           <i className="bi bi-cloud-upload"></i>
         </button>
-
-
-
       </form>
 
       {!modoVisualizacao && (
