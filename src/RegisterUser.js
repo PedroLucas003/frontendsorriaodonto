@@ -5,17 +5,32 @@ import "./RegisterUser.css";
 // Funções auxiliares
 function formatDateForInput(dateString) {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+  
+  // Para datas no formato ISO (vindas do backend)
+  if (dateString.includes('T')) {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+  }
+  
+  // Para datas no formato dd/mm/yyyy (input do usuário)
+  const parts = dateString.split('/');
+  if (parts.length === 3) {
+    const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+  }
+  
+  return '';
 }
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
-  const date = new Date(dateString);
   
-  // Corrige o problema do timezone adicionando o offset
-  const offset = date.getTimezoneOffset() * 60000; // converte minutos para milissegundos
-  const localDate = new Date(date.getTime() + offset);
+  // Divide a string da data em partes
+  const parts = dateString.split('T')[0].split('-');
+  if (parts.length !== 3) return 'Data inválida';
+  
+  // Cria a data no formato local (ignora o timezone)
+  const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
   
   return isNaN(localDate.getTime()) ? 'Data inválida' : 
     localDate.toLocaleDateString('pt-BR', {
