@@ -5,39 +5,37 @@ import "./RegisterUser.css";
 // Funções auxiliares
 function formatDateForInput(dateString) {
   if (!dateString) return '';
-  
+
   // Para datas no formato ISO (vindas do backend)
   if (dateString.includes('T')) {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
   }
-  
+
   // Para datas no formato dd/mm/yyyy (input do usuário)
   const parts = dateString.split('/');
   if (parts.length === 3) {
     const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
     return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
   }
-  
+
   return '';
 }
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
   
-  // Divide a string da data em partes
-  const parts = dateString.split('T')[0].split('-');
-  if (parts.length !== 3) return 'Data inválida';
+  // Extrai apenas a parte da data (ignora o tempo se existir)
+  const dateOnly = dateString.split('T')[0];
   
-  // Cria a data no formato local (ignora o timezone)
-  const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
+  // Verifica o formato yyyy-mm-dd
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return 'Data inválida';
   
-  return isNaN(localDate.getTime()) ? 'Data inválida' : 
-    localDate.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+  // Divide em partes
+  const [year, month, day] = dateOnly.split('-');
+  
+  // Formata diretamente como dd/mm/yyyy SEM usar Date object
+  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
 }
 
 function convertValueToFloat(valor) {
@@ -48,10 +46,10 @@ function convertValueToFloat(valor) {
 
 function formatValueForDisplay(valor) {
   if (valor === null || valor === undefined || valor === '') return 'Valor não informado';
-  const numericValue = typeof valor === 'string' ? 
-    parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) : 
+  const numericValue = typeof valor === 'string' ?
+    parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) :
     Number(valor);
-  return isNaN(numericValue) ? 'Valor inválido' : 
+  return isNaN(numericValue) ? 'Valor inválido' :
     numericValue.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -316,7 +314,7 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     const errors = {};
     if (!procedimentoData.dataProcedimento) errors.dataProcedimento = "Data é obrigatória";
     if (!procedimentoData.procedimento) errors.procedimento = "Procedimento é obrigatório";
@@ -326,10 +324,10 @@ const RegisterUser = () => {
       setFieldErrors(errors);
       return;
     }
-  
+
     try {
       const token = localStorage.getItem("token");
-      
+
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
@@ -882,7 +880,7 @@ const RegisterUser = () => {
                 onChange={(e) => {
                   const rawValue = e.target.value.replace(/[^\d,]/g, '');
                   const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
-                  
+
                   setFormData(prev => ({
                     ...prev,
                     valor: numericValue
@@ -949,18 +947,18 @@ const RegisterUser = () => {
                   <div className="form-group">
                     <label htmlFor="dataProcedimento">Data *</label>
                     <input
-  type="date"
-  id="dataProcedimento"
-  name="dataProcedimento"
-  value={procedimentoData.dataProcedimento || ''}
-  onChange={(e) => {
-    setProcedimentoData(prev => ({
-      ...prev,
-      dataProcedimento: e.target.value // Formato yyyy-mm-dd
-    }));
-  }}
-  required
-/>
+                      type="date"
+                      id="dataProcedimento"
+                      name="dataProcedimento"
+                      value={procedimentoData.dataProcedimento || ''}
+                      onChange={(e) => {
+                        setProcedimentoData(prev => ({
+                          ...prev,
+                          dataProcedimento: e.target.value // Formato yyyy-mm-dd
+                        }));
+                      }}
+                      required
+                    />
                     {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
                   </div>
 
@@ -1004,7 +1002,7 @@ const RegisterUser = () => {
                       onChange={(e) => {
                         const rawValue = e.target.value.replace(/[^\d,]/g, '');
                         const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
-                        
+
                         setProcedimentoData(prev => ({
                           ...prev,
                           valor: numericValue
