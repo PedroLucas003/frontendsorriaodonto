@@ -12,9 +12,13 @@ function formatDateForInput(dateString) {
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
   const date = new Date(dateString);
-  return isNaN(date.getTime()) ? 'Data inválida' : 
-    date.toLocaleDateString('pt-BR', {
-      timeZone: 'UTC',
+  
+  // Corrige o problema do timezone adicionando o offset
+  const offset = date.getTimezoneOffset() * 60000; // converte minutos para milissegundos
+  const localDate = new Date(date.getTime() + offset);
+  
+  return isNaN(localDate.getTime()) ? 'Data inválida' : 
+    localDate.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
