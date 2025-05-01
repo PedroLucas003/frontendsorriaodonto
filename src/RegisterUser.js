@@ -24,16 +24,16 @@ function formatDateForInput(dateString) {
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
-  
+
   // Extrai apenas a parte da data (ignora o tempo se existir)
   const dateOnly = dateString.split('T')[0];
-  
+
   // Verifica o formato yyyy-mm-dd
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return 'Data inválida';
-  
+
   // Divide em partes
   const [year, month, day] = dateOnly.split('-');
-  
+
   // Formata diretamente como dd/mm/yyyy SEM usar Date object
   return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
 }
@@ -826,14 +826,12 @@ const RegisterUser = () => {
                 name="dataProcedimento"
                 value={formatDateForInput(formData.dataProcedimento)}
                 onChange={(e) => {
-                  const date = new Date(e.target.value);
-                  if (!isNaN(date.getTime())) {
-                    setFormData(prev => ({
-                      ...prev,
-                      dataProcedimento: date.toISOString()
-                    }));
-                  }
+                  setFormData(prev => ({
+                    ...prev,
+                    dataProcedimento: e.target.value // ✅ apenas a string 'YYYY-MM-DD'
+                  }));
                 }}
+
                 required
                 className={fieldErrors.dataProcedimento ? 'error-field' : ''}
               />
