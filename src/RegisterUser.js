@@ -949,18 +949,18 @@ const RegisterUser = () => {
                   <div className="form-group">
                     <label htmlFor="dataProcedimento">Data *</label>
                     <input
-                      type="date"
-                      id="dataProcedimento"
-                      name="dataProcedimento"
-                      value={procedimentoData.dataProcedimento || ''}
-                      onChange={(e) => {
-                        setProcedimentoData(prev => ({
-                          ...prev,
-                          dataProcedimento: e.target.value
-                        }));
-                      }}
-                      className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                    />
+  type="date"
+  id="dataProcedimento"
+  name="dataProcedimento"
+  value={procedimentoData.dataProcedimento || ''}
+  onChange={(e) => {
+    setProcedimentoData(prev => ({
+      ...prev,
+      dataProcedimento: e.target.value // Formato yyyy-mm-dd
+    }));
+  }}
+  required
+/>
                     {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
                   </div>
 
