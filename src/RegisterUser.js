@@ -25,6 +25,11 @@ function formatDateForInput(dateString) {
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
+  // Se for um objeto Date, converte para string
+  if (dateString instanceof Date) {
+    dateString = dateString.toISOString().split('T')[0];
+  }
+
   // Extrai apenas a parte da data (ignora o tempo se existir)
   const dateOnly = dateString.split('T')[0];
 
@@ -34,8 +39,16 @@ function formatDateForDisplay(dateString) {
   // Divide em partes
   const [year, month, day] = dateOnly.split('-');
 
-  // Formata diretamente como dd/mm/yyyy SEM usar Date object
-  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  // Ajusta a data adicionando 1 dia para compensar o UTC
+  const dateObj = new Date(year, month - 1, day);
+  dateObj.setDate(dateObj.getDate() + 1);
+
+  // Formata como dd/mm/yyyy
+  const adjustedDay = String(dateObj.getDate()).padStart(2, '0');
+  const adjustedMonth = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const adjustedYear = dateObj.getFullYear();
+
+  return `${adjustedDay}/${adjustedMonth}/${adjustedYear}`;
 }
 
 function convertValueToFloat(valor) {
@@ -328,13 +341,15 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
   
-      // Garantir que a data seja enviada como string no formato YYYY-MM-DD
-      const dataProcedimentoStr = procedimentoData.dataProcedimento;
+      // Ajuste para garantir que a data seja enviada corretamente
+      const dataProcedimentoAjustada = new Date(procedimentoData.dataProcedimento);
+      dataProcedimentoAjustada.setDate(dataProcedimentoAjustada.getDate() + 1);
+      const dataFormatada = dataProcedimentoAjustada.toISOString().split('T')[0];
   
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: dataProcedimentoStr // Já está no formato correto
+        dataProcedimento: dataFormatada // Usa a data ajustada
       };
   
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
@@ -344,7 +359,8 @@ const RegisterUser = () => {
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
-        isPrincipal: false
+        isPrincipal: false,
+        dataProcedimento: procedimentoData.dataProcedimento // Mantém a data original para exibição
       };
   
       setFormData(prev => ({
