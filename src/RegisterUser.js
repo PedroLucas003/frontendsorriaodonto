@@ -314,41 +314,44 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-
+  
     const errors = {};
     if (!procedimentoData.dataProcedimento) errors.dataProcedimento = "Data é obrigatória";
     if (!procedimentoData.procedimento) errors.procedimento = "Procedimento é obrigatório";
     if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
-
+  
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
-
+  
     try {
       const token = localStorage.getItem("token");
-
+  
+      // Garantir que a data seja enviada como string no formato YYYY-MM-DD
+      const dataProcedimentoStr = procedimentoData.dataProcedimento;
+  
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: procedimentoData.dataProcedimento
+        dataProcedimento: dataProcedimentoStr // Já está no formato correto
       };
-
+  
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
         isPrincipal: false
       };
-
+  
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-
+  
       setProcedimentoData({
         dataProcedimento: "",
         procedimento: "",
@@ -360,7 +363,7 @@ const RegisterUser = () => {
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
-
+  
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
