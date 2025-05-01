@@ -25,11 +25,6 @@ function formatDateForInput(dateString) {
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
-  // Se for um objeto Date, converte para string
-  if (dateString instanceof Date) {
-    dateString = dateString.toISOString().split('T')[0];
-  }
-
   // Extrai apenas a parte da data (ignora o tempo se existir)
   const dateOnly = dateString.split('T')[0];
 
@@ -39,16 +34,8 @@ function formatDateForDisplay(dateString) {
   // Divide em partes
   const [year, month, day] = dateOnly.split('-');
 
-  // Ajusta a data adicionando 1 dia para compensar o UTC
-  const dateObj = new Date(year, month - 1, day);
-  dateObj.setDate(dateObj.getDate() + 1);
-
-  // Formata como dd/mm/yyyy
-  const adjustedDay = String(dateObj.getDate()).padStart(2, '0');
-  const adjustedMonth = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const adjustedYear = dateObj.getFullYear();
-
-  return `${adjustedDay}/${adjustedMonth}/${adjustedYear}`;
+  // Formata diretamente como dd/mm/yyyy SEM usar Date object
+  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
 }
 
 function convertValueToFloat(valor) {
@@ -327,47 +314,41 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     const errors = {};
     if (!procedimentoData.dataProcedimento) errors.dataProcedimento = "Data é obrigatória";
     if (!procedimentoData.procedimento) errors.procedimento = "Procedimento é obrigatório";
     if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
-  
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
-  
+
     try {
       const token = localStorage.getItem("token");
-  
-      // Ajuste para garantir que a data seja enviada corretamente
-      const dataProcedimentoAjustada = new Date(procedimentoData.dataProcedimento);
-      dataProcedimentoAjustada.setDate(dataProcedimentoAjustada.getDate() + 1);
-      const dataFormatada = dataProcedimentoAjustada.toISOString().split('T')[0];
-  
+
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: dataFormatada // Usa a data ajustada
+        dataProcedimento: procedimentoData.dataProcedimento
       };
-  
+
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-  
+
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
-        isPrincipal: false,
-        dataProcedimento: procedimentoData.dataProcedimento // Mantém a data original para exibição
+        isPrincipal: false
       };
-  
+
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-  
+
       setProcedimentoData({
         dataProcedimento: "",
         procedimento: "",
@@ -379,7 +360,7 @@ const RegisterUser = () => {
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
