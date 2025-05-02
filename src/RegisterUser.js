@@ -331,7 +331,7 @@ const RegisterUser = () => {
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: procedimentoData.dataProcedimento
+        dataProcedimento: formatDateForInput(procedimentoData.dataProcedimento)
       };
 
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
@@ -341,7 +341,9 @@ const RegisterUser = () => {
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
-        isPrincipal: false
+        isPrincipal: false,
+        // Garante que a data é armazenada como string no formato correto
+        dataProcedimento: formatDateForInput(dadosParaEnvio.dataProcedimento)
       };
 
       setFormData(prev => ({
@@ -349,6 +351,7 @@ const RegisterUser = () => {
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
 
+      // Reset do formulário
       setProcedimentoData({
         dataProcedimento: "",
         procedimento: "",
@@ -357,6 +360,7 @@ const RegisterUser = () => {
         modalidadePagamento: "",
         profissional: ""
       });
+      
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
@@ -365,7 +369,9 @@ const RegisterUser = () => {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
     }
-  };
+};
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -377,7 +383,9 @@ const RegisterUser = () => {
       const dadosParaEnvio = {
         ...formData,
         valor: convertValueToFloat(formData.valor),
-        dataProcedimento: formData.dataProcedimento,
+        // Garante o formato correto das datas
+        dataNascimento: formatDateForInput(formData.dataNascimento),
+        dataProcedimento: formatDateForInput(formData.dataProcedimento),
         procedimentos: undefined,
         image: undefined
       };
@@ -398,10 +406,13 @@ const RegisterUser = () => {
       fetchUsuarios();
 
     } catch (error) {
-      console.error("Erro ao salvar usuário:", error);
+      console.error("Erro ao salvar usuário:", {
+        error: error,
+        responseData: error.response?.data
+      });
       setError(error.response?.data?.message || "Erro ao salvar usuário");
     }
-  };
+};
 
   const resetForm = () => {
     setFormData({
