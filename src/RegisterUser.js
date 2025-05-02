@@ -367,44 +367,94 @@ const RegisterUser = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (!validateForm()) return;
+  console.log("--- INÍCIO DO DEBUG DO FORMULÁRIO ---");
+
+  // 1. Log de todos os campos do formulário
+  console.group("Dados completos do formulário:");
+  Object.entries(formData).forEach(([key, value]) => {
+    // Não logar senhas por segurança
+    if (key !== 'password' && key !== 'confirmPassword') {
+      console.log(`${key}:`, value, `| Tipo:`, typeof value);
+    }
+  });
+  console.groupEnd();
+
+  // 2. Log específico para as datas
+  console.group("Debug de datas:");
+  console.log("dataNascimento (raw):", formData.dataNascimento, "| Tipo:", typeof formData.dataNascimento);
+  console.log("dataProcedimento (raw):", formData.dataProcedimento, "| Tipo:", typeof formData.dataProcedimento);
+  
+  try {
+    console.log("dataNascimento (Date object):", new Date(formData.dataNascimento));
+    console.log("dataProcedimento (Date object):", new Date(formData.dataProcedimento));
+  } catch (e) {
+    console.error("Erro ao converter datas:", e);
+  }
+  console.groupEnd();
+
+  if (!validateForm()) {
+    console.error("Validação do formulário falhou!");
+    return;
+  }
 
   try {
     const token = localStorage.getItem("token");
     const dadosParaEnvio = {
       ...formData,
       valor: convertValueToFloat(formData.valor),
-      // Não aplicamos formatação adicional nas datas - o backend cuidará disso
       dataNascimento: formData.dataNascimento,
       dataProcedimento: formData.dataProcedimento,
       procedimentos: undefined,
       image: undefined
     };
 
+    // 3. Log dos dados que serão enviados
+    console.group("Dados que serão enviados para o backend:");
+    Object.entries(dadosParaEnvio).forEach(([key, value]) => {
+      if (key !== 'password' && key !== 'confirmPassword') {
+        console.log(`${key}:`, value, `| Tipo:`, typeof value);
+      }
+    });
+    console.groupEnd();
+
+    let response;
     if (editandoId) {
-      await api.put(`/api/users/${editandoId}`, dadosParaEnvio, {
+      console.log("Enviando requisição PUT para atualização...");
+      response = await api.put(`/api/users/${editandoId}`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Usuário atualizado com sucesso!");
     } else {
-      await api.post("/api/register/user", dadosParaEnvio, {
+      console.log("Enviando requisição POST para cadastro...");
+      response = await api.post("/api/register/user", dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Usuário cadastrado com sucesso!");
     }
 
+    console.log("Resposta do servidor:", response.data);
+    alert(editandoId ? "Usuário atualizado com sucesso!" : "Usuário cadastrado com sucesso!");
+    
     resetForm();
     fetchUsuarios();
 
   } catch (error) {
-    console.error("Erro ao salvar usuário:", {
-      error: error,
-      responseData: error.response?.data
-    });
+    console.group("Erro detalhado:");
+    console.error("Mensagem de erro:", error.message);
+    console.error("Resposta completa do erro:", error.response);
+    
+    if (error.response) {
+      console.error("Dados da resposta de erro:", error.response.data);
+      console.error("Status do erro:", error.response.status);
+      console.error("Headers do erro:", error.response.headers);
+    }
+    
+    console.error("Configuração da requisição:", error.config);
+    console.groupEnd();
+    
     setError(error.response?.data?.message || "Erro ao salvar usuário");
+  } finally {
+    console.log("--- FIM DO DEBUG DO FORMULÁRIO ---\n\n");
   }
 };
-
   const resetForm = () => {
     setFormData({
       nomeCompleto: "",
