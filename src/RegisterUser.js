@@ -3,39 +3,29 @@ import api from "./api/api";
 import "./RegisterUser.css";
 
 // Funções auxiliares
+// Funções auxiliares atualizadas (substitua as existentes)
 function formatDateForInput(dateString) {
   if (!dateString) return '';
-
-  // Para datas no formato ISO (vindas do backend)
-  if (dateString.includes('T')) {
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+  
+  // Se já estiver no formato YYYY-MM-DD (input date)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
   }
-
-  // Para datas no formato dd/mm/yyyy (input do usuário)
-  const parts = dateString.split('/');
-  if (parts.length === 3) {
-    const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-    return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
-  }
-
-  return '';
+  
+  // Se for um objeto Date ou string ISO
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
+  return date.toISOString().split('T')[0];
 }
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
-
-  // Extrai apenas a parte da data (ignora o tempo se existir)
-  const dateOnly = dateString.split('T')[0];
-
-  // Verifica o formato yyyy-mm-dd
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return 'Data inválida';
-
-  // Divide em partes
-  const [year, month, day] = dateOnly.split('-');
-
-  // Formata diretamente como dd/mm/yyyy SEM usar Date object
-  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Data inválida';
+  
+  return date.toLocaleDateString('pt-BR');
 }
 
 function convertValueToFloat(valor) {
@@ -211,9 +201,9 @@ const RegisterUser = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
+  
     let formattedValue = value;
-
+  
     if (name === "peso") {
       formattedValue = value.replace(/[^0-9.]/g, "");
       if ((formattedValue.match(/\./g) || []).length > 1) {
@@ -238,7 +228,8 @@ const RegisterUser = () => {
       }));
       return;
     }
-
+  
+    // Para campos de data, não aplicamos formatação adicional
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     validateField(name, formattedValue);
     setError("");
@@ -373,45 +364,45 @@ const RegisterUser = () => {
 
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    try {
-      const token = localStorage.getItem("token");
-      const dadosParaEnvio = {
-        ...formData,
-        valor: convertValueToFloat(formData.valor),
-        // Garante o formato correto das datas
-        dataNascimento: formatDateForInput(formData.dataNascimento),
-        dataProcedimento: formatDateForInput(formData.dataProcedimento),
-        procedimentos: undefined,
-        image: undefined
-      };
+  try {
+    const token = localStorage.getItem("token");
+    const dadosParaEnvio = {
+      ...formData,
+      valor: convertValueToFloat(formData.valor),
+      // Não aplicamos formatação adicional nas datas - o backend cuidará disso
+      dataNascimento: formData.dataNascimento,
+      dataProcedimento: formData.dataProcedimento,
+      procedimentos: undefined,
+      image: undefined
+    };
 
-      if (editandoId) {
-        await api.put(`/api/users/${editandoId}`, dadosParaEnvio, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        alert("Usuário atualizado com sucesso!");
-      } else {
-        await api.post("/api/register/user", dadosParaEnvio, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        alert("Usuário cadastrado com sucesso!");
-      }
-
-      resetForm();
-      fetchUsuarios();
-
-    } catch (error) {
-      console.error("Erro ao salvar usuário:", {
-        error: error,
-        responseData: error.response?.data
+    if (editandoId) {
+      await api.put(`/api/users/${editandoId}`, dadosParaEnvio, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setError(error.response?.data?.message || "Erro ao salvar usuário");
+      alert("Usuário atualizado com sucesso!");
+    } else {
+      await api.post("/api/register/user", dadosParaEnvio, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Usuário cadastrado com sucesso!");
     }
+
+    resetForm();
+    fetchUsuarios();
+
+  } catch (error) {
+    console.error("Erro ao salvar usuário:", {
+      error: error,
+      responseData: error.response?.data
+    });
+    setError(error.response?.data?.message || "Erro ao salvar usuário");
+  }
 };
 
   const resetForm = () => {
@@ -465,7 +456,7 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-
+  
     const procedimentosCompletos = [
       {
         dataProcedimento: usuario.dataProcedimento,
@@ -481,11 +472,12 @@ const RegisterUser = () => {
         isPrincipal: false
       }))
     ];
-
+  
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
+      // Usamos a função formatDateForInput para garantir o formato correto
       dataNascimento: formatDateForInput(usuario.dataNascimento),
       dataProcedimento: formatDateForInput(usuario.dataProcedimento),
       valor: usuario.valor,
@@ -590,22 +582,32 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-            {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
-              <div key={key} className="form-group">
-                <label htmlFor={key}>{labels[key]}</label>
-                <input
-                  type={key.includes("password") ? "password" : key === "dataNascimento" ? "date" : "text"}
-                  id={key}
-                  name={key}
-                  value={formData[key]}
-                  onChange={handleChange}
-                  required={(key !== 'password' && key !== 'confirmPassword') || !editandoId}
-                  className={fieldErrors[key] ? 'error-field' : ''}
-                />
-                {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
-              </div>
-            ))}
+          {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
+  <div key={key} className="form-group">
+    <label htmlFor={key}>{labels[key]}</label>
+    <input
+      type={key.includes("password") ? "password" : key === "dataNascimento" ? "date" : "text"}
+      id={key}
+      name={key}
+      value={formData[key]}
+      onChange={handleChange}
+      required={(key !== 'password' && key !== 'confirmPassword') || !editandoId}
+      className={fieldErrors[key] ? 'error-field' : ''}
+    />
+    {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
+  </div>
+))}
 
+{/* Para dataProcedimento */}
+<input
+  type="date"
+  id="dataProcedimento"
+  name="dataProcedimento"
+  value={formData.dataProcedimento} // Diretamente o valor, sem formatação
+  onChange={handleChange}
+  required
+  className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+/>
             <div className="form-group">
               <label htmlFor="endereco">{labels.endereco}</label>
               <textarea
