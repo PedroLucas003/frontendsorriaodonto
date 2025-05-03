@@ -311,23 +311,26 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-  
-    const procedimentosCompletos = [
-      {
-        procedimento: usuario.procedimento,
-        denteFace: usuario.denteFace,
-        valor: usuario.valor,
-        modalidadePagamento: usuario.modalidadePagamento,
-        profissional: usuario.profissional,
-        isPrincipal: true,
-        createdAt: usuario.createdAt
-      },
-      ...(usuario.historicoProcedimentos || []).map(p => ({
-        ...p,
-        isPrincipal: false,
-        // Garantindo que a data está formatada corretamente
-        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null
-      }))
+
+    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos) 
+    ? usuario.historicoProcedimentos 
+    : [];
+
+  const procedimentosCompletos = [
+    {
+      procedimento: usuario.procedimento || "",
+      denteFace: usuario.denteFace || "",
+      valor: usuario.valor || 0,
+      modalidadePagamento: usuario.modalidadePagamento || "",
+      profissional: usuario.profissional || "",
+      isPrincipal: true,
+      createdAt: usuario.createdAt || new Date().toISOString()
+    },
+    ...historicoProcedimentos.map(p => ({
+      ...p,
+      isPrincipal: false,
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+    }))
     ];
   
     setFormData({
@@ -891,18 +894,50 @@ const RegisterUser = () => {
             )}
 
 <div className="procedimentos-list">
-  {formData.procedimentos?.length > 0 ? (
+  {Array.isArray(formData.procedimentos) && formData.procedimentos.length > 0 ? (
     [...formData.procedimentos]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .map((proc, index) => (
-        <div key={proc._id || index} className="procedimento-item">
-          <div className="procedimento-header">
-            <h4>Procedimento #{index + 1} {proc.isPrincipal && "(Principal)"}</h4>
-            <span>{formatDateForDisplay(proc.createdAt)}</span>
+      .sort((a, b) => {
+        try {
+          const dateA = new Date(a.createdAt || new Date());
+          const dateB = new Date(b.createdAt || new Date());
+          return dateB - dateA;
+        } catch (e) {
+          console.error("Erro ao ordenar datas:", e);
+          return 0;
+        }
+      })
+      .map((proc, index) => {
+        // Garante valores padrão para campos obrigatórios
+        const procedimento = {
+          _id: proc._id || `temp-${index}`,
+          procedimento: proc.procedimento || "Não especificado",
+          denteFace: proc.denteFace || "Não especificado",
+          valor: proc.valor || 0,
+          modalidadePagamento: proc.modalidadePagamento || "Não especificado",
+          profissional: proc.profissional || "Não especificado",
+          isPrincipal: proc.isPrincipal || false,
+          createdAt: proc.createdAt || new Date().toISOString()
+        };
+
+        return (
+          <div key={procedimento._id} className="procedimento-item">
+            <div className="procedimento-header">
+              <h4>
+                Procedimento #{index + 1} 
+                {procedimento.isPrincipal && " (Principal)"}
+              </h4>
+              <span>{formatDateForDisplay(procedimento.createdAt)}</span>
+            </div>
+            <div className="procedimento-details">
+              <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
+              <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
+              <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
+              <p><strong>Pagamento:</strong> {procedimento.modalidadePagamento}</p>
+              <p><strong>Profissional:</strong> {procedimento.profissional}</p>
+            </div>
           </div>
-          {/* ... restante do código ... */}
-        </div>
-      ))
+        );
+      })
   ) : (
     <div className="no-procedimentos">
       <p>Nenhum procedimento cadastrado ainda.</p>
