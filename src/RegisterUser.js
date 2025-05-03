@@ -897,17 +897,13 @@ const RegisterUser = () => {
   {Array.isArray(formData.procedimentos) && formData.procedimentos.length > 0 ? (
     [...formData.procedimentos]
       .sort((a, b) => {
-        try {
-          const dateA = new Date(a.createdAt || new Date());
-          const dateB = new Date(b.createdAt || new Date());
-          return dateB - dateA;
-        } catch (e) {
-          console.error("Erro ao ordenar datas:", e);
-          return 0;
-        }
+        // Adicionando tratamento seguro para datas
+        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        return dateB - dateA;
       })
       .map((proc, index) => {
-        // Garante valores padrão para campos obrigatórios
+        // Garantindo que todos os campos existam
         const procedimento = {
           _id: proc._id || `temp-${index}`,
           procedimento: proc.procedimento || "Não especificado",
@@ -920,11 +916,11 @@ const RegisterUser = () => {
         };
 
         return (
-          <div key={procedimento._id} className="procedimento-item">
+          <div key={procedimento._id} className={`procedimento-item ${procedimento.isPrincipal ? 'principal' : ''}`}>
             <div className="procedimento-header">
               <h4>
-                Procedimento #{index + 1} 
-                {procedimento.isPrincipal && " (Principal)"}
+                Procedimento #{index + 1}
+                {procedimento.isPrincipal && <span className="badge-principal">Principal</span>}
               </h4>
               <span>{formatDateForDisplay(procedimento.createdAt)}</span>
             </div>
