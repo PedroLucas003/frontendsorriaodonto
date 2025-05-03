@@ -896,7 +896,7 @@ const handleSubmit = async (e) => {
 
                 <div className="form-grid">
                   <div className="form-group">
-                    <label htmlFor="dataProcedimento">Data *</label>
+                    <label htmlFor="dataProcedimento">Data </label>
                     <input
                       type="date"
                       id="dataProcedimento"
@@ -914,7 +914,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="procedimento">Procedimento *</label>
+                    <label htmlFor="procedimento">Procedimento </label>
                     <input
                       type="text"
                       id="procedimento"
@@ -929,7 +929,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="denteFace">Dente/Face *</label>
+                    <label htmlFor="denteFace">Dente/Face </label>
                     <input
                       type="text"
                       id="denteFace"
@@ -944,7 +944,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="valor">Valor *</label>
+                    <label htmlFor="valor">Valor </label>
                     <input
                       type="text"
                       id="valor"
@@ -967,7 +967,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="modalidadePagamento">Modalidade de Pagamento *</label>
+                    <label htmlFor="modalidadePagamento">Modalidade de Pagamento </label>
                     <select
                       id="modalidadePagamento"
                       name="modalidadePagamento"
@@ -985,7 +985,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="profissional">Profissional *</label>
+                    <label htmlFor="profissional">Profissional </label>
                     <input
                       type="text"
                       id="profissional"
