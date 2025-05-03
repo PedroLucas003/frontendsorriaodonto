@@ -236,6 +236,7 @@ const RegisterUser = () => {
   };
 
   const validateForm = () => {
+    // Apenas esses campos são obrigatórios
     const requiredFields = {
       nomeCompleto: "O nome completo é obrigatório!",
       email: "O email é obrigatório!",
@@ -243,16 +244,25 @@ const RegisterUser = () => {
       telefone: "O telefone é obrigatório!",
       endereco: "O endereço é obrigatório!",
       dataNascimento: "A data de nascimento é obrigatória!",
+      password: editandoId ? "" : "A senha é obrigatória!", // Obrigatória apenas em cadastro novo
+      confirmPassword: editandoId ? "" : "Confirme a senha!" // Obrigatória apenas em cadastro novo
     };
   
     const errors = {};
     let isValid = true;
   
+    // Valida apenas os campos obrigatórios
     for (const [field, message] of Object.entries(requiredFields)) {
-      if (!formData[field]) {
+      if (!formData[field] && message) { // Só valida se houver mensagem (não vazia)
         errors[field] = message;
         isValid = false;
       }
+    }
+  
+    // Validação extra para senha (apenas em cadastro novo)
+    if (!editandoId && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "As senhas não coincidem!";
+      isValid = false;
     }
   
     setFieldErrors(errors);
@@ -479,13 +489,13 @@ const handleSubmit = async (e) => {
     dataNascimento: "Data de nascimento *",
     password: "Senha" + (editandoId ? "" : " *"),
     confirmPassword: "Confirmar senha" + (editandoId ? "" : " *"),
-    detalhesDoencas: "Detalhes de doenças *",
-    quaisRemedios: "Quais remédios *",
-    quaisMedicamentos: "Alergia a medicamentos *",
+    detalhesDoencas: "Detalhes de doenças ",
+    quaisRemedios: "Quais remédios ",
+    quaisMedicamentos: "Alergia a medicamentos ",
     quaisAnestesias: "Alergia a anestesias",
     frequenciaFumo: "Frequência de fumo",
     frequenciaAlcool: "Frequência de álcool",
-    historicoCirurgia: "Histórico de cirurgia *",
+    historicoCirurgia: "Histórico de cirurgia ",
     exameSangue: "Exame de sangue",
     coagulacao: "Coagulação",
     cicatrizacao: "Cicatrização",
@@ -493,12 +503,12 @@ const handleSubmit = async (e) => {
     sangramentoPosProcedimento: "Sangramento pós-procedimento",
     respiracao: "Respiração",
     peso: "Peso (kg)",
-    dataProcedimento: "Data *",
-    procedimento: "Procedimento *",
-    denteFace: "Dente/Face *",
-    valor: "Valor *",
-    modalidadePagamento: "Modalidade de pagamento *",
-    profissional: "Profissional *"
+    dataProcedimento: "Data ",
+    procedimento: "Procedimento ",
+    denteFace: "Dente/Face ",
+    valor: "Valor ",
+    modalidadePagamento: "Modalidade de pagamento ",
+    profissional: "Profissional "
   };
 
   return (
@@ -575,7 +585,7 @@ const handleSubmit = async (e) => {
                 name="detalhesDoencas"
                 value={formData.detalhesDoencas}
                 onChange={handleChange}
-                required
+                
                 className={`resizable-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
                 rows={3}
               />
@@ -589,7 +599,7 @@ const handleSubmit = async (e) => {
                 name="quaisRemedios"
                 value={formData.quaisRemedios}
                 onChange={handleChange}
-                required
+                
                 className={`resizable-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
                 rows={3}
               />
@@ -603,7 +613,7 @@ const handleSubmit = async (e) => {
                 name="quaisMedicamentos"
                 value={formData.quaisMedicamentos}
                 onChange={handleChange}
-                required
+                
                 className={`resizable-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
                 rows={3}
               />
@@ -749,7 +759,7 @@ const handleSubmit = async (e) => {
                 value={formData.historicoCirurgia}
                 onChange={handleChange}
                 rows={2}
-                required
+                
                 className={`medium-text-area ${fieldErrors.historicoCirurgia ? 'error-field' : ''}`}
               />
               {fieldErrors.historicoCirurgia && <span className="field-error">{fieldErrors.historicoCirurgia}</span>}
@@ -786,7 +796,7 @@ const handleSubmit = async (e) => {
                   }));
                 }}
 
-                required
+               
                 className={fieldErrors.dataProcedimento ? 'error-field' : ''}
               />
               {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
@@ -800,7 +810,7 @@ const handleSubmit = async (e) => {
                 name="procedimento"
                 value={formData.procedimento}
                 onChange={handleChange}
-                required
+                
                 className={fieldErrors.procedimento ? 'error-field' : ''}
                 placeholder="Digite o procedimento realizado"
               />
@@ -815,7 +825,7 @@ const handleSubmit = async (e) => {
                 name="denteFace"
                 value={formData.denteFace}
                 onChange={handleChange}
-                required
+                
                 className={fieldErrors.denteFace ? 'error-field' : ''}
                 placeholder="Ex: 11, 22, Face Lingual, etc."
               />
@@ -838,7 +848,7 @@ const handleSubmit = async (e) => {
                     valor: numericValue
                   }));
                 }}
-                required
+                
                 className={fieldErrors.valor ? 'error-field' : ''}
                 placeholder="R$ 0,00"
               />
@@ -852,7 +862,7 @@ const handleSubmit = async (e) => {
                 name="modalidadePagamento"
                 value={formData.modalidadePagamento}
                 onChange={handleChange}
-                required
+                
                 className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
               >
                 <option value="">Selecione...</option>
@@ -871,7 +881,7 @@ const handleSubmit = async (e) => {
                 name="profissional"
                 value={formData.profissional}
                 onChange={handleChange}
-                required
+               
                 className={fieldErrors.profissional ? 'error-field' : ''}
               />
               {fieldErrors.profissional && <span className="field-error">{fieldErrors.profissional}</span>}
@@ -909,7 +919,7 @@ const handleSubmit = async (e) => {
                           dataProcedimento: e.target.value // Formato yyyy-mm-dd
                         }));
                       }}
-                      required
+                      
                     />
                     {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
                   </div>
@@ -924,7 +934,7 @@ const handleSubmit = async (e) => {
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.procedimento ? 'error-field' : ''}
                       placeholder="Digite o procedimento realizado"
-                      required
+                      
                     />
                     {fieldErrors.procedimento && <span className="field-error">{fieldErrors.procedimento}</span>}
                   </div>
@@ -939,7 +949,7 @@ const handleSubmit = async (e) => {
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.denteFace ? 'error-field' : ''}
                       placeholder="Ex: 11, 22, Face Lingual, etc."
-                      required
+                    
                     />
                     {fieldErrors.denteFace && <span className="field-error">{fieldErrors.denteFace}</span>}
                   </div>
@@ -960,7 +970,7 @@ const handleSubmit = async (e) => {
                           valor: numericValue
                         }));
                       }}
-                      required
+                      
                       className={fieldErrors.valor ? 'error-field' : ''}
                       placeholder="R$ 0,00"
                     />
@@ -975,7 +985,7 @@ const handleSubmit = async (e) => {
                       value={procedimentoData.modalidadePagamento}
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
-                      required
+                      
                     >
                       <option value="">Selecione...</option>
                       {modalidadesPagamento.map((opcao) => (
@@ -994,7 +1004,7 @@ const handleSubmit = async (e) => {
                       value={procedimentoData.profissional}
                       onChange={handleProcedimentoChange}
                       className={fieldErrors.profissional ? 'error-field' : ''}
-                      required
+                     
                     />
                     {fieldErrors.profissional && <span className="field-error">{fieldErrors.profissional}</span>}
                   </div>
