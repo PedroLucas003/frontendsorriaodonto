@@ -107,17 +107,34 @@ const RegisterUser = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Garantir que cada usuário tenha procedimentos como array
-      const usuariosComProcedimentos = response.data.map(usuario => ({
+      // Verificação profunda da resposta da API
+      if (!response || !response.data) {
+        throw new Error("Resposta da API inválida");
+      }
+
+      // Converter a resposta para array, se necessário
+      const dadosUsuarios = Array.isArray(response.data)
+        ? response.data
+        : response.data.users || response.data.itens || [];
+
+      // Garantir que cada usuário tenha a estrutura correta
+      const usuariosFormatados = dadosUsuarios.map(usuario => ({
         ...usuario,
         procedimentos: Array.isArray(usuario.procedimentos) ? usuario.procedimentos : [],
-        historicoProcedimentos: Array.isArray(usuario.historicoProcedimentos) ? usuario.historicoProcedimentos : []
+        historicoProcedimentos: Array.isArray(usuario.historicoProcedimentos)
+          ? usuario.historicoProcedimentos
+          : [],
+        _id: usuario._id || Date.now().toString(), // Fallback para ID
+        nomeCompleto: usuario.nomeCompleto || "Nome não informado"
       }));
 
-      setUsuarios(usuariosComProcedimentos);
+      setUsuarios(usuariosFormatados);
+      setError("");
+
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
       setError("Erro ao carregar usuários. Tente novamente.");
+      setUsuarios([]); // Garante que o estado seja sempre um array
     }
   };
 
@@ -991,7 +1008,72 @@ const RegisterUser = () => {
                 <tr>
                   <th>Nome</th>
                   <th>CPF</th>
-                  <th>Telefone</th>
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Nome</th>
+                          <th>CPF</th>
+                          <th>Telefone</th>
+                          <th>Imagem</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.isArray(usuarios) && usuarios.length > 0 ? (
+                          usuarios
+                            .filter(usuario => {
+                              const searchLower = searchTerm.toLowerCase();
+                              return (
+                                (usuario.nomeCompleto || '').toLowerCase().includes(searchLower) ||
+                                (usuario.cpf || '').includes(searchTerm.replace(/\D/g, ""))
+                              );
+                            })
+                            .map((usuario) => (
+                              <tr key={usuario._id}>
+                                <td>{usuario.nomeCompleto || 'N/A'}</td>
+                                <td>{usuario.cpf ? formatCPF(usuario.cpf) : 'N/A'}</td>
+                                <td>{usuario.telefone ? formatFone(usuario.telefone) : 'N/A'}</td>
+                                <td>
+                                  {usuario.image && (
+                                    <button
+                                      onClick={() => handleViewImage(usuario.image)}
+                                      className="btn-view"
+                                    >
+                                      Imagem
+                                    </button>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="actions">
+                                    <button
+                                      onClick={() => handleEdit(usuario)}
+                                      className="btn-edit"
+                                      aria-label="Editar usuário"
+                                    >
+                                      <i className="bi bi-pencil"></i>
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(usuario._id)}
+                                      className="btn-delete"
+                                      aria-label="Excluir usuário"
+                                    >
+                                      <i className="bi bi-trash"></i>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                        ) : (
+                          <tr>
+                            <td colSpan="5" className="no-data">
+                              {error || "Nenhum paciente encontrado"}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>       <th>Telefone</th>
                   <th>Imagem</th>
                   <th>Ações</th>
                 </tr>
