@@ -2,19 +2,18 @@ import React, { useState, useEffect } from "react";
 import api from "./api/api";
 import "./RegisterUser.css";
 
-// Funções auxiliares
-function formatDateForInput(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '';
-  return date.toISOString().split('T')[0];
-}
+// Funções auxiliares - ATUALIZADAS
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return 'Data inválida';
-  return date.toLocaleDateString('pt-BR');
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    return date.toLocaleDateString('pt-BR');
+  } catch (e) {
+    console.error("Erro ao formatar data para exibição:", e);
+    return 'Data inválida';
+  }
 }
 
 function convertValueToFloat(valor) {
@@ -41,15 +40,14 @@ const RegisterUser = () => {
     cpf: "",
     telefone: "",
     endereco: "",
-    dataNascimento: "",
     password: "",
     confirmPassword: "",
     detalhesDoencas: "",
     quaisRemedios: "",
     quaisMedicamentos: "",
     quaisAnestesias: "",
-    frequenciaFumo: "",
-    frequenciaAlcool: "",
+    frequenciaFumo: "Nunca",
+    frequenciaAlcool: "Nunca",
     historicoCirurgia: "",
     exameSangue: "",
     coagulacao: "",
@@ -58,7 +56,6 @@ const RegisterUser = () => {
     sangramentoPosProcedimento: "",
     respiracao: "",
     peso: "",
-    dataProcedimento: "",
     procedimento: "",
     denteFace: "",
     valor: "",
@@ -76,7 +73,6 @@ const RegisterUser = () => {
   const [modoVisualizacao, setModoVisualizacao] = useState(false);
   const [showProcedimentoForm, setShowProcedimentoForm] = useState(false);
   const [procedimentoData, setProcedimentoData] = useState({
-    dataProcedimento: "",
     procedimento: "",
     denteFace: "",
     valor: "",
@@ -89,8 +85,8 @@ const RegisterUser = () => {
     "Cartão de Crédito",
     "Cartão de Débito",
     "PIX",
-    "Boleto",
-    "Convênio"
+    "Convênio",
+    "Boleto"
   ];
 
   const frequencias = [
@@ -159,29 +155,6 @@ const RegisterUser = () => {
       }
     }
 
-    if (name === "dataNascimento") {
-      if (value) {
-        const birthDate = new Date(value);
-        const today = new Date();
-        if (birthDate >= today) {
-          errors.dataNascimento = "A data de nascimento deve ser no passado";
-        } else {
-          delete errors.dataNascimento;
-        }
-      }
-    }
-
-    if (name === "dataProcedimento") {
-      if (value) {
-        const procedureDate = new Date(value);
-        if (isNaN(procedureDate.getTime())) {
-          errors.dataProcedimento = "Data inválida";
-        } else {
-          delete errors.dataProcedimento;
-        }
-      }
-    }
-
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -241,14 +214,25 @@ const RegisterUser = () => {
       return;
     }
 
-    const dadosParaEnvio = Object.fromEntries(
-      Object.entries(formData).filter(
-        ([key, value]) => 
-          value !== "" && 
-          value !== null && 
-          value !== undefined
-      )
-    );
+    const dadosParaEnvio = {
+      ...formData,
+      habitos: {
+        frequenciaFumo: formData.frequenciaFumo,
+        frequenciaAlcool: formData.frequenciaAlcool
+      },
+      exames: {
+        exameSangue: formData.exameSangue,
+        coagulacao: formData.coagulacao,
+        cicatrizacao: formData.cicatrizacao
+      },
+      confirmPassword: undefined,
+      frequenciaFumo: undefined,
+      frequenciaAlcool: undefined,
+      exameSangue: undefined,
+      coagulacao: undefined,
+      cicatrizacao: undefined,
+      procedimentos: undefined
+    };
 
     try {
       const endpoint = editandoId 
@@ -256,12 +240,27 @@ const RegisterUser = () => {
         : "/api/register/user";
       const method = editandoId ? "put" : "post";
       
-      await api[method](endpoint, dadosParaEnvio);
+      const response = await api[method](endpoint, dadosParaEnvio);
+      
+      if (response.data && response.data.errors) {
+        setFieldErrors(response.data.errors);
+        setError(response.data.message || "Erro de validação");
+        return;
+      }
+      
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
     } catch (error) {
-      setError(error.response?.data?.message || "Erro ao salvar usuário");
+      if (error.response && error.response.data) {
+        const { data } = error.response;
+        if (data.errors) {
+          setFieldErrors(data.errors);
+        }
+        setError(data.message || "Erro ao salvar usuário");
+      } else {
+        setError("Erro ao conectar com o servidor");
+      }
     }
   };
 
@@ -272,15 +271,14 @@ const RegisterUser = () => {
       cpf: "",
       telefone: "",
       endereco: "",
-      dataNascimento: "",
       password: "",
       confirmPassword: "",
       detalhesDoencas: "",
       quaisRemedios: "",
       quaisMedicamentos: "",
       quaisAnestesias: "",
-      frequenciaFumo: "",
-      frequenciaAlcool: "",
+      frequenciaFumo: "Nunca",
+      frequenciaAlcool: "Nunca",
       historicoCirurgia: "",
       exameSangue: "",
       coagulacao: "",
@@ -289,7 +287,6 @@ const RegisterUser = () => {
       sangramentoPosProcedimento: "",
       respiracao: "",
       peso: "",
-      dataProcedimento: "",
       procedimento: "",
       denteFace: "",
       valor: "",
@@ -303,7 +300,6 @@ const RegisterUser = () => {
     setFieldErrors({});
     setShowProcedimentoForm(false);
     setProcedimentoData({
-      dataProcedimento: "",
       procedimento: "",
       denteFace: "",
       valor: "",
@@ -318,17 +314,19 @@ const RegisterUser = () => {
   
     const procedimentosCompletos = [
       {
-        dataProcedimento: usuario.dataProcedimento,
         procedimento: usuario.procedimento,
         denteFace: usuario.denteFace,
         valor: usuario.valor,
         modalidadePagamento: usuario.modalidadePagamento,
         profissional: usuario.profissional,
-        isPrincipal: true
+        isPrincipal: true,
+        createdAt: usuario.createdAt
       },
       ...(usuario.historicoProcedimentos || []).map(p => ({
         ...p,
-        isPrincipal: false
+        isPrincipal: false,
+        // Garantindo que a data está formatada corretamente
+        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null
       }))
     ];
   
@@ -336,9 +334,11 @@ const RegisterUser = () => {
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
-      dataNascimento: formatDateForInput(usuario.dataNascimento),
-      dataProcedimento: formatDateForInput(usuario.dataProcedimento),
-      valor: usuario.valor,
+      frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
+      frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
+      exameSangue: usuario.exames?.exameSangue || "",
+      coagulacao: usuario.exames?.coagulacao || "",
+      cicatrizacao: usuario.exames?.cicatrizacao || "",
       procedimentos: procedimentosCompletos,
       password: "",
       confirmPassword: ""
@@ -379,13 +379,6 @@ const RegisterUser = () => {
     setDarkMode(!darkMode);
   };
 
-  const filteredUsuarios = usuarios.filter(usuario => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      usuario.nomeCompleto.toLowerCase().includes(searchLower) ||
-      usuario.cpf.includes(searchTerm.replace(/\D/g, ""))
-    );
-  });
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
   
@@ -394,8 +387,7 @@ const RegisterUser = () => {
   
       const dadosParaEnvio = {
         ...procedimentoData,
-        valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: formatDateForInput(procedimentoData.dataProcedimento)
+        valor: convertValueToFloat(procedimentoData.valor)
       };
   
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
@@ -406,7 +398,7 @@ const RegisterUser = () => {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
         isPrincipal: false,
-        dataProcedimento: formatDateForInput(dadosParaEnvio.dataProcedimento)
+        createdAt: new Date().toISOString()
       };
   
       setFormData(prev => ({
@@ -415,7 +407,6 @@ const RegisterUser = () => {
       }));
   
       setProcedimentoData({
-        dataProcedimento: "",
         procedimento: "",
         denteFace: "",
         valor: "",
@@ -433,13 +424,20 @@ const RegisterUser = () => {
     }
   };
 
+  const filteredUsuarios = usuarios.filter(usuario => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      usuario.nomeCompleto.toLowerCase().includes(searchLower) ||
+      usuario.cpf.includes(searchTerm.replace(/\D/g, ""))
+    );
+  });
+
   const labels = {
     nomeCompleto: "Nome completo",
     email: "E-mail",
     cpf: "CPF",
     telefone: "Telefone",
     endereco: "Endereço",
-    dataNascimento: "Data de nascimento",
     password: "Senha",
     confirmPassword: "Confirmar senha",
     detalhesDoencas: "Detalhes de doenças",
@@ -456,7 +454,6 @@ const RegisterUser = () => {
     sangramentoPosProcedimento: "Sangramento pós-procedimento",
     respiracao: "Respiração",
     peso: "Peso (kg)",
-    dataProcedimento: "Data",
     procedimento: "Procedimento",
     denteFace: "Dente/Face",
     valor: "Valor",
@@ -486,11 +483,11 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-            {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
+            {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
               <div key={key} className="form-group">
                 <label htmlFor={key}>{labels[key]}</label>
                 <input
-                  type={key.includes("password") ? "password" : key === "dataNascimento" ? "date" : "text"}
+                  type={key.includes("password") ? "password" : "text"}
                   id={key}
                   name={key}
                   value={formData[key]}
@@ -575,7 +572,6 @@ const RegisterUser = () => {
                 value={formData.frequenciaFumo}
                 onChange={handleChange}
               >
-                <option value="">Selecione...</option>
                 {frequencias.map((opcao) => (
                   <option key={opcao} value={opcao}>{opcao}</option>
                 ))}
@@ -590,7 +586,6 @@ const RegisterUser = () => {
                 value={formData.frequenciaAlcool}
                 onChange={handleChange}
               >
-                <option value="">Selecione...</option>
                 {frequencias.map((opcao) => (
                   <option key={opcao} value={opcao}>{opcao}</option>
                 ))}
@@ -707,22 +702,6 @@ const RegisterUser = () => {
           <h2>Dados do Procedimento</h2>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="dataProcedimento">{labels.dataProcedimento}</label>
-              <input
-                type="date"
-                id="dataProcedimento"
-                name="dataProcedimento"
-                value={formatDateForInput(formData.dataProcedimento)}
-                onChange={(e) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    dataProcedimento: e.target.value
-                  }));
-                }}
-              />
-            </div>
-
-            <div className="form-group">
               <label htmlFor="procedimento">{labels.procedimento}</label>
               <input
                 type="text"
@@ -812,22 +791,6 @@ const RegisterUser = () => {
 
                 <div className="form-grid">
                   <div className="form-group">
-                    <label htmlFor="dataProcedimento">Data</label>
-                    <input
-                      type="date"
-                      id="dataProcedimento"
-                      name="dataProcedimento"
-                      value={procedimentoData.dataProcedimento || ''}
-                      onChange={(e) => {
-                        setProcedimentoData(prev => ({
-                          ...prev,
-                          dataProcedimento: e.target.value
-                        }));
-                      }}
-                    />
-                  </div>
-
-                  <div className="form-group">
                     <label htmlFor="procedimento">Procedimento</label>
                     <input
                       type="text"
@@ -903,7 +866,6 @@ const RegisterUser = () => {
                     type="button"
                     onClick={() => {
                       setProcedimentoData({
-                        dataProcedimento: "",
                         procedimento: "",
                         denteFace: "",
                         valor: "",
@@ -928,31 +890,25 @@ const RegisterUser = () => {
               </div>
             )}
 
-            <div className="procedimentos-list">
-              {formData.procedimentos?.length > 0 ? (
-                [...formData.procedimentos]
-                  .sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento))
-                  .map((proc, index) => (
-                    <div key={proc._id || index} className="procedimento-item">
-                      <div className="procedimento-header">
-                        <h4>Procedimento #{index + 1}</h4>
-                        <span>{formatDateForDisplay(proc.dataProcedimento)}</span>
-                      </div>
-                      <div className="procedimento-details">
-                        <p><strong>Procedimento:</strong> {proc.procedimento || 'Não informado'}</p>
-                        <p><strong>Dente/Face:</strong> {proc.denteFace || 'Não informado'}</p>
-                        <p><strong>Valor:</strong> {formatValueForDisplay(proc.valor)}</p>
-                        <p><strong>Modalidade:</strong> {proc.modalidadePagamento || 'Não informada'}</p>
-                        <p><strong>Profissional:</strong> {proc.profissional || 'Não informado'}</p>
-                      </div>
-                    </div>
-                  ))
-              ) : (
-                <div className="no-procedimentos">
-                  <p>Nenhum procedimento cadastrado ainda.</p>
-                </div>
-              )}
-            </div>
+<div className="procedimentos-list">
+  {formData.procedimentos?.length > 0 ? (
+    [...formData.procedimentos]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((proc, index) => (
+        <div key={proc._id || index} className="procedimento-item">
+          <div className="procedimento-header">
+            <h4>Procedimento #{index + 1} {proc.isPrincipal && "(Principal)"}</h4>
+            <span>{formatDateForDisplay(proc.createdAt)}</span>
+          </div>
+          {/* ... restante do código ... */}
+        </div>
+      ))
+  ) : (
+    <div className="no-procedimentos">
+      <p>Nenhum procedimento cadastrado ainda.</p>
+    </div>
+  )}
+</div>
           </div>
         )}
 
