@@ -33,8 +33,6 @@ function formatValueForDisplay(valor) {
     });
 }
 
-
-
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -218,38 +216,16 @@ const RegisterUser = () => {
       return;
     }
   
-    // Para campos de data, não aplicamos formatação adicional
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     validateField(name, formattedValue);
     setError("");
   };
 
   const validateForm = () => {
-    // Apenas esses campos são obrigatórios
-    const requiredFields = {
-      nomeCompleto: "O nome completo é obrigatório!",
-      email: "O email é obrigatório!",
-      cpf: "O CPF é obrigatório!",
-      telefone: "O telefone é obrigatório!",
-      endereco: "O endereço é obrigatório!",
-      dataNascimento: "A data de nascimento é obrigatória!",
-      password: editandoId ? "" : "A senha é obrigatória!", // Obrigatória apenas em cadastro novo
-      confirmPassword: editandoId ? "" : "Confirme a senha!" // Obrigatória apenas em cadastro novo
-    };
-
     const errors = {};
     let isValid = true;
 
-    // Valida apenas os campos obrigatórios
-    for (const [field, message] of Object.entries(requiredFields)) {
-      if (!formData[field] && message) {
-        errors[field] = message;
-        isValid = false;
-      }
-    }
-
-    // Validação extra para senha (apenas em cadastro novo)
-    if (!editandoId && formData.password !== formData.confirmPassword) {
+    if (formData.password && formData.password !== formData.confirmPassword) {
       errors.confirmPassword = "As senhas não coincidem!";
       isValid = false;
     }
@@ -258,93 +234,37 @@ const RegisterUser = () => {
     return isValid;
   };
 
-  const handleAddProcedimento = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const errors = {};
-    if (!procedimentoData.dataProcedimento) errors.dataProcedimento = "Data é obrigatória";
-    if (!procedimentoData.procedimento) errors.procedimento = "Procedimento é obrigatório";
-    if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    if (!validateForm()) {
       return;
     }
 
+    const dadosParaEnvio = Object.fromEntries(
+      Object.entries(formData).filter(
+        ([key, value]) => 
+          value !== "" && 
+          value !== null && 
+          value !== undefined
+      )
+    );
+
     try {
-      const token = localStorage.getItem("token");
-
-      const dadosParaEnvio = {
-        ...procedimentoData,
-        valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: formatDateForInput(procedimentoData.dataProcedimento)
-      };
-
-      await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const novoProcedimento = {
-        ...dadosParaEnvio,
-        _id: Date.now().toString(),
-        isPrincipal: false,
-        // Garante que a data é armazenada como string no formato correto
-        dataProcedimento: formatDateForInput(dadosParaEnvio.dataProcedimento)
-      };
-
-      setFormData(prev => ({
-        ...prev,
-        procedimentos: [...prev.procedimentos, novoProcedimento]
-      }));
-
-      // Reset do formulário
-      setProcedimentoData({
-        dataProcedimento: "",
-        procedimento: "",
-        denteFace: "",
-        valor: "",
-        modalidadePagamento: "",
-        profissional: ""
-      });
+      const endpoint = editandoId 
+        ? `/api/users/${editandoId}` 
+        : "/api/register/user";
+      const method = editandoId ? "put" : "post";
       
-      setShowProcedimentoForm(false);
-      setError("");
+      await api[method](endpoint, dadosParaEnvio);
+      alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
+      resetForm();
       fetchUsuarios();
-
     } catch (error) {
-      console.error("Erro ao adicionar procedimento:", error);
-      setError(error.response?.data?.message || "Erro ao adicionar procedimento");
+      setError(error.response?.data?.message || "Erro ao salvar usuário");
     }
-};
+  };
 
-
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!validateForm()) {
-    return;
-  }
-
-  // Filtra campos vazios (exceto password/confirmPassword)
-  const dadosParaEnvio = Object.fromEntries(
-    Object.entries(formData).filter(
-      ([key, value]) => 
-        value !== "" && 
-        value !== null && 
-        value !== undefined &&
-        !['password', 'confirmPassword'].includes(key)
-    )
-  );
-
-  try {
-    await api.post("/api/register/user", dadosParaEnvio);
-    alert("Usuário cadastrado com sucesso!");
-    resetForm();
-  } catch (error) {
-    setError(error.response?.data?.message || "Erro ao salvar usuário");
-  }
-};
   const resetForm = () => {
     setFormData({
       nomeCompleto: "",
@@ -375,7 +295,6 @@ const handleSubmit = async (e) => {
       valor: "",
       modalidadePagamento: "",
       profissional: "",
-      image: null,
       procedimentos: []
     });
     setEditandoId(null);
@@ -417,7 +336,6 @@ const handleSubmit = async (e) => {
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
-      // Usamos a função formatDateForInput para garantir o formato correto
       dataNascimento: formatDateForInput(usuario.dataNascimento),
       dataProcedimento: formatDateForInput(usuario.dataProcedimento),
       valor: usuario.valor,
@@ -468,23 +386,69 @@ const handleSubmit = async (e) => {
       usuario.cpf.includes(searchTerm.replace(/\D/g, ""))
     );
   });
+  const handleAddProcedimento = async (e) => {
+    e.preventDefault();
+  
+    try {
+      const token = localStorage.getItem("token");
+  
+      const dadosParaEnvio = {
+        ...procedimentoData,
+        valor: convertValueToFloat(procedimentoData.valor),
+        dataProcedimento: formatDateForInput(procedimentoData.dataProcedimento)
+      };
+  
+      await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      const novoProcedimento = {
+        ...dadosParaEnvio,
+        _id: Date.now().toString(),
+        isPrincipal: false,
+        dataProcedimento: formatDateForInput(dadosParaEnvio.dataProcedimento)
+      };
+  
+      setFormData(prev => ({
+        ...prev,
+        procedimentos: [...prev.procedimentos, novoProcedimento]
+      }));
+  
+      setProcedimentoData({
+        dataProcedimento: "",
+        procedimento: "",
+        denteFace: "",
+        valor: "",
+        modalidadePagamento: "",
+        profissional: ""
+      });
+      
+      setShowProcedimentoForm(false);
+      setError("");
+      fetchUsuarios();
+  
+    } catch (error) {
+      console.error("Erro ao adicionar procedimento:", error);
+      setError(error.response?.data?.message || "Erro ao adicionar procedimento");
+    }
+  };
 
   const labels = {
-    nomeCompleto: "Nome completo *",
-    email: "E-mail *",
-    cpf: "CPF *",
-    telefone: "Telefone *",
-    endereco: "Endereço *",
-    dataNascimento: "Data de nascimento *",
-    password: "Senha" + (editandoId ? "" : " *"),
-    confirmPassword: "Confirmar senha" + (editandoId ? "" : " *"),
-    detalhesDoencas: "Detalhes de doenças ",
-    quaisRemedios: "Quais remédios ",
-    quaisMedicamentos: "Alergia a medicamentos ",
+    nomeCompleto: "Nome completo",
+    email: "E-mail",
+    cpf: "CPF",
+    telefone: "Telefone",
+    endereco: "Endereço",
+    dataNascimento: "Data de nascimento",
+    password: "Senha",
+    confirmPassword: "Confirmar senha",
+    detalhesDoencas: "Detalhes de doenças",
+    quaisRemedios: "Quais remédios",
+    quaisMedicamentos: "Alergia a medicamentos",
     quaisAnestesias: "Alergia a anestesias",
     frequenciaFumo: "Frequência de fumo",
     frequenciaAlcool: "Frequência de álcool",
-    historicoCirurgia: "Histórico de cirurgia ",
+    historicoCirurgia: "Histórico de cirurgia",
     exameSangue: "Exame de sangue",
     coagulacao: "Coagulação",
     cicatrizacao: "Cicatrização",
@@ -492,12 +456,12 @@ const handleSubmit = async (e) => {
     sangramentoPosProcedimento: "Sangramento pós-procedimento",
     respiracao: "Respiração",
     peso: "Peso (kg)",
-    dataProcedimento: "Data ",
-    procedimento: "Procedimento ",
-    denteFace: "Dente/Face ",
-    valor: "Valor ",
-    modalidadePagamento: "Modalidade de pagamento ",
-    profissional: "Profissional "
+    dataProcedimento: "Data",
+    procedimento: "Procedimento",
+    denteFace: "Dente/Face",
+    valor: "Valor",
+    modalidadePagamento: "Modalidade de pagamento",
+    profissional: "Profissional"
   };
 
   return (
@@ -522,32 +486,21 @@ const handleSubmit = async (e) => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-          {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
-  <div key={key} className="form-group">
-    <label htmlFor={key}>{labels[key]}</label>
-    <input
-      type={key.includes("password") ? "password" : key === "dataNascimento" ? "date" : "text"}
-      id={key}
-      name={key}
-      value={formData[key]}
-      onChange={handleChange}
-      required={(key !== 'password' && key !== 'confirmPassword') || !editandoId}
-      className={fieldErrors[key] ? 'error-field' : ''}
-    />
-    {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
-  </div>
-))}
+            {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
+              <div key={key} className="form-group">
+                <label htmlFor={key}>{labels[key]}</label>
+                <input
+                  type={key.includes("password") ? "password" : key === "dataNascimento" ? "date" : "text"}
+                  id={key}
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className={fieldErrors[key] ? 'error-field' : ''}
+                />
+                {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
+              </div>
+            ))}
 
-{/* Para dataProcedimento */}
-<input
-  type="date"
-  id="dataProcedimento"
-  name="dataProcedimento"
-  value={formData.dataProcedimento} // Diretamente o valor, sem formatação
-  onChange={handleChange}
-  required
-  className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-/>
             <div className="form-group">
               <label htmlFor="endereco">{labels.endereco}</label>
               <textarea
@@ -555,7 +508,6 @@ const handleSubmit = async (e) => {
                 name="endereco"
                 value={formData.endereco}
                 onChange={handleChange}
-                required
                 className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
                 rows={3}
               />
@@ -574,11 +526,9 @@ const handleSubmit = async (e) => {
                 name="detalhesDoencas"
                 value={formData.detalhesDoencas}
                 onChange={handleChange}
-                
                 className={`resizable-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
                 rows={3}
               />
-              {fieldErrors.detalhesDoencas && <span className="field-error">{fieldErrors.detalhesDoencas}</span>}
             </div>
 
             <div className="form-group">
@@ -588,11 +538,9 @@ const handleSubmit = async (e) => {
                 name="quaisRemedios"
                 value={formData.quaisRemedios}
                 onChange={handleChange}
-                
                 className={`resizable-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
                 rows={3}
               />
-              {fieldErrors.quaisRemedios && <span className="field-error">{fieldErrors.quaisRemedios}</span>}
             </div>
 
             <div className="form-group">
@@ -602,11 +550,9 @@ const handleSubmit = async (e) => {
                 name="quaisMedicamentos"
                 value={formData.quaisMedicamentos}
                 onChange={handleChange}
-                
                 className={`resizable-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
                 rows={3}
               />
-              {fieldErrors.quaisMedicamentos && <span className="field-error">{fieldErrors.quaisMedicamentos}</span>}
             </div>
 
             <div className="form-group">
@@ -619,7 +565,6 @@ const handleSubmit = async (e) => {
                 className={`resizable-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
                 rows={3}
               />
-              {fieldErrors.quaisAnestesias && <span className="field-error">{fieldErrors.quaisAnestesias}</span>}
             </div>
 
             <div className="form-group">
@@ -629,14 +574,12 @@ const handleSubmit = async (e) => {
                 name="frequenciaFumo"
                 value={formData.frequenciaFumo}
                 onChange={handleChange}
-                className={fieldErrors.frequenciaFumo ? 'error-field' : ''}
               >
                 <option value="">Selecione...</option>
                 {frequencias.map((opcao) => (
                   <option key={opcao} value={opcao}>{opcao}</option>
                 ))}
               </select>
-              {fieldErrors.frequenciaFumo && <span className="field-error">{fieldErrors.frequenciaFumo}</span>}
             </div>
 
             <div className="form-group">
@@ -646,14 +589,12 @@ const handleSubmit = async (e) => {
                 name="frequenciaAlcool"
                 value={formData.frequenciaAlcool}
                 onChange={handleChange}
-                className={fieldErrors.frequenciaAlcool ? 'error-field' : ''}
               >
                 <option value="">Selecione...</option>
                 {frequencias.map((opcao) => (
                   <option key={opcao} value={opcao}>{opcao}</option>
                 ))}
               </select>
-              {fieldErrors.frequenciaAlcool && <span className="field-error">{fieldErrors.frequenciaAlcool}</span>}
             </div>
 
             <div className="form-group">
@@ -664,9 +605,7 @@ const handleSubmit = async (e) => {
                 name="respiracao"
                 value={formData.respiracao}
                 onChange={handleChange}
-                className={fieldErrors.respiracao ? 'error-field' : ''}
               />
-              {fieldErrors.respiracao && <span className="field-error">{fieldErrors.respiracao}</span>}
             </div>
 
             <div className="form-group">
@@ -678,9 +617,7 @@ const handleSubmit = async (e) => {
                 value={formData.peso}
                 onChange={handleChange}
                 step="0.1"
-                className={fieldErrors.peso ? 'error-field' : ''}
               />
-              {fieldErrors.peso && <span className="field-error">{fieldErrors.peso}</span>}
             </div>
           </div>
         </div>
@@ -748,10 +685,8 @@ const handleSubmit = async (e) => {
                 value={formData.historicoCirurgia}
                 onChange={handleChange}
                 rows={2}
-                
-                className={`medium-text-area ${fieldErrors.historicoCirurgia ? 'error-field' : ''}`}
+                className="medium-text-area"
               />
-              {fieldErrors.historicoCirurgia && <span className="field-error">{fieldErrors.historicoCirurgia}</span>}
             </div>
 
             <div className="form-group full-width">
@@ -781,14 +716,10 @@ const handleSubmit = async (e) => {
                 onChange={(e) => {
                   setFormData(prev => ({
                     ...prev,
-                    dataProcedimento: e.target.value // ✅ apenas a string 'YYYY-MM-DD'
+                    dataProcedimento: e.target.value
                   }));
                 }}
-
-               
-                className={fieldErrors.dataProcedimento ? 'error-field' : ''}
               />
-              {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
             </div>
 
             <div className="form-group">
@@ -799,11 +730,8 @@ const handleSubmit = async (e) => {
                 name="procedimento"
                 value={formData.procedimento}
                 onChange={handleChange}
-                
-                className={fieldErrors.procedimento ? 'error-field' : ''}
                 placeholder="Digite o procedimento realizado"
               />
-              {fieldErrors.procedimento && <span className="field-error">{fieldErrors.procedimento}</span>}
             </div>
 
             <div className="form-group">
@@ -814,11 +742,8 @@ const handleSubmit = async (e) => {
                 name="denteFace"
                 value={formData.denteFace}
                 onChange={handleChange}
-                
-                className={fieldErrors.denteFace ? 'error-field' : ''}
                 placeholder="Ex: 11, 22, Face Lingual, etc."
               />
-              {fieldErrors.denteFace && <span className="field-error">{fieldErrors.denteFace}</span>}
             </div>
 
             <div className="form-group">
@@ -837,11 +762,8 @@ const handleSubmit = async (e) => {
                     valor: numericValue
                   }));
                 }}
-                
-                className={fieldErrors.valor ? 'error-field' : ''}
                 placeholder="R$ 0,00"
               />
-              {fieldErrors.valor && <span className="field-error">{fieldErrors.valor}</span>}
             </div>
 
             <div className="form-group">
@@ -851,15 +773,12 @@ const handleSubmit = async (e) => {
                 name="modalidadePagamento"
                 value={formData.modalidadePagamento}
                 onChange={handleChange}
-                
-                className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
               >
                 <option value="">Selecione...</option>
                 {modalidadesPagamento.map((opcao) => (
                   <option key={opcao} value={opcao}>{opcao}</option>
                 ))}
               </select>
-              {fieldErrors.modalidadePagamento && <span className="field-error">{fieldErrors.modalidadePagamento}</span>}
             </div>
 
             <div className="form-group">
@@ -870,10 +789,7 @@ const handleSubmit = async (e) => {
                 name="profissional"
                 value={formData.profissional}
                 onChange={handleChange}
-               
-                className={fieldErrors.profissional ? 'error-field' : ''}
               />
-              {fieldErrors.profissional && <span className="field-error">{fieldErrors.profissional}</span>}
             </div>
           </div>
         </div>
@@ -896,7 +812,7 @@ const handleSubmit = async (e) => {
 
                 <div className="form-grid">
                   <div className="form-group">
-                    <label htmlFor="dataProcedimento">Data </label>
+                    <label htmlFor="dataProcedimento">Data</label>
                     <input
                       type="date"
                       id="dataProcedimento"
@@ -905,46 +821,38 @@ const handleSubmit = async (e) => {
                       onChange={(e) => {
                         setProcedimentoData(prev => ({
                           ...prev,
-                          dataProcedimento: e.target.value // Formato yyyy-mm-dd
+                          dataProcedimento: e.target.value
                         }));
                       }}
-                      
                     />
-                    {fieldErrors.dataProcedimento && <span className="field-error">{fieldErrors.dataProcedimento}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="procedimento">Procedimento </label>
+                    <label htmlFor="procedimento">Procedimento</label>
                     <input
                       type="text"
                       id="procedimento"
                       name="procedimento"
                       value={procedimentoData.procedimento}
                       onChange={handleProcedimentoChange}
-                      className={fieldErrors.procedimento ? 'error-field' : ''}
                       placeholder="Digite o procedimento realizado"
-                      
                     />
-                    {fieldErrors.procedimento && <span className="field-error">{fieldErrors.procedimento}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="denteFace">Dente/Face </label>
+                    <label htmlFor="denteFace">Dente/Face</label>
                     <input
                       type="text"
                       id="denteFace"
                       name="denteFace"
                       value={procedimentoData.denteFace}
                       onChange={handleProcedimentoChange}
-                      className={fieldErrors.denteFace ? 'error-field' : ''}
                       placeholder="Ex: 11, 22, Face Lingual, etc."
-                    
                     />
-                    {fieldErrors.denteFace && <span className="field-error">{fieldErrors.denteFace}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="valor">Valor </label>
+                    <label htmlFor="valor">Valor</label>
                     <input
                       type="text"
                       id="valor"
@@ -959,43 +867,34 @@ const handleSubmit = async (e) => {
                           valor: numericValue
                         }));
                       }}
-                      
-                      className={fieldErrors.valor ? 'error-field' : ''}
                       placeholder="R$ 0,00"
                     />
-                    {fieldErrors.valor && <span className="field-error">{fieldErrors.valor}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="modalidadePagamento">Modalidade de Pagamento </label>
+                    <label htmlFor="modalidadePagamento">Modalidade de Pagamento</label>
                     <select
                       id="modalidadePagamento"
                       name="modalidadePagamento"
                       value={procedimentoData.modalidadePagamento}
                       onChange={handleProcedimentoChange}
-                      className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
-                      
                     >
                       <option value="">Selecione...</option>
                       {modalidadesPagamento.map((opcao) => (
                         <option key={opcao} value={opcao}>{opcao}</option>
                       ))}
                     </select>
-                    {fieldErrors.modalidadePagamento && <span className="field-error">{fieldErrors.modalidadePagamento}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="profissional">Profissional </label>
+                    <label htmlFor="profissional">Profissional</label>
                     <input
                       type="text"
                       id="profissional"
                       name="profissional"
                       value={procedimentoData.profissional}
                       onChange={handleProcedimentoChange}
-                      className={fieldErrors.profissional ? 'error-field' : ''}
-                     
                     />
-                    {fieldErrors.profissional && <span className="field-error">{fieldErrors.profissional}</span>}
                   </div>
                 </div>
 
@@ -1012,7 +911,6 @@ const handleSubmit = async (e) => {
                         profissional: ""
                       });
                       setShowProcedimentoForm(false);
-                      setFieldErrors({});
                     }}
                     className="btn-cancel"
                   >
