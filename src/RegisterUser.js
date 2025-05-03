@@ -243,62 +243,18 @@ const RegisterUser = () => {
       telefone: "O telefone é obrigatório!",
       endereco: "O endereço é obrigatório!",
       dataNascimento: "A data de nascimento é obrigatória!",
-      detalhesDoencas: "Os detalhes sobre doenças são obrigatórios!",
-      quaisRemedios: "Informação sobre medicamentos é obrigatória!",
-      quaisMedicamentos: "Informação sobre medicamentos é obrigatória!",
-      historicoCirurgia: "O histórico cirúrgico é obrigatório!",
-      dataProcedimento: "A data do procedimento é obrigatória!",
-      procedimento: "O procedimento é obrigatório!",
-      denteFace: "Dente/Face é obrigatório!",
-      valor: "O valor é obrigatório!",
-      modalidadePagamento: "A modalidade de pagamento é obrigatória!",
-      profissional: "O profissional é obrigatório!"
     };
-
+  
     const errors = {};
     let isValid = true;
-
+  
     for (const [field, message] of Object.entries(requiredFields)) {
       if (!formData[field]) {
         errors[field] = message;
         isValid = false;
       }
     }
-
-    if (!editandoId && (!formData.password || !formData.confirmPassword)) {
-      errors.password = "A senha e confirmação são obrigatórias para novo cadastro!";
-      isValid = false;
-    }
-
-    if (!editandoId && formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "As senhas não coincidem!";
-      isValid = false;
-    }
-
-    if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(formData.cpf)) {
-      errors.cpf = "CPF inválido! Use o formato 000.000.000-00";
-      isValid = false;
-    }
-
-    if (!modalidadesPagamento.includes(formData.modalidadePagamento)) {
-      errors.modalidadePagamento = "Modalidade de pagamento inválida!";
-      isValid = false;
-    }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Por favor, insira um e-mail válido";
-      isValid = false;
-    }
-
-    if (formData.dataNascimento) {
-      const birthDate = new Date(formData.dataNascimento);
-      const today = new Date();
-      if (birthDate >= today) {
-        errors.dataNascimento = "A data de nascimento deve ser no passado";
-        isValid = false;
-      }
-    }
-
+  
     setFieldErrors(errors);
     return isValid;
   };
@@ -367,92 +323,27 @@ const RegisterUser = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  console.log("--- INÍCIO DO DEBUG DO FORMULÁRIO ---");
-
-  // 1. Log de todos os campos do formulário
-  console.group("Dados completos do formulário:");
-  Object.entries(formData).forEach(([key, value]) => {
-    // Não logar senhas por segurança
-    if (key !== 'password' && key !== 'confirmPassword') {
-      console.log(`${key}:`, value, `| Tipo:`, typeof value);
-    }
-  });
-  console.groupEnd();
-
-  // 2. Log específico para as datas
-  console.group("Debug de datas:");
-  console.log("dataNascimento (raw):", formData.dataNascimento, "| Tipo:", typeof formData.dataNascimento);
-  console.log("dataProcedimento (raw):", formData.dataProcedimento, "| Tipo:", typeof formData.dataProcedimento);
-  
-  try {
-    console.log("dataNascimento (Date object):", new Date(formData.dataNascimento));
-    console.log("dataProcedimento (Date object):", new Date(formData.dataProcedimento));
-  } catch (e) {
-    console.error("Erro ao converter datas:", e);
-  }
-  console.groupEnd();
-
   if (!validateForm()) {
-    console.error("Validação do formulário falhou!");
     return;
   }
 
+  // Filtra campos vazios (exceto password/confirmPassword)
+  const dadosParaEnvio = Object.fromEntries(
+    Object.entries(formData).filter(
+      ([key, value]) => 
+        value !== "" && 
+        value !== null && 
+        value !== undefined &&
+        !['password', 'confirmPassword'].includes(key)
+    )
+  );
+
   try {
-    const token = localStorage.getItem("token");
-    const dadosParaEnvio = {
-      ...formData,
-      valor: convertValueToFloat(formData.valor),
-      dataNascimento: formData.dataNascimento,
-      dataProcedimento: formData.dataProcedimento,
-      procedimentos: undefined,
-      image: undefined
-    };
-
-    // 3. Log dos dados que serão enviados
-    console.group("Dados que serão enviados para o backend:");
-    Object.entries(dadosParaEnvio).forEach(([key, value]) => {
-      if (key !== 'password' && key !== 'confirmPassword') {
-        console.log(`${key}:`, value, `| Tipo:`, typeof value);
-      }
-    });
-    console.groupEnd();
-
-    let response;
-    if (editandoId) {
-      console.log("Enviando requisição PUT para atualização...");
-      response = await api.put(`/api/users/${editandoId}`, dadosParaEnvio, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    } else {
-      console.log("Enviando requisição POST para cadastro...");
-      response = await api.post("/api/register/user", dadosParaEnvio, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    }
-
-    console.log("Resposta do servidor:", response.data);
-    alert(editandoId ? "Usuário atualizado com sucesso!" : "Usuário cadastrado com sucesso!");
-    
+    await api.post("/api/register/user", dadosParaEnvio);
+    alert("Usuário cadastrado com sucesso!");
     resetForm();
-    fetchUsuarios();
-
   } catch (error) {
-    console.group("Erro detalhado:");
-    console.error("Mensagem de erro:", error.message);
-    console.error("Resposta completa do erro:", error.response);
-    
-    if (error.response) {
-      console.error("Dados da resposta de erro:", error.response.data);
-      console.error("Status do erro:", error.response.status);
-      console.error("Headers do erro:", error.response.headers);
-    }
-    
-    console.error("Configuração da requisição:", error.config);
-    console.groupEnd();
-    
     setError(error.response?.data?.message || "Erro ao salvar usuário");
-  } finally {
-    console.log("--- FIM DO DEBUG DO FORMULÁRIO ---\n\n");
   }
 };
   const resetForm = () => {
