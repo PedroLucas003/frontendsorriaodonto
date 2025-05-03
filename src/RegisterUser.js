@@ -106,7 +106,15 @@ const RegisterUser = () => {
       const response = await api.get("/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsuarios(response.data);
+
+      // Garantir que cada usuário tenha procedimentos como array
+      const usuariosComProcedimentos = response.data.map(usuario => ({
+        ...usuario,
+        procedimentos: Array.isArray(usuario.procedimentos) ? usuario.procedimentos : [],
+        historicoProcedimentos: Array.isArray(usuario.historicoProcedimentos) ? usuario.historicoProcedimentos : []
+      }));
+
+      setUsuarios(usuariosComProcedimentos);
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
       setError("Erro ao carregar usuários. Tente novamente.");
@@ -161,9 +169,9 @@ const RegisterUser = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-  
+
     let formattedValue = value;
-  
+
     if (name === "peso") {
       formattedValue = value.replace(/[^0-9.]/g, "");
       if ((formattedValue.match(/\./g) || []).length > 1) {
@@ -188,7 +196,7 @@ const RegisterUser = () => {
       }));
       return;
     }
-  
+
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     validateField(name, formattedValue);
     setError("");
@@ -235,19 +243,19 @@ const RegisterUser = () => {
     };
 
     try {
-      const endpoint = editandoId 
-        ? `/api/users/${editandoId}` 
+      const endpoint = editandoId
+        ? `/api/users/${editandoId}`
         : "/api/register/user";
       const method = editandoId ? "put" : "post";
-      
+
       const response = await api[method](endpoint, dadosParaEnvio);
-      
+
       if (response.data && response.data.errors) {
         setFieldErrors(response.data.errors);
         setError(response.data.message || "Erro de validação");
         return;
       }
-      
+
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
@@ -312,27 +320,27 @@ const RegisterUser = () => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
 
-    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos) 
-    ? usuario.historicoProcedimentos 
-    : [];
+    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
+      ? usuario.historicoProcedimentos
+      : [];
 
-  const procedimentosCompletos = [
-    {
-      procedimento: usuario.procedimento || "",
-      denteFace: usuario.denteFace || "",
-      valor: usuario.valor || 0,
-      modalidadePagamento: usuario.modalidadePagamento || "",
-      profissional: usuario.profissional || "",
-      isPrincipal: true,
-      createdAt: usuario.createdAt || new Date().toISOString()
-    },
-    ...historicoProcedimentos.map(p => ({
-      ...p,
-      isPrincipal: false,
-      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
-    }))
+    const procedimentosCompletos = [
+      {
+        procedimento: usuario.procedimento || "",
+        denteFace: usuario.denteFace || "",
+        valor: usuario.valor || 0,
+        modalidadePagamento: usuario.modalidadePagamento || "",
+        profissional: usuario.profissional || "",
+        isPrincipal: true,
+        createdAt: usuario.createdAt || new Date().toISOString()
+      },
+      ...historicoProcedimentos.map(p => ({
+        ...p,
+        isPrincipal: false,
+        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+      }))
     ];
-  
+
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
@@ -384,31 +392,31 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor)
       };
-  
+
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-  
+
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
         isPrincipal: false,
         createdAt: new Date().toISOString()
       };
-  
+
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-  
+
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
@@ -416,11 +424,11 @@ const RegisterUser = () => {
         modalidadePagamento: "",
         profissional: ""
       });
-      
+
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -893,53 +901,70 @@ const RegisterUser = () => {
               </div>
             )}
 
-<div className="procedimentos-list">
-  {Array.isArray(formData.procedimentos) && formData.procedimentos.length > 0 ? (
-    [...formData.procedimentos]
-      .sort((a, b) => {
-        // Adicionando tratamento seguro para datas
-        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
-        return dateB - dateA;
-      })
-      .map((proc, index) => {
-        // Garantindo que todos os campos existam
-        const procedimento = {
-          _id: proc._id || `temp-${index}`,
-          procedimento: proc.procedimento || "Não especificado",
-          denteFace: proc.denteFace || "Não especificado",
-          valor: proc.valor || 0,
-          modalidadePagamento: proc.modalidadePagamento || "Não especificado",
-          profissional: proc.profissional || "Não especificado",
-          isPrincipal: proc.isPrincipal || false,
-          createdAt: proc.createdAt || new Date().toISOString()
-        };
+            <div className="procedimentos-list">
+              {Array.isArray(formData.procedimentos) ? (
+                formData.procedimentos.length > 0 ? (
+                  [...formData.procedimentos]
+                    .sort((a, b) => {
+                      try {
+                        const dateA = new Date(a.createdAt || new Date());
+                        const dateB = new Date(b.createdAt || new Date());
+                        return dateB - dateA;
+                      } catch {
+                        return 0;
+                      }
+                    })
+                    .map((proc, index) => {
+                      // Objeto seguro com fallbacks para todos os campos
+                      const procedimento = {
+                        _id: proc._id || `temp-${index}`,
+                        procedimento: proc.procedimento || "Não especificado",
+                        denteFace: proc.denteFace || "Não especificado",
+                        valor: typeof proc.valor === 'number' ? proc.valor : 0,
+                        modalidadePagamento: proc.modalidadePagamento || "Não especificado",
+                        profissional: proc.profissional || "Não especificado",
+                        isPrincipal: !!proc.isPrincipal,
+                        createdAt: proc.createdAt || new Date().toISOString()
+                      };
 
-        return (
-          <div key={procedimento._id} className={`procedimento-item ${procedimento.isPrincipal ? 'principal' : ''}`}>
-            <div className="procedimento-header">
-              <h4>
-                Procedimento #{index + 1}
-                {procedimento.isPrincipal && <span className="badge-principal">Principal</span>}
-              </h4>
-              <span>{formatDateForDisplay(procedimento.createdAt)}</span>
+                      return (
+                        <div
+                          key={procedimento._id}
+                          className={`procedimento-item ${procedimento.isPrincipal ? 'principal' : ''}`}
+                        >
+                          <div className="procedimento-header">
+                            <h4>
+                              Procedimento #{index + 1}
+                              {procedimento.isPrincipal && (
+                                <span className="badge-principal">Principal</span>
+                              )}
+                            </h4>
+                            <span>{formatDateForDisplay(procedimento.createdAt)}</span>
+                          </div>
+
+                          <div className="procedimento-details">
+                            <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
+                            <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
+                            <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
+                            <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
+                            <p><strong>Profissional:</strong> {procedimento.profissional}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="no-procedimentos">
+                    <i className="bi bi-clipboard-x"></i>
+                    <p>Nenhum procedimento cadastrado ainda.</p>
+                  </div>
+                )
+              ) : (
+                <div className="no-procedimentos error">
+                  <i className="bi bi-exclamation-triangle"></i>
+                  <p>Dados de procedimentos inválidos.</p>
+                </div>
+              )}
             </div>
-            <div className="procedimento-details">
-              <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
-              <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-              <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
-              <p><strong>Pagamento:</strong> {procedimento.modalidadePagamento}</p>
-              <p><strong>Profissional:</strong> {procedimento.profissional}</p>
-            </div>
-          </div>
-        );
-      })
-  ) : (
-    <div className="no-procedimentos">
-      <p>Nenhum procedimento cadastrado ainda.</p>
-    </div>
-  )}
-</div>
           </div>
         )}
 
