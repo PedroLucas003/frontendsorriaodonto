@@ -3,7 +3,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: process.env.NODE_ENV === 'development'
     ? "http://localhost:4000"  // Ou sua URL local do backend em desenvolvimento
-    : "https://landingpage-5jo1.onrender.com",  // URL do seu backend no Render
+    : "https://backendsorriaodonto.onrender.com",  // URL do seu backend no Render
 });
 
 // ✅ Interceptor para adicionar token e lidar com erro 401
