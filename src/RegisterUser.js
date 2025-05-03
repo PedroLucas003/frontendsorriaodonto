@@ -3,28 +3,17 @@ import api from "./api/api";
 import "./RegisterUser.css";
 
 // Funções auxiliares
-// Funções auxiliares atualizadas (substitua as existentes)
 function formatDateForInput(dateString) {
   if (!dateString) return '';
-  
-  // Se já estiver no formato YYYY-MM-DD (input date)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return dateString;
-  }
-  
-  // Se for um objeto Date ou string ISO
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return '';
-  
   return date.toISOString().split('T')[0];
 }
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
-  
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return 'Data inválida';
-  
   return date.toLocaleDateString('pt-BR');
 }
 
@@ -36,15 +25,15 @@ function convertValueToFloat(valor) {
 
 function formatValueForDisplay(valor) {
   if (valor === null || valor === undefined || valor === '') return 'Valor não informado';
-  const numericValue = typeof valor === 'string' ?
-    parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) :
-    Number(valor);
+  const numericValue = convertValueToFloat(valor);
   return isNaN(numericValue) ? 'Valor inválido' :
     numericValue.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     });
 }
+
+
 
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -247,24 +236,24 @@ const RegisterUser = () => {
       password: editandoId ? "" : "A senha é obrigatória!", // Obrigatória apenas em cadastro novo
       confirmPassword: editandoId ? "" : "Confirme a senha!" // Obrigatória apenas em cadastro novo
     };
-  
+
     const errors = {};
     let isValid = true;
-  
+
     // Valida apenas os campos obrigatórios
     for (const [field, message] of Object.entries(requiredFields)) {
-      if (!formData[field] && message) { // Só valida se houver mensagem (não vazia)
+      if (!formData[field] && message) {
         errors[field] = message;
         isValid = false;
       }
     }
-  
+
     // Validação extra para senha (apenas em cadastro novo)
     if (!editandoId && formData.password !== formData.confirmPassword) {
       errors.confirmPassword = "As senhas não coincidem!";
       isValid = false;
     }
-  
+
     setFieldErrors(errors);
     return isValid;
   };
