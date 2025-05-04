@@ -40,6 +40,7 @@ const RegisterUser = () => {
     cpf: "",
     telefone: "",
     endereco: "",
+    dataNascimento: "",
     password: "",
     confirmPassword: "",
     detalhesDoencas: "",
@@ -146,7 +147,7 @@ const RegisterUser = () => {
     if (cleanedValue.length <= 9) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6)}`;
     return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6, 9)}-${cleanedValue.slice(9, 11)}`;
   };
-  
+
   const formatFone = (value) => {
     const cleanedValue = value.replace(/\D/g, "");
     if (cleanedValue.length <= 2) return cleanedValue;
@@ -231,7 +232,7 @@ const RegisterUser = () => {
   const validateForm = () => {
     const errors = {};
     let isValid = true;
-  
+
     // Só valida senha se estiver cadastrando novo usuário ou se a senha foi preenchida
     if (!editandoId || (formData.password || formData.confirmPassword)) {
       if (formData.password && formData.confirmPassword &&
@@ -239,13 +240,13 @@ const RegisterUser = () => {
         errors.confirmPassword = "As senhas não coincidem!";
         isValid = false;
       }
-  
+
       if (formData.password && formData.password.length < 6) {
         errors.password = "A senha deve ter pelo menos 6 caracteres";
         isValid = false;
       }
     }
-  
+
     setFieldErrors(errors);
     return isValid;
   };
@@ -264,6 +265,7 @@ const RegisterUser = () => {
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')), // Formata o CPF
       telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
       endereco: formData.endereco,
+      dataNascimento: formData.dataNascimento,
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
@@ -338,6 +340,7 @@ const RegisterUser = () => {
       cpf: "",
       telefone: "",
       endereco: "",
+      dataNascimento: "",
       password: "",
       confirmPassword: "",
       detalhesDoencas: "",
@@ -404,6 +407,7 @@ const RegisterUser = () => {
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
+      dataNascimento: usuario.dataNascimento || "",
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -508,6 +512,7 @@ const RegisterUser = () => {
     cpf: "CPF",
     telefone: "Telefone",
     endereco: "Endereço",
+    dataNascimento: "Data de Nascimento",
     password: "Senha",
     confirmPassword: "Confirmar senha",
     detalhesDoencas: "Detalhes de doenças",
@@ -553,7 +558,7 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-            {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
+            {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
               <div key={key} className="form-group">
                 <label htmlFor={key}>{labels[key]}</label>
                 <input
