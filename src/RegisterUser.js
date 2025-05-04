@@ -1008,112 +1008,56 @@ const RegisterUser = () => {
                 <tr>
                   <th>Nome</th>
                   <th>CPF</th>
-                  <div className="table-container">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Nome</th>
-                          <th>CPF</th>
-                          <th>Telefone</th>
-                          <th>Imagem</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Array.isArray(usuarios) && usuarios.length > 0 ? (
-                          usuarios
-                            .filter(usuario => {
-                              const searchLower = searchTerm.toLowerCase();
-                              return (
-                                (usuario.nomeCompleto || '').toLowerCase().includes(searchLower) ||
-                                (usuario.cpf || '').includes(searchTerm.replace(/\D/g, ""))
-                              );
-                            })
-                            .map((usuario) => (
-                              <tr key={usuario._id}>
-                                <td>{usuario.nomeCompleto || 'N/A'}</td>
-                                <td>{usuario.cpf ? formatCPF(usuario.cpf) : 'N/A'}</td>
-                                <td>{usuario.telefone ? formatFone(usuario.telefone) : 'N/A'}</td>
-                                <td>
-                                  {usuario.image && (
-                                    <button
-                                      onClick={() => handleViewImage(usuario.image)}
-                                      className="btn-view"
-                                    >
-                                      Imagem
-                                    </button>
-                                  )}
-                                </td>
-                                <td>
-                                  <div className="actions">
-                                    <button
-                                      onClick={() => handleEdit(usuario)}
-                                      className="btn-edit"
-                                      aria-label="Editar usuário"
-                                    >
-                                      <i className="bi bi-pencil"></i>
-                                    </button>
-                                    <button
-                                      onClick={() => handleDelete(usuario._id)}
-                                      className="btn-delete"
-                                      aria-label="Excluir usuário"
-                                    >
-                                      <i className="bi bi-trash"></i>
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                        ) : (
-                          <tr>
-                            <td colSpan="5" className="no-data">
-                              {error || "Nenhum paciente encontrado"}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>       <th>Telefone</th>
+                  <th>Telefone</th>
                   <th>Imagem</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsuarios.map((usuario) => (
-                  <tr key={usuario._id}>
-                    <td>{usuario.nomeCompleto}</td>
-                    <td>{formatCPF(usuario.cpf)}</td>
-                    <td>{formatFone(usuario.telefone)}</td>
-                    <td>
-                      {usuario.image && (
-                        <button
-                          onClick={() => handleViewImage(usuario.image)}
-                          className="btn-view"
-                        >
-                          Imagem
-                        </button>
-                      )}
-                    </td>
-                    <td>
-                      <div className="actions">
-                        <button
-                          onClick={() => handleEdit(usuario)}
-                          className="btn-edit"
-                        >
-                          <span className="btnText">Editar</span>
-                          <i className="bi bi-pencil"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(usuario._id)}
-                          className="btn-delete"
-                        >
-                          <span className="btnText">Excluir</span>
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
+                {filteredUsuarios.length > 0 ? (
+                  filteredUsuarios.map((usuario) => (
+                    <tr key={usuario._id}>
+                      <td>{usuario.nomeCompleto || 'N/A'}</td>
+                      <td>{usuario.cpf ? formatCPF(usuario.cpf) : 'N/A'}</td>
+                      <td>{usuario.telefone ? formatFone(usuario.telefone) : 'N/A'}</td>
+                      <td>
+                        {usuario.image && (
+                          <button
+                            onClick={() => handleViewImage(usuario.image)}
+                            className="btn-view"
+                            aria-label="Visualizar imagem"
+                          >
+                            Imagem
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        <div className="actions">
+                          <button
+                            onClick={() => handleEdit(usuario)}
+                            className="btn-edit"
+                            aria-label="Editar usuário"
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(usuario._id)}
+                            className="btn-delete"
+                            aria-label="Excluir usuário"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="no-data">
+                      {usuarios.length === 0 ? "Nenhum paciente cadastrado" : "Nenhum resultado encontrado"}
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
