@@ -231,20 +231,21 @@ const RegisterUser = () => {
   const validateForm = () => {
     const errors = {};
     let isValid = true;
-
-    // Verifica se as senhas coincidem apenas se ambas estiverem preenchidas
-    if (formData.password && formData.confirmPassword &&
-      formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "As senhas não coincidem!";
-      isValid = false;
+  
+    // Só valida senha se estiver cadastrando novo usuário ou se a senha foi preenchida
+    if (!editandoId || (formData.password || formData.confirmPassword)) {
+      if (formData.password && formData.confirmPassword &&
+        formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = "As senhas não coincidem!";
+        isValid = false;
+      }
+  
+      if (formData.password && formData.password.length < 6) {
+        errors.password = "A senha deve ter pelo menos 6 caracteres";
+        isValid = false;
+      }
     }
-
-    // Verifica se a senha tem pelo menos 6 caracteres
-    if (formData.password && formData.password.length < 6) {
-      errors.password = "A senha deve ter pelo menos 6 caracteres";
-      isValid = false;
-    }
-
+  
     setFieldErrors(errors);
     return isValid;
   };
@@ -263,8 +264,6 @@ const RegisterUser = () => {
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')), // Formata o CPF
       telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
       endereco: formData.endereco,
-      password: formData.password,
-      confirmPassword: formData.confirmPassword,
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
@@ -296,13 +295,16 @@ const RegisterUser = () => {
       return;
     }
 
+    if (!editandoId && formData.password) {
+      dadosParaEnvio.password = formData.password;
+      dadosParaEnvio.confirmPassword = formData.confirmPassword;
+    }
+
     try {
       const endpoint = editandoId
         ? `/api/users/${editandoId}`
         : "/api/register/user";
       const method = editandoId ? "put" : "post";
-
-      console.log("Dados enviados:", dadosParaEnvio); // Para debug
 
       const response = await api[method](endpoint, dadosParaEnvio);
 
