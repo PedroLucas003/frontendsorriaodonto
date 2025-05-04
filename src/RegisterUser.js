@@ -234,49 +234,81 @@ const RegisterUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!validateForm()) {
       return;
     }
-
+  
+    // Converter valor para número
+    const valorNumerico = convertValueToFloat(formData.valor);
+  
     const dadosParaEnvio = {
-      ...formData,
+      // Dados Pessoais
+      nomeCompleto: formData.nomeCompleto,
+      email: formData.email,
+      cpf: formData.cpf.replace(/\D/g, ''), // Enviar apenas números
+      telefone: formData.telefone.replace(/\D/g, ''), // Enviar apenas números
+      endereco: formData.endereco,
+      password: formData.password,
+  
+      // Campos de Saúde
+      detalhesDoencas: formData.detalhesDoencas,
+      quaisRemedios: formData.quaisRemedios,
+      quaisMedicamentos: formData.quaisMedicamentos,
+      quaisAnestesias: formData.quaisAnestesias,
+  
+      // Hábitos
       habitos: {
         frequenciaFumo: formData.frequenciaFumo,
         frequenciaAlcool: formData.frequenciaAlcool
       },
+  
+      // Exames
       exames: {
         exameSangue: formData.exameSangue,
         coagulacao: formData.coagulacao,
         cicatrizacao: formData.cicatrizacao
       },
-      confirmPassword: undefined,
-      frequenciaFumo: undefined,
-      frequenciaAlcool: undefined,
-      exameSangue: undefined,
-      coagulacao: undefined,
-      cicatrizacao: undefined,
-      procedimentos: undefined
+  
+      // Histórico Médico
+      historicoCirurgia: formData.historicoCirurgia,
+      historicoOdontologico: formData.historicoOdontologico,
+      sangramentoPosProcedimento: formData.sangramentoPosProcedimento,
+      respiracao: formData.respiracao,
+      peso: parseFloat(formData.peso) || 0,
+  
+      // Procedimento
+      procedimento: formData.procedimento,
+      denteFace: formData.denteFace,
+      valor: valorNumerico,
+      modalidadePagamento: formData.modalidadePagamento,
+      profissional: formData.profissional,
+  
+      // Campos não enviados
+      confirmPassword: undefined
     };
-
+  
     try {
       const endpoint = editandoId
         ? `/api/users/${editandoId}`
         : "/api/register/user";
       const method = editandoId ? "put" : "post";
-
+  
+      console.log("Enviando dados:", dadosParaEnvio); // Para debug
+  
       const response = await api[method](endpoint, dadosParaEnvio);
-
+  
       if (response.data && response.data.errors) {
         setFieldErrors(response.data.errors);
         setError(response.data.message || "Erro de validação");
         return;
       }
-
+  
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
     } catch (error) {
+      console.error("Erro completo:", error); // Log mais detalhado
       if (error.response && error.response.data) {
         const { data } = error.response;
         if (data.errors) {
