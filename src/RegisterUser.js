@@ -264,7 +264,7 @@ const RegisterUser = () => {
       telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
       endereco: formData.endereco,
       password: formData.password,
-      confirmPassword: undefined,
+      confirmPassword: formData.confirmPassword,
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
