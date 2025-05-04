@@ -1035,17 +1035,19 @@ const RegisterUser = () => {
                         <div className="actions">
                           <button
                             onClick={() => handleEdit(usuario)}
-                            className="btn-edit"
+                            className="btn-action btn-edit"
                             aria-label="Editar usuário"
                           >
                             <i className="bi bi-pencil"></i>
+                            <span className="btn-text">Editar</span>
                           </button>
                           <button
                             onClick={() => handleDelete(usuario._id)}
-                            className="btn-delete"
+                            className="btn-action btn-delete"
                             aria-label="Excluir usuário"
                           >
                             <i className="bi bi-trash"></i>
+                            <span className="btn-text">Excluir</span>
                           </button>
                         </div>
                       </td>
