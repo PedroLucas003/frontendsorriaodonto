@@ -146,12 +146,12 @@ const RegisterUser = () => {
     if (cleanedValue.length <= 9) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6)}`;
     return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6, 9)}-${cleanedValue.slice(9, 11)}`;
   };
-
+  
   const formatFone = (value) => {
     const cleanedValue = value.replace(/\D/g, "");
     if (cleanedValue.length <= 2) return cleanedValue;
     if (cleanedValue.length <= 7) return `(${cleanedValue.slice(0, 2)}) ${cleanedValue.slice(2)}`;
-    return `(${cleanedValue.slice(0, 2)}) ${cleanedValue.slice(2, 7)}-${cleanedValue.slice(7)}`;
+    return `(${cleanedValue.slice(0, 2)}) ${cleanedValue.slice(2, 7)}-${cleanedValue.slice(7, 11)}`;
   };
 
   const handleProcedimentoChange = (e) => {
@@ -260,11 +260,11 @@ const RegisterUser = () => {
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto,
       email: formData.email.toLowerCase(),
-      cpf: formData.cpf.replace(/\D/g, ''), // APENAS NÚMEROS
-      telefone: formData.telefone.replace(/\D/g, ''), // APENAS NÚMEROS
+      cpf: formatCPF(formData.cpf.replace(/\D/g, '')), // Formata o CPF
+      telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
       endereco: formData.endereco,
       password: formData.password,
-      confirmPassword: formData.confirmPassword,
+      confirmPassword: undefined,
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
