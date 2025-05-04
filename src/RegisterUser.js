@@ -59,6 +59,7 @@ const RegisterUser = () => {
     procedimento: "",
     denteFace: "",
     valor: "",
+    valorNumerico: 0,
     modalidadePagamento: "",
     profissional: "",
     procedimentos: []
@@ -200,16 +201,24 @@ const RegisterUser = () => {
     } else if (name === "telefone") {
       formattedValue = formatFone(value);
     } else if (name === "valor") {
-      const rawValue = value.replace(/[^\d,]/g, '');
-      const numericValue = rawValue ? parseInt(rawValue) / 100 : 0;
+      // Remove todos os caracteres não numéricos
+      const rawValue = value.replace(/[^\d]/g, '');
+
+      // Converte para número (considerando centavos)
+      const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+
+      // Formata para exibição
       formattedValue = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
+
       setFormData(prev => ({
         ...prev,
-        [name]: numericValue,
-        valorFormatado: formattedValue
+        [name]: numericValue, // Armazena o valor numérico
+        valorFormatado: formattedValue // Armazena o valor formatado para exibição
       }));
       return;
     }
@@ -223,8 +232,16 @@ const RegisterUser = () => {
     const errors = {};
     let isValid = true;
 
-    if (formData.password && formData.password !== formData.confirmPassword) {
+    // Verifica se as senhas coincidem apenas se ambas estiverem preenchidas
+    if (formData.password && formData.confirmPassword &&
+      formData.password !== formData.confirmPassword) {
       errors.confirmPassword = "As senhas não coincidem!";
+      isValid = false;
+    }
+
+    // Verifica se a senha tem pelo menos 6 caracteres
+    if (formData.password && formData.password.length < 6) {
+      errors.password = "A senha deve ter pelo menos 6 caracteres";
       isValid = false;
     }
 
@@ -234,19 +251,20 @@ const RegisterUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!validateForm()) {
       return;
     }
-  
+
     // Formatando os campos corretamente antes de enviar
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto,
-      email: formData.email.toLowerCase(), // Garante minúsculas
-      cpf: formatCPF(formData.cpf.replace(/\D/g, '')), // Formata CPF
-      telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata telefone
+      email: formData.email.toLowerCase(),
+      cpf: formData.cpf.replace(/\D/g, ''), // APENAS NÚMEROS
+      telefone: formData.telefone.replace(/\D/g, ''), // APENAS NÚMEROS
       endereco: formData.endereco,
       password: formData.password,
+      confirmPassword: formData.confirmPassword,
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
@@ -264,47 +282,49 @@ const RegisterUser = () => {
       historicoOdontologico: formData.historicoOdontologico,
       sangramentoPosProcedimento: formData.sangramentoPosProcedimento,
       respiracao: formData.respiracao,
-      peso: parseFloat(formData.peso) || 0,
+      peso: Number(formData.peso) || 0, // Garante número com fallback para 0
       procedimento: formData.procedimento,
       denteFace: formData.denteFace,
-      valor: convertValueToFloat(formData.valor),
+      valor: Number(formData.valor) || 0, // Usa o valor numérico já convertido
       modalidadePagamento: formData.modalidadePagamento,
       profissional: formData.profissional
     };
-  
+
     // Validação adicional do e-mail
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dadosParaEnvio.email)) {
-      setFieldErrors({...fieldErrors, email: "E-mail inválido"});
+      setFieldErrors({ ...fieldErrors, email: "E-mail inválido" });
       return;
     }
-  
+
     try {
       const endpoint = editandoId
         ? `/api/users/${editandoId}`
         : "/api/register/user";
       const method = editandoId ? "put" : "post";
-  
+
       console.log("Dados enviados:", dadosParaEnvio); // Para debug
-  
+
       const response = await api[method](endpoint, dadosParaEnvio);
-  
+
       if (response.data && response.data.errors) {
         setFieldErrors(response.data.errors);
         setError(response.data.message || "Erro de validação");
         return;
       }
-  
+
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
     } catch (error) {
       console.error("Erro completo:", error.response?.data || error.message);
-      
+
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
         setError("Corrija os erros no formulário");
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
       } else {
-        setError(error.response?.data?.message || "Erro ao conectar com o servidor");
+        setError("Erro ao conectar com o servidor");
       }
     }
   };
@@ -779,15 +799,37 @@ const RegisterUser = () => {
                 type="text"
                 id="valor"
                 name="valor"
-                value={formatValueForDisplay(formData.valor)}
+                value={formData.valorFormatado || ''}
                 onChange={(e) => {
-                  const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                  const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+                  // Remove tudo exceto números
+                  const rawValue = e.target.value.replace(/\D/g, '');
+
+                  // Converte para valor decimal (divide por 100 para centavos)
+                  const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+
+                  // Formata para exibição
+                  const formattedValue = numericValue.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  });
 
                   setFormData(prev => ({
                     ...prev,
-                    valor: numericValue
+                    valor: numericValue, // Armazena como número
+                    valorFormatado: formattedValue // Armazena versão formatada
                   }));
+                }}
+                onBlur={() => {
+                  // Garante formatação correta ao sair do campo
+                  if (!formData.valorFormatado) {
+                    setFormData(prev => ({
+                      ...prev,
+                      valor: 0,
+                      valorFormatado: 'R$ 0,00'
+                    }));
+                  }
                 }}
                 placeholder="R$ 0,00"
               />
