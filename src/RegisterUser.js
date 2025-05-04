@@ -4,6 +4,37 @@ import "./RegisterUser.css";
 
 // Funções auxiliares - ATUALIZADAS
 
+function formatDateInput(value) {
+  // Remove tudo que não é dígito
+  let cleanedValue = value.replace(/\D/g, '');
+
+  // Limita o dia para 0-31
+  if (cleanedValue.length > 2) {
+    const day = parseInt(cleanedValue.substring(0, 2), 10);
+    if (day > 31) {
+      cleanedValue = '31' + cleanedValue.substring(2);
+    }
+  }
+
+  // Limita o mês para 0-12
+  if (cleanedValue.length > 4) {
+    const month = parseInt(cleanedValue.substring(2, 4), 10);
+    if (month > 12) {
+      cleanedValue = cleanedValue.substring(0, 2) + '12' + cleanedValue.substring(4);
+    }
+  }
+
+  // Aplica a máscara: DD/MM/AAAA
+  if (cleanedValue.length > 2) {
+    cleanedValue = cleanedValue.substring(0, 2) + '/' + cleanedValue.substring(2);
+  }
+  if (cleanedValue.length > 5) {
+    cleanedValue = cleanedValue.substring(0, 5) + '/' + cleanedValue.substring(5, 9);
+  }
+
+  return cleanedValue;
+}
+
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
   try {
@@ -165,6 +196,24 @@ const RegisterUser = () => {
 
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
+    if (name === "dataNascimento") {
+      // Verifica o formato básico
+      if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+        errors.dataNascimento = "Formato inválido (DD/MM/AAAA)";
+      } else if (value && value.length === 10) {
+        // Validação completa da data
+        const [day, month, year] = value.split('/');
+        const date = new Date(`${year}-${month}-${day}`);
+
+        if (isNaN(date.getTime())) {
+          errors.dataNascimento = "Data inválida";
+        } else if (date > new Date()) {
+          errors.dataNascimento = "Data deve ser no passado";
+        } else {
+          delete errors.dataNascimento;
+        }
+      }
+    }
 
     if (name === "peso") {
       if (value && !/^\d*\.?\d*$/.test(value)) {
@@ -179,6 +228,30 @@ const RegisterUser = () => {
         errors.email = "Por favor, insira um e-mail válido";
       } else {
         delete errors.email;
+      }
+    }
+
+    if (name === "dataNascimento") {
+      // Verifica o formato básico
+      if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+        errors.dataNascimento = "Formato inválido (DD/MM/AAAA)";
+      } else if (value) {
+        // Converte para Date e verifica se é válida
+        const parts = value.split('/');
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        const date = new Date(year, month, day);
+
+        if (
+          date.getFullYear() !== year ||
+          date.getMonth() !== month ||
+          date.getDate() !== day
+        ) {
+          errors.dataNascimento = "Data inválida";
+        } else if (date > new Date()) {
+          errors.dataNascimento = "Data deve ser no passado";
+        }
       }
     }
 
@@ -199,28 +272,32 @@ const RegisterUser = () => {
     }
     else if (name === "cpf") {
       formattedValue = formatCPF(value);
-    } else if (name === "telefone") {
+    }
+    else if (name === "telefone") {
       formattedValue = formatFone(value);
-    } else if (name === "valor") {
-      // Remove todos os caracteres não numéricos
-      const rawValue = value.replace(/[^\d]/g, '');
+    }
+    else if (name === "dataNascimento") {
+      // Aplica a máscara de data e validação em tempo real
+      formattedValue = formatDateInput(value);
 
-      // Converte para número (considerando centavos)
-      const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+      // Validação imediata quando o campo estiver completo
+      if (formattedValue.length === 10) {
+        const [day, month, year] = formattedValue.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
 
-      // Formata para exibição
-      formattedValue = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-
-      setFormData(prev => ({
-        ...prev,
-        [name]: numericValue, // Armazena o valor numérico
-        valorFormatado: formattedValue // Armazena o valor formatado para exibição
-      }));
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, dataNascimento: "Data inválida" }));
+        } else if (dateObj > new Date()) {
+          setFieldErrors(prev => ({ ...prev, dataNascimento: "Data deve ser no passado" }));
+        } else {
+          const errors = { ...fieldErrors };
+          delete errors.dataNascimento;
+          setFieldErrors(errors);
+        }
+      }
+    }
+    else if (name === "valor") {
+      // ... (código existente para o campo valor)
       return;
     }
 
@@ -258,6 +335,21 @@ const RegisterUser = () => {
       return;
     }
 
+    // Converter data para formato ISO (YYYY-MM-DD) com validação robusta
+    let dataNascimentoISO = null;
+    if (formData.dataNascimento && formData.dataNascimento.length === 10) {
+      const [day, month, year] = formData.dataNascimento.split('/');
+
+      // Validação adicional da data
+      const dateObj = new Date(`${year}-${month}-${day}`);
+      if (isNaN(dateObj.getTime())) {
+        setFieldErrors({ ...fieldErrors, dataNascimento: "Data inválida" });
+        return;
+      }
+
+      dataNascimentoISO = dateObj.toISOString();
+    }
+
     // Formatando os campos corretamente antes de enviar
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto,
@@ -265,7 +357,7 @@ const RegisterUser = () => {
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')), // Formata o CPF
       telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
       endereco: formData.endereco,
-      dataNascimento: formData.dataNascimento,
+      dataNascimento: dataNascimentoISO,
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
@@ -382,6 +474,24 @@ const RegisterUser = () => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
 
+    // Formatação segura da data de nascimento com tratamento de erros
+    let dataNascimentoFormatada = '';
+    if (usuario.dataNascimento) {
+      try {
+        const date = new Date(usuario.dataNascimento);
+        if (!isNaN(date.getTime())) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          dataNascimentoFormatada = `${day}/${month}/${year}`;
+        } else {
+          console.warn("Data de nascimento inválida no banco de dados");
+        }
+      } catch (e) {
+        console.error("Erro ao formatar data de nascimento:", e);
+      }
+    }
+
     const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
       ? usuario.historicoProcedimentos
       : [];
@@ -407,7 +517,7 @@ const RegisterUser = () => {
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
-      dataNascimento: usuario.dataNascimento || "",
+      dataNascimento: dataNascimentoFormatada,
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -558,7 +668,7 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-            {['nomeCompleto', 'email', 'cpf', 'telefone', 'dataNascimento', 'password', 'confirmPassword'].map((key) => (
+            {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
               <div key={key} className="form-group">
                 <label htmlFor={key}>{labels[key]}</label>
                 <input
@@ -568,10 +678,36 @@ const RegisterUser = () => {
                   value={formData[key]}
                   onChange={handleChange}
                   className={fieldErrors[key] ? 'error-field' : ''}
+                  disabled={modoVisualizacao && !key.includes("password")}
                 />
                 {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
               </div>
             ))}
+
+            {/* Campo dataNascimento separado com tratamento especial */}
+            <div className="form-group">
+              <label htmlFor="dataNascimento">{labels.dataNascimento}</label>
+              <input
+                type="text"
+                id="dataNascimento"
+                name="dataNascimento"
+                value={formData.dataNascimento}
+                onChange={handleChange}
+                onKeyDown={(e) => {
+                  // Permite apenas números e teclas de controle
+                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                className={fieldErrors.dataNascimento ? 'error-field' : ''}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+                disabled={modoVisualizacao}
+              />
+              {fieldErrors.dataNascimento && (
+                <span className="field-error">{fieldErrors.dataNascimento}</span>
+              )}
+            </div>
 
             <div className="form-group">
               <label htmlFor="endereco">{labels.endereco}</label>
@@ -582,6 +718,7 @@ const RegisterUser = () => {
                 onChange={handleChange}
                 className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
                 rows={3}
+                disabled={modoVisualizacao}
               />
               {fieldErrors.endereco && <span className="field-error">{fieldErrors.endereco}</span>}
             </div>
