@@ -1006,11 +1006,11 @@ const RegisterUser = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>CPF</th>
-                  <th>Telefone</th>
-                  <th>Imagem</th>
-                  <th>Ações</th>
+                  <th><i className="bi bi-person"></i> Nome</th>
+                  <th><i className="bi bi-credit-card"></i> CPF</th>
+                  <th><i className="bi bi-telephone"></i> Telefone</th>
+                  <th><i className="bi bi-image"></i> Imagem</th>
+                  <th><i className="bi bi-gear"></i> Ações</th>
                 </tr>
               </thead>
               <tbody>

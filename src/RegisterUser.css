@@ -54,27 +54,14 @@ h2 {
   border-color: #444;
 }
 
-.dark-mode table {
-  background-color: #1e1e1e;
-  color: #fff;
-}
-
-.dark-mode th {
-  background-color: #0d47a1;
-}
-
-.dark-mode td {
-  border-color: #333;
-}
-
-/* ===== BOTÕES ===== */
+/* ===== BOTÕES PRINCIPAIS ===== */
 .btn {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   background: #ffffff;
   color: black;
   border-radius: 15px;
@@ -83,7 +70,7 @@ h2 {
   height: 40px;
   overflow: hidden;
   cursor: pointer;
-  transition: background-color 0.8s, color 0.8s;
+  transition: all 0.3s ease;
   margin: 10px auto;
 }
 
@@ -97,16 +84,16 @@ h2 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  transition: all 0.8s;
+  transition: all 0.3s ease;
 }
 
 .btn i {
   position: absolute;
-  top: 200%;
+  top: 150%;
   left: 50%;
   transform: translate(-50%, -50%);
-  transition: all 0.8s;
-  font-size: 20px;
+  transition: all 0.3s ease;
+  font-size: 16px;
 }
 
 .btn:hover i {
@@ -114,63 +101,76 @@ h2 {
 }
 
 .btn:hover .btnText {
-  top: -200%;
+  top: -50%;
 }
 
-/* Botões de Ação na Tabela */
+/* ===== BOTÕES DE AÇÃO NA TABELA ===== */
 .actions {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
 
-.btn-edit, 
-.btn-delete, 
-.btn-view {
+.btn-table {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  background: #ffffff;
-  color: black;
+  font-size: 14px;
   border-radius: 15px;
   border: 1px solid rgba(0, 0, 0, 0.7);
-  width: 80px;
-  height: 30px;
+  width: 100px;
+  height: 36px;
   overflow: hidden;
   cursor: pointer;
-  transition: background-color 0.8s, color 0.8s;
+  transition: all 0.3s ease;
 }
 
-.btn-edit:hover, 
-.btn-delete:hover, 
-.btn-view:hover {
+.btn-edit {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-view {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-table:hover {
   background: #000000;
   color: #ffffff;
+  transform: translateY(-2px);
 }
 
-.btn-edit i, 
-.btn-delete i, 
-.btn-view i {
+.btn-table .btn-text {
   position: absolute;
-  top: 200%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  transition: all 0.8s;
-  font-size: 16px;
+  transition: all 0.3s ease;
 }
 
-.btn-edit:hover i, 
-.btn-delete:hover i, 
-.btn-view:hover i {
+.btn-table i {
+  position: absolute;
+  top: 150%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.btn-table:hover i {
   top: 50%;
 }
 
-.btn-edit:hover .btnText, 
-.btn-delete:hover .btnText, 
-.btn-view:hover .btnText {
-  top: -200%;
+.btn-table:hover .btn-text {
+  top: -50%;
 }
 
 /* Botão de Tema */
@@ -294,33 +294,76 @@ textarea {
   font-family: inherit;
 }
 
-/* ===== TABELA ===== */
+/* ===== TABELA - DESIGN ATUALIZADO ===== */
 .table-container {
   margin-top: 20px;
   overflow-x: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   min-width: 600px;
-}
-
-th, td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 th {
-  background-color: #007bff;
+  background-color: #4a6cf7;
   color: white;
+  padding: 15px;
+  text-align: left;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
 }
 
+td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+tr:not(:last-child) td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+tr:hover td {
+  background-color: #f8f9fa;
+}
+
+/* Linhas zebradas para melhor legibilidade */
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Célula de "Nenhum dado" */
 .no-data {
   text-align: center;
   padding: 20px;
   color: #666;
+  font-style: italic;
+}
+
+/* Borda arredondada na primeira e última célula */
+tr:first-child th:first-child {
+  border-top-left-radius: 10px;
+}
+
+tr:first-child th:last-child {
+  border-top-right-radius: 10px;
+}
+
+tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+
+tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
 }
 
 /* ===== PROCEDIMENTOS ===== */
@@ -532,7 +575,33 @@ th {
   cursor: pointer;
 }
 
-/* ===== DARK MODE ESPECÍFICO ===== */
+/* ===== DARK MODE ===== */
+.dark-mode table {
+  background-color: #2d3748;
+}
+
+.dark-mode th {
+  background-color: #4a5568;
+  color: #f7fafc;
+}
+
+.dark-mode td {
+  border-bottom-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-mode tr:nth-child(even) {
+  background-color: #2d3748;
+}
+
+.dark-mode tr:hover td {
+  background-color: #4a5568;
+}
+
+.dark-mode .no-data {
+  color: #a0aec0;
+}
+
 .dark-mode .procedimento-item {
   background-color: #2d2d2d;
   border-left-color: #4a6cf7;
@@ -586,9 +655,7 @@ th {
   background-color: #000;
 }
 
-.dark-mode .btn-edit,
-.dark-mode .btn-delete,
-.dark-mode .btn-view {
+.dark-mode .btn-table {
   background-color: #333;
   color: #fff;
   border-color: #555;
@@ -630,6 +697,27 @@ th {
     text-align: right;
     margin-bottom: 15px;
   }
+
+  /* Ajuste para botões em mobile */
+  .btn-table {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+  
+  .btn-table .btn-text {
+    display: none;
+  }
+  
+  .btn-table i {
+    position: static;
+    transform: none;
+  }
+  
+  .btn-table:hover i {
+    position: static;
+    transform: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -638,10 +726,9 @@ th {
     align-items: center;
   }
   
-  .btn-edit, 
-  .btn-delete, 
-  .btn-view {
+  .btn-table {
     width: 100%;
+    border-radius: 6px;
   }
 }
 
@@ -666,103 +753,4 @@ th {
 
 .dark-mode .procedimentos-list::-webkit-scrollbar-thumb {
   background: #555;
-}
-/* Estilos base dos botões (igual ao botão de cadastrar) */
-.btn {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  background: #ffffff;
-  color: black;
-  border-radius: 15px;
-  border: 1px solid rgba(0, 0, 0, 0.7);
-  width: 120px;
-  height: 40px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 0 5px;
-}
-
-/* Efeito hover igual para todos os botões */
-.btn:hover {
-  background: #000000;
-  color: #ffffff;
-}
-
-/* Estilo específico para botão de editar */
-.btn-edit {
-  background-color: #ffc107;
-  color: #212529;
-  border: 1px solid rgba(0, 0, 0, 0.7);
-}
-
-/* Estilo específico para botão de excluir */
-.btn-delete {
-  background-color: #dc3545;
-  color: white;
-  border: 1px solid rgba(0, 0, 0, 0.7);
-}
-
-/* Texto do botão */
-.btnText {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  transition: all 0.3s ease;
-}
-
-/* Ícone do botão */
-.btn i {
-  position: absolute;
-  top: 150%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  transition: all 0.3s ease;
-  font-size: 16px;
-}
-
-/* Efeito hover - move texto para cima e ícone para o centro */
-.btn:hover i {
-  top: 50%;
-}
-
-.btn:hover .btnText {
-  top: -50%;
-}
-
-/* Container de ações na tabela */
-.actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-/* Responsividade - ajusta tamanho dos botões em telas menores */
-@media (max-width: 768px) {
-  .btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  }
-  
-  .btn .btnText {
-    display: none;
-  }
-  
-  .btn i {
-    position: static;
-    transform: none;
-    top: auto;
-    left: auto;
-  }
-  
-  .btn:hover i {
-    position: static;
-    transform: none;
-  }
 }
