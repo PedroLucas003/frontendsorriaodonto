@@ -198,63 +198,104 @@ const RegisterUser = () => {
 
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
-    if (name === "dataNascimento") {
-      // Verifica o formato básico
-      if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-        errors.dataNascimento = "Formato inválido (DD/MM/AAAA)";
-      } else if (value && value.length === 10) {
-        // Validação completa da data
-        const [day, month, year] = value.split('/');
-        const date = new Date(`${year}-${month}-${day}`);
 
-        if (isNaN(date.getTime())) {
-          errors.dataNascimento = "Data inválida";
-        } else if (date > new Date()) {
-          errors.dataNascimento = "Data deve ser no passado";
+    // Função auxiliar para validar datas
+    const validateDate = (dateValue, fieldName) => {
+      if (!dateValue) {
+        delete errors[fieldName];
+        return true;
+      }
+
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+        errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
+        return false;
+      }
+
+      if (dateValue.length !== 10) {
+        return true;
+      }
+
+      const [day, month, year] = dateValue.split('/');
+      const dayNum = parseInt(day, 10);
+      const monthNum = parseInt(month, 10) - 1;
+      const yearNum = parseInt(year, 10);
+
+      if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
+        errors[fieldName] = "Data contém valores inválidos";
+        return false;
+      }
+
+      const dateObj = new Date(yearNum, monthNum, dayNum);
+      if (
+        dateObj.getFullYear() !== yearNum ||
+        dateObj.getMonth() !== monthNum ||
+        dateObj.getDate() !== dayNum
+      ) {
+        errors[fieldName] = "Data inválida";
+        return false;
+      }
+
+      if (fieldName === "dataNascimento" && dateObj > new Date()) {
+        errors[fieldName] = "Data deve ser no passado";
+        return false;
+      }
+
+      delete errors[fieldName];
+      return true;
+    };
+
+    // Validações específicas por campo
+    switch (name) {
+      case "dataNascimento":
+      case "dataProcedimento":
+        validateDate(value, name);
+        break;
+
+      case "peso":
+        if (value && !/^\d*\.?\d*$/.test(value)) {
+          errors.peso = "O peso deve conter apenas números (ex: 70.5)";
         } else {
-          delete errors.dataNascimento;
+          delete errors.peso;
         }
-      }
-    }
+        break;
 
-    if (name === "peso") {
-      if (value && !/^\d*\.?\d*$/.test(value)) {
-        errors.peso = "O peso deve conter apenas números (ex: 70.5)";
-      } else {
-        delete errors.peso;
-      }
-    }
-
-    if (name === "email") {
-      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        errors.email = "Por favor, insira um e-mail válido";
-      } else {
-        delete errors.email;
-      }
-    }
-
-    if (name === "dataNascimento") {
-      // Verifica o formato básico
-      if (value && !/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-        errors.dataNascimento = "Formato inválido (DD/MM/AAAA)";
-      } else if (value) {
-        // Converte para Date e verifica se é válida
-        const parts = value.split('/');
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
-        const date = new Date(year, month, day);
-
-        if (
-          date.getFullYear() !== year ||
-          date.getMonth() !== month ||
-          date.getDate() !== day
-        ) {
-          errors.dataNascimento = "Data inválida";
-        } else if (date > new Date()) {
-          errors.dataNascimento = "Data deve ser no passado";
+      case "email":
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = "Por favor, insira um e-mail válido";
+        } else {
+          delete errors.email;
         }
-      }
+        break;
+
+      case "cpf":
+        if (value && value.replace(/\D/g, '').length !== 11) {
+          errors.cpf = "CPF deve ter 11 dígitos";
+        } else {
+          delete errors.cpf;
+        }
+        break;
+
+      case "telefone":
+        if (value && value.replace(/\D/g, '').length < 10) {
+          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
+        } else {
+          delete errors.telefone;
+        }
+        break;
+
+      case "valor":
+        const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+        if (value && isNaN(numericValue)) {
+          errors.valor = "Valor monetário inválido";
+        } else {
+          delete errors.valor;
+        }
+        break;
+
+      default:
+        if (errors[name]) {
+          delete errors[name];
+        }
     }
 
     setFieldErrors(errors);
@@ -333,66 +374,82 @@ const RegisterUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validação inicial do formulário
     if (!validateForm()) {
       return;
     }
 
-    // Converter data para formato ISO (YYYY-MM-DD) com validação robusta
-    let dataNascimentoISO = null;
-    if (formData.dataNascimento && formData.dataNascimento.length === 10) {
-      const [day, month, year] = formData.dataNascimento.split('/');
-      const dateObj = new Date(`${year}-${month}-${day}`);
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataNascimento: "Data inválida" });
-        return;
-      }
-      dataNascimentoISO = dateObj.toISOString();
+    // Verificar se dataProcedimento está preenchida
+    if (!formData.dataProcedimento || formData.dataProcedimento.length < 10) {
+      setFieldErrors({ ...fieldErrors, dataProcedimento: "Data do procedimento é obrigatória" });
+      return;
     }
 
-    // Converter dataProcedimento para formato ISO
-    let dataProcedimentoISO = null;
-    if (formData.dataProcedimento && formData.dataProcedimento.length === 10) {
-      const [day, month, year] = formData.dataProcedimento.split('/');
-      const dateObj = new Date(`${year}-${month}-${day}`);
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
-        return;
+    // Converter datas para formato ISO com tratamento de erros
+    const convertDateToISO = (dateString, fieldName) => {
+      if (!dateString || dateString.length !== 10) {
+        setFieldErrors({ ...fieldErrors, [fieldName]: `Data ${fieldName} inválida ou incompleta` });
+        return null;
       }
-      dataProcedimentoISO = dateObj.toISOString();
+
+      try {
+        const [day, month, year] = dateString.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors({ ...fieldErrors, [fieldName]: `Data ${fieldName} inválida` });
+          return null;
+        }
+
+        return dateObj.toISOString();
+      } catch (error) {
+        console.error(`Erro ao converter ${fieldName}:`, error);
+        setFieldErrors({ ...fieldErrors, [fieldName]: `Erro ao processar data ${fieldName}` });
+        return null;
+      }
+    };
+
+    // Converter datas
+    const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
+    const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
+
+    // Se alguma conversão falhou, retornar
+    if (!dataNascimentoISO || !dataProcedimentoISO) {
+      return;
     }
 
-    // Formatando os campos corretamente antes de enviar
+    // Preparar dados para envio
     const dadosParaEnvio = {
-      nomeCompleto: formData.nomeCompleto,
-      email: formData.email.toLowerCase(),
-      cpf: formatCPF(formData.cpf.replace(/\D/g, '')), // Formata o CPF
-      telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
-      endereco: formData.endereco,
+      nomeCompleto: formData.nomeCompleto.trim(),
+      email: formData.email.toLowerCase().trim(),
+      cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+      telefone: formatFone(formData.telefone.replace(/\D/g, '')),
+      endereco: formData.endereco.trim(),
       dataNascimento: dataNascimentoISO,
-      dataProcedimento: dataProcedimentoISO, // Adicionado aqui
-      detalhesDoencas: formData.detalhesDoencas,
-      quaisRemedios: formData.quaisRemedios,
-      quaisMedicamentos: formData.quaisMedicamentos,
-      quaisAnestesias: formData.quaisAnestesias,
+      dataProcedimento: dataProcedimentoISO,
+      detalhesDoencas: formData.detalhesDoencas.trim(),
+      quaisRemedios: formData.quaisRemedios.trim(),
+      quaisMedicamentos: formData.quaisMedicamentos.trim(),
+      quaisAnestesias: formData.quaisAnestesias.trim(),
       habitos: {
         frequenciaFumo: formData.frequenciaFumo,
         frequenciaAlcool: formData.frequenciaAlcool
       },
       exames: {
-        exameSangue: formData.exameSangue,
-        coagulacao: formData.coagulacao,
-        cicatrizacao: formData.cicatrizacao
+        exameSangue: formData.exameSangue.trim(),
+        coagulacao: formData.coagulacao.trim(),
+        cicatrizacao: formData.cicatrizacao.trim()
       },
-      historicoCirurgia: formData.historicoCirurgia,
-      historicoOdontologico: formData.historicoOdontologico,
-      sangramentoPosProcedimento: formData.sangramentoPosProcedimento,
-      respiracao: formData.respiracao,
-      peso: Number(formData.peso) || 0, // Garante número com fallback para 0
-      procedimento: formData.procedimento,
-      denteFace: formData.denteFace,
-      valor: Number(formData.valor) || 0, // Usa o valor numérico já convertido
+      historicoCirurgia: formData.historicoCirurgia.trim(),
+      historicoOdontologico: formData.historicoOdontologico.trim(),
+      sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+      respiracao: formData.respiracao.trim(),
+      peso: Number(formData.peso) || 0,
+      procedimento: formData.procedimento.trim(),
+      denteFace: formData.denteFace.trim(),
+      valor: Number(formData.valor) || 0,
       modalidadePagamento: formData.modalidadePagamento,
-      profissional: formData.profissional
+      profissional: formData.profissional.trim()
     };
 
     // Validação adicional do e-mail
@@ -401,20 +458,27 @@ const RegisterUser = () => {
       return;
     }
 
-    if (!editandoId && formData.password) {
+    // Adicionar senha apenas para novo cadastro
+    if (!editandoId) {
+      if (!formData.password || formData.password.length < 6) {
+        setFieldErrors({ ...fieldErrors, password: "A senha deve ter pelo menos 6 caracteres" });
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setFieldErrors({ ...fieldErrors, confirmPassword: "As senhas não coincidem" });
+        return;
+      }
       dadosParaEnvio.password = formData.password;
       dadosParaEnvio.confirmPassword = formData.confirmPassword;
     }
 
     try {
-      const endpoint = editandoId
-        ? `/api/users/${editandoId}`
-        : "/api/register/user";
+      const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
       const method = editandoId ? "put" : "post";
 
       const response = await api[method](endpoint, dadosParaEnvio);
 
-      if (response.data && response.data.errors) {
+      if (response.data?.errors) {
         setFieldErrors(response.data.errors);
         setError(response.data.message || "Erro de validação");
         return;
@@ -424,15 +488,14 @@ const RegisterUser = () => {
       resetForm();
       fetchUsuarios();
     } catch (error) {
-      console.error("Erro completo:", error.response?.data || error.message);
+      console.error("Erro ao enviar formulário:", error);
 
+      // Tratamento de erros mais robusto
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
-        setError("Corrija os erros no formulário");
-      } else if (error.response?.data?.message) {
-        setError(error.response.data.message);
+        setError(error.response.data.message || "Corrija os erros no formulário");
       } else {
-        setError("Erro ao conectar com o servidor");
+        setError(error.message || "Erro ao conectar com o servidor");
       }
     }
   };
@@ -995,7 +1058,18 @@ const RegisterUser = () => {
                 onChange={handleChange}
                 placeholder="DD/MM/AAAA"
                 maxLength={10}
+                className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+                disabled={modoVisualizacao}
+                onKeyDown={(e) => {
+                  // Permite apenas números e teclas de controle
+                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
               />
+              {fieldErrors.dataProcedimento && (
+                <span className="field-error">{fieldErrors.dataProcedimento}</span>
+              )}
             </div>
 
             <div className="form-group">
