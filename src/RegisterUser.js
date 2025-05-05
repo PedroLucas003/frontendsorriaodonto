@@ -476,123 +476,61 @@ const RegisterUser = () => {
   
     // Função auxiliar para conversão de datas com logs
     const convertDateToISO = (dateString, fieldName) => {
-      console.log(`\n🔁 Convertendo ${fieldName}: "${dateString}"`);
+      console.log(`🔁 Convertendo ${fieldName}: "${dateString}"`);
       
       if (!dateString || dateString.length !== 10) {
-        const errorMsg = `${fieldName} inválida ou incompleta (${dateString})`;
+        const errorMsg = `${fieldName} inválida ou incompleta`;
         console.error(`❌ ${errorMsg}`);
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: errorMsg
-        }));
+        setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
         return null;
       }
     
       try {
         const [day, month, year] = dateString.split('/');
-        console.log(`📅 Partes da data ${fieldName}:`, { 
-          dia: day, 
-          mês: month, 
-          ano: year 
-        });
-        
-        // Validação dos componentes da data
         const dayNum = parseInt(day, 10);
         const monthNum = parseInt(month, 10);
         const yearNum = parseInt(year, 10);
         
+        // Validações básicas
         if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
           const errorMsg = `${fieldName} contém valores inválidos`;
-          console.error(`❌ ${errorMsg}`, { 
-            dia: dayNum, 
-            mês: monthNum, 
-            ano: yearNum 
-          });
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: errorMsg
-          }));
-          return null;
-        }
-    
-        // Validação básica dos valores
-        if (monthNum < 1 || monthNum > 12) {
-          const errorMsg = `Mês inválido em ${fieldName}`;
           console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: errorMsg
-          }));
+          setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
           return null;
         }
     
-        if (dayNum < 1 || dayNum > 31) {
-          const errorMsg = `Dia inválido em ${fieldName}`;
-          console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: errorMsg
-          }));
-          return null;
+        // Cria o objeto Date (UTC para evitar problemas de fuso horário)
+        const dateObj = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+        console.log(`📅 Data interpretada (UTC):`, dateObj.toISOString());
+    
+        // Validação específica para dataProcedimento (DEVE SER FUTURO)
+        if (fieldName === "dataProcedimento") {
+          const hojeUTC = new Date();
+          hojeUTC.setHours(0, 0, 0, 0); // Ignora hora atual
+          
+          if (dateObj < hojeUTC) {
+            const errorMsg = "Data do procedimento deve ser futura";
+            console.error(`❌ ${errorMsg}`);
+            setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
+            return null;
+          }
         }
     
-        // Cria o objeto Date (mês é 0-indexed)
-        const dateObj = new Date(yearNum, monthNum - 1, dayNum);
-        console.log(`📅 Objeto Date criado:`, dateObj);
-    
-        // Verifica se a data é válida
-        if (
-          dateObj.getFullYear() !== yearNum ||
-          dateObj.getMonth() + 1 !== monthNum ||
-          dateObj.getDate() !== dayNum
-        ) {
-          const errorMsg = `${fieldName} inválida (data não existe)`;
-          console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: errorMsg
-          }));
-          return null;
-        }
-    
-        // Validações específicas por tipo de data
+        // Validação para dataNascimento (DEVE SER PASSADO)
         if (fieldName === "dataNascimento" && dateObj > new Date()) {
           const errorMsg = "Data de nascimento deve ser no passado";
           console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: errorMsg
-          }));
+          setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
           return null;
         }
     
-        if (fieldName === "dataProcedimento" && dateObj < new Date()) {
-          const errorMsg = "Data do procedimento não pode ser no passado";
-          console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: errorMsg
-          }));
-          return null;
-        }
+        console.log(`✅ ${fieldName} válida:`, dateObj.toISOString());
+        setFieldErrors(prev => ({ ...prev, [fieldName]: undefined }));
+        return dateObj.toISOString();
     
-        const isoDate = dateObj.toISOString();
-        console.log(`✅ Conversão bem-sucedida: ${isoDate}`);
-        
-        // Limpa qualquer erro anterior
-        setFieldErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors[fieldName];
-          return newErrors;
-        });
-    
-        return isoDate;
       } catch (error) {
         console.error(`❌ Erro ao converter ${fieldName}:`, error);
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: `Erro ao processar ${fieldName}`
-        }));
+        setFieldErrors(prev => ({ ...prev, [fieldName]: "Formato inválido" }));
         return null;
       }
     };
