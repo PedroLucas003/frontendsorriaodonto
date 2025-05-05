@@ -624,7 +624,8 @@ const RegisterUser = () => {
       valor: "",
       modalidadePagamento: "",
       profissional: "",
-      dataProcedimento: ""
+      dataProcedimento: "",
+      dataNovoProcedimento: ""
     });
   };
 
@@ -632,39 +633,29 @@ const RegisterUser = () => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
 
-    // Formatação segura da data de nascimento
-    let dataNascimentoFormatada = '';
-    if (usuario.dataNascimento) {
+    // Função auxiliar para formatar datas
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
       try {
-        const date = new Date(usuario.dataNascimento);
+        const date = new Date(dateString);
         if (!isNaN(date.getTime())) {
           const day = String(date.getDate()).padStart(2, '0');
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const year = date.getFullYear();
-          dataNascimentoFormatada = `${day}/${month}/${year}`;
+          return `${day}/${month}/${year}`;
         }
       } catch (e) {
-        console.error("Erro ao formatar data de nascimento:", e);
+        console.error("Erro ao formatar data:", e);
       }
-    }
+      return '';
+    };
 
-    // Formatação da data do procedimento principal
-    let dataProcedimentoFormatada = '';
-    if (usuario.dataProcedimento) {
-      try {
-        const date = new Date(usuario.dataProcedimento);
-        if (!isNaN(date.getTime())) {
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const year = date.getFullYear();
-          dataProcedimentoFormatada = `${day}/${month}/${year}`;
-        }
-      } catch (e) {
-        console.error("Erro ao formatar data do procedimento:", e);
-      }
-    }
+    // Formatação dos dados
+    const dataNascimentoFormatada = formatDate(usuario.dataNascimento);
+    const dataProcedimentoFormatada = formatDate(usuario.dataProcedimento);
+    const dataNovoProcedimentoFormatada = formatDate(usuario.dataNovoProcedimento);
 
-    // Formatação do valor monetário (NOVA CORREÇÃO)
+    // Formatação do valor monetário
     let valorFormatado = '';
     if (usuario.valor !== undefined && usuario.valor !== null) {
       const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
@@ -685,12 +676,13 @@ const RegisterUser = () => {
         procedimento: usuario.procedimento || "",
         denteFace: usuario.denteFace || "",
         valor: usuario.valor || 0,
-        valorFormatado: valorFormatado, // Adicionado o valor formatado
+        valorFormatado: valorFormatado,
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
-        dataProcedimento: usuario.dataProcedimento || "",
+        dataProcedimento: dataProcedimentoFormatada, // Mostra apenas para procedimento principal
+        dataNovoProcedimento: "", // Não mostra para procedimento principal
         isPrincipal: true,
-        createdAt: usuario.createdAt || new Date().toISOString()
+        createdAt: formatDate(usuario.createdAt)
       },
       ...historicoProcedimentos.map(p => {
         // Formata o valor para cada procedimento histórico
@@ -707,10 +699,11 @@ const RegisterUser = () => {
 
         return {
           ...p,
-          valorFormatado: valorProcFormatado, // Adicionado o valor formatado
-          dataProcedimento: p.dataProcedimento || p.createdAt,
+          valorFormatado: valorProcFormatado,
+          dataProcedimento: "", // Não mostra para procedimentos históricos
+          dataNovoProcedimento: formatDate(p.dataNovoProcedimento || p.createdAt), // Mostra apenas dataNovoProcedimento
           isPrincipal: false,
-          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+          createdAt: formatDate(p.createdAt)
         };
       })
     ];
@@ -721,8 +714,9 @@ const RegisterUser = () => {
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
       dataProcedimento: dataProcedimentoFormatada,
+      dataNovoProcedimento: dataNovoProcedimentoFormatada,
       valor: usuario.valor || 0,
-      valorFormatado: valorFormatado, // Adicionado o valor formatado
+      valorFormatado: valorFormatado,
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -732,7 +726,7 @@ const RegisterUser = () => {
       password: "",
       confirmPassword: ""
     });
-  };
+};
 
   const handleVoltar = () => {
     setEditandoId(null);
@@ -1299,7 +1293,13 @@ const RegisterUser = () => {
                       id="dataNovoProcedimento"
                       name="dataNovoProcedimento"
                       value={procedimentoData.dataNovoProcedimento}
-                      onChange={handleProcedimentoChange}
+                      onChange={(e) => {
+                        const formattedValue = formatDateInput(e.target.value);
+                        setProcedimentoData(prev => ({
+                          ...prev,
+                          dataNovoProcedimento: formattedValue
+                        }));
+                      }}
                       placeholder="DD/MM/AAAA"
                       maxLength={10}
                       onKeyDown={(e) => {
@@ -1443,8 +1443,11 @@ const RegisterUser = () => {
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
-                            <p><strong>Nova Data:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
+                            {procedimento.isPrincipal ? (
+                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                            ) : (
+                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
+                            )}
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
