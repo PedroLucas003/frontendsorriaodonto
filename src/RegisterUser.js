@@ -38,9 +38,14 @@ function formatDateInput(value) {
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
   try {
+    // Corrige o problema do fuso horário criando a data no UTC
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
-    return date.toLocaleDateString('pt-BR');
+    
+    // Ajusta para o dia correto considerando UTC
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    
+    return adjustedDate.toLocaleDateString('pt-BR');
   } catch (e) {
     console.error("Erro ao formatar data para exibição:", e);
     return 'Data inválida';
@@ -645,40 +650,32 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-
-    // Formatação segura da data de nascimento
-    let dataNascimentoFormatada = '';
-    if (usuario.dataNascimento) {
+  
+    // Função corrigida para formatar datas sem problemas de timezone
+    const formatDateWithoutTimezone = (dateString) => {
+      if (!dateString) return '';
       try {
-        const date = new Date(usuario.dataNascimento);
-        if (!isNaN(date.getTime())) {
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const year = date.getFullYear();
-          dataNascimentoFormatada = `${day}/${month}/${year}`;
-        }
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        
+        // Ajuste para evitar problemas de timezone
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        
+        return `${day}/${month}/${year}`;
       } catch (e) {
-        console.error("Erro ao formatar data de nascimento:", e);
+        console.error("Erro ao formatar data:", e);
+        return '';
       }
-    }
-
-    // Formatação da data do procedimento principal
-    let dataProcedimentoFormatada = '';
-    if (usuario.dataProcedimento) {
-      try {
-        const date = new Date(usuario.dataProcedimento);
-        if (!isNaN(date.getTime())) {
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const year = date.getFullYear();
-          dataProcedimentoFormatada = `${day}/${month}/${year}`;
-        }
-      } catch (e) {
-        console.error("Erro ao formatar data do procedimento:", e);
-      }
-    }
-
-    // Formatação do valor monetário (NOVA CORREÇÃO)
+    };
+  
+    // Formatação das datas usando a nova função
+    let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
+    let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
+    let dataNovoProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataNovoProcedimento);
+  
+    // Formatação do valor monetário
     let valorFormatado = '';
     if (usuario.valor !== undefined && usuario.valor !== null) {
       const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
@@ -689,25 +686,25 @@ const RegisterUser = () => {
         });
       }
     }
-
+  
     const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
       ? usuario.historicoProcedimentos
       : [];
-
+  
     const procedimentosCompletos = [
       {
         procedimento: usuario.procedimento || "",
         denteFace: usuario.denteFace || "",
         valor: usuario.valor || 0,
-        valorFormatado: valorFormatado, // Adicionado o valor formatado
+        valorFormatado: valorFormatado,
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
         dataProcedimento: usuario.dataProcedimento || "",
+        dataNovoProcedimento: usuario.dataNovoProcedimento || "",
         isPrincipal: true,
         createdAt: usuario.createdAt || new Date().toISOString()
       },
       ...historicoProcedimentos.map(p => {
-        // Formata o valor para cada procedimento histórico
         let valorProcFormatado = '';
         if (p.valor !== undefined && p.valor !== null) {
           const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
@@ -718,25 +715,26 @@ const RegisterUser = () => {
             });
           }
         }
-
+  
         return {
           ...p,
-          valorFormatado: valorProcFormatado, // Adicionado o valor formatado
+          valorFormatado: valorProcFormatado,
           dataProcedimento: p.dataProcedimento || p.createdAt,
           isPrincipal: false,
           createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
         };
       })
     ];
-
+  
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
       dataProcedimento: dataProcedimentoFormatada,
+      dataNovoProcedimento: dataNovoProcedimentoFormatada,
       valor: usuario.valor || 0,
-      valorFormatado: valorFormatado, // Adicionado o valor formatado
+      valorFormatado: valorFormatado,
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -784,49 +782,50 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-
+  
     try {
       const token = localStorage.getItem("token");
-
-      // Função auxiliar para converter e validar datas
+  
+      // Função auxiliar para converter e validar datas (permite datas no passado)
       const parseDate = (dateString, fieldName) => {
         if (!dateString || dateString.length !== 10) {
           setFieldErrors(prev => ({ ...prev, [fieldName]: "Data incompleta (DD/MM/AAAA)" }));
           return null;
         }
-
+  
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-
+  
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [fieldName]: "Data inválida" }));
           return null;
         }
-
-        return dateObj.toISOString();
+  
+        // Retorna no formato ISO sem timezone (YYYY-MM-DD)
+        return `${year}-${month}-${day}`;
       };
-
+  
       // Converter ambas as datas para formato ISO
       const dataProcedimentoISO = parseDate(procedimentoData.dataProcedimento, "dataProcedimento");
       const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
-
+  
       // Verifica se alguma conversão falhou
       if (!dataProcedimentoISO || !dataNovoProcedimentoISO) {
         return;
       }
-
+  
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
         dataProcedimento: dataProcedimentoISO,
         dataNovoProcedimento: dataNovoProcedimentoISO
       };
-
+  
       // Envia para a API
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       // Cria o novo procedimento para adicionar ao estado
       const novoProcedimento = {
         ...dadosParaEnvio,
@@ -835,15 +834,15 @@ const RegisterUser = () => {
         createdAt: new Date().toISOString(),
         dataProcedimento: dataProcedimentoISO,
         dataNovoProcedimento: dataNovoProcedimentoISO,
-        valorFormatado: formatValueForDisplay(procedimentoData.valor) // Formata para exibição
+        valorFormatado: formatValueForDisplay(procedimentoData.valor)
       };
-
+  
       // Atualiza o estado com o novo procedimento
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-
+  
       // Reseta o formulário
       setProcedimentoData({
         procedimento: "",
@@ -854,14 +853,14 @@ const RegisterUser = () => {
         dataProcedimento: "",
         dataNovoProcedimento: ""
       });
-
+  
       // Fecha o formulário e limpa erros
       setShowProcedimentoForm(false);
       setError("");
       
       // Atualiza a lista de usuários
       fetchUsuarios();
-
+  
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
