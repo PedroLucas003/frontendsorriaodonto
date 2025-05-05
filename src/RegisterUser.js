@@ -629,8 +629,8 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-
-    // Formatação segura da data de nascimento com tratamento de erros
+  
+    // Formatação segura da data de nascimento
     let dataNascimentoFormatada = '';
     if (usuario.dataNascimento) {
       try {
@@ -640,15 +640,13 @@ const RegisterUser = () => {
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const year = date.getFullYear();
           dataNascimentoFormatada = `${day}/${month}/${year}`;
-        } else {
-          console.warn("Data de nascimento inválida no banco de dados");
         }
       } catch (e) {
         console.error("Erro ao formatar data de nascimento:", e);
       }
     }
-
-    // Adicionado: Formatação da data do procedimento principal
+  
+    // Formatação segura da data do procedimento principal (CORREÇÃO AQUI)
     let dataProcedimentoFormatada = '';
     if (usuario.dataProcedimento) {
       try {
@@ -658,19 +656,16 @@ const RegisterUser = () => {
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const year = date.getFullYear();
           dataProcedimentoFormatada = `${day}/${month}/${year}`;
-        } else {
-          console.warn("Data do procedimento inválida no banco de dados");
         }
       } catch (e) {
         console.error("Erro ao formatar data do procedimento:", e);
       }
     }
-
+  
     const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
       ? usuario.historicoProcedimentos
       : [];
-
-    // Atualizado: Incluindo dataProcedimento nos procedimentos
+  
     const procedimentosCompletos = [
       {
         procedimento: usuario.procedimento || "",
@@ -678,24 +673,24 @@ const RegisterUser = () => {
         valor: usuario.valor || 0,
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
-        dataProcedimento: usuario.dataProcedimento || "", // Adicionado
+        dataProcedimento: usuario.dataProcedimento || "",
         isPrincipal: true,
         createdAt: usuario.createdAt || new Date().toISOString()
       },
       ...historicoProcedimentos.map(p => ({
         ...p,
-        dataProcedimento: p.dataProcedimento || p.createdAt, // Adicionado
+        dataProcedimento: p.dataProcedimento || p.createdAt,
         isPrincipal: false,
         createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
       }))
     ];
-
+  
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
-      dataProcedimento: dataProcedimentoFormatada, // Adicionado
+      dataProcedimento: dataProcedimentoFormatada, // Agora formatada corretamente
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
