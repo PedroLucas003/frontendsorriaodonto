@@ -198,38 +198,38 @@ const RegisterUser = () => {
     }));
   };
 
-  const validateField = (name, value) => {
+  function validateField(name, value) {
     const errors = { ...fieldErrors };
-
+  
     // Função auxiliar para validar datas
     const validateDate = (dateValue, fieldName) => {
       if (!dateValue) {
         delete errors[fieldName];
         return true;
       }
-
+  
       // Verifica formato básico
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
         errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
         return false;
       }
-
+  
       // Verifica se está completo
       if (dateValue.length !== 10) {
         return true;
       }
-
+  
       // Validação completa da data
       const [day, month, year] = dateValue.split('/');
       const dayNum = parseInt(day, 10);
       const monthNum = parseInt(month, 10) - 1;
       const yearNum = parseInt(year, 10);
-
+  
       if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
         errors[fieldName] = "Data contém valores inválidos";
         return false;
       }
-
+  
       const dateObj = new Date(yearNum, monthNum, dayNum);
       if (
         dateObj.getFullYear() !== yearNum ||
@@ -239,29 +239,29 @@ const RegisterUser = () => {
         errors[fieldName] = "Data inválida";
         return false;
       }
-
+  
       // Validações específicas por tipo de data
       if (fieldName === "dataNascimento" && dateObj > new Date()) {
         errors[fieldName] = "Data deve ser no passado";
         return false;
       }
-
+  
       // Para dataProcedimento, não permitir datas passadas
       if (fieldName === "dataProcedimento" && dateObj < new Date()) {
         errors[fieldName] = "Data do procedimento não pode ser no passado";
         return false;
       }
-
-      // Para dataNovoProcedimento, deve ser data futura
+  
+      // Para dataNovoProcedimento, deve ser uma data futura
       if (fieldName === "dataNovoProcedimento" && dateObj <= new Date()) {
         errors[fieldName] = "Data do novo procedimento deve ser futura";
         return false;
       }
-
+  
       delete errors[fieldName];
       return true;
     };
-
+  
     // Validações específicas por campo
     switch (name) {
       case "nomeCompleto":
@@ -271,7 +271,7 @@ const RegisterUser = () => {
           delete errors.nomeCompleto;
         }
         break;
-
+  
       case "email":
         if (!value) {
           errors.email = "E-mail é obrigatório";
@@ -281,7 +281,7 @@ const RegisterUser = () => {
           delete errors.email;
         }
         break;
-
+  
       case "cpf":
         if (!value) {
           errors.cpf = "CPF é obrigatório";
@@ -291,7 +291,7 @@ const RegisterUser = () => {
           delete errors.cpf;
         }
         break;
-
+  
       case "telefone":
         if (!value) {
           errors.telefone = "Telefone é obrigatório";
@@ -301,13 +301,13 @@ const RegisterUser = () => {
           delete errors.telefone;
         }
         break;
-
+  
       case "dataNascimento":
       case "dataProcedimento":
-      case "dataNovoProcedimento": // Adicionado para validar o novo campo
+      case "dataNovoProcedimento":
         validateDate(value, name);
         break;
-
+  
       case "endereco":
         if (!value || value.trim().length < 5) {
           errors.endereco = "Endereço deve ter pelo menos 5 caracteres";
@@ -315,7 +315,7 @@ const RegisterUser = () => {
           delete errors.endereco;
         }
         break;
-
+  
       case "password":
         if (!editandoId && (!value || value.length < 6)) {
           errors.password = "A senha deve ter pelo menos 6 caracteres";
@@ -323,7 +323,7 @@ const RegisterUser = () => {
           delete errors.password;
         }
         break;
-
+  
       case "confirmPassword":
         if (!editandoId && formData.password && value !== formData.password) {
           errors.confirmPassword = "As senhas não coincidem";
@@ -331,7 +331,7 @@ const RegisterUser = () => {
           delete errors.confirmPassword;
         }
         break;
-
+  
       case "peso":
         if (value && !/^\d*\.?\d*$/.test(value)) {
           errors.peso = "O peso deve conter apenas números (ex: 70.5)";
@@ -339,27 +339,46 @@ const RegisterUser = () => {
           delete errors.peso;
         }
         break;
-
+  
       case "valor":
-        const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
-        if (value && isNaN(numericValue)) {
-          errors.valor = "Valor monetário inválido";
-        } else if (numericValue < 0) {
-          errors.valor = "O valor não pode ser negativo";
+        case "procedimentoData.valor":
+          const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+          if (value && isNaN(numericValue)) {
+            errors.valor = "Valor monetário inválido";
+          } else if (numericValue < 0) {
+            errors.valor = "O valor não pode ser negativo";
+          } else {
+            delete errors.valor;
+          }
+          break;
+  
+      case "procedimento":
+      case "denteFace":
+      case "profissional":
+        if (!value || value.trim().length < 2) {
+          errors[name] = `O campo ${labels[name]} deve ter pelo menos 2 caracteres`;
         } else {
-          delete errors.valor;
+          delete errors[name];
         }
         break;
-
+  
+      case "modalidadePagamento":
+        if (!value) {
+          errors.modalidadePagamento = "Selecione uma modalidade de pagamento";
+        } else {
+          delete errors.modalidadePagamento;
+        }
+        break;
+  
       default:
         if (errors[name]) {
           delete errors[name];
         }
     }
-
+  
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-};
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1252,7 +1271,7 @@ const RegisterUser = () => {
               </select>
             </div>
 
-            <div className="form-group">
+            {/* <div className="form-group">
   <label htmlFor="dataNovoProcedimento">Data do Novo Procedimento</label>
   <input
     type="text"
@@ -1268,7 +1287,7 @@ const RegisterUser = () => {
       }
     }}
   />
-</div>
+</div> */}
 
             <div className="form-group">
               <label htmlFor="profissional">{labels.profissional}</label>
