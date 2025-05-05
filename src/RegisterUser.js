@@ -110,7 +110,8 @@ const RegisterUser = () => {
     denteFace: "",
     valor: "",
     modalidadePagamento: "",
-    profissional: ""
+    profissional: "",
+    dataProcedimento: ""
   });
 
   const modalidadesPagamento = [
@@ -454,6 +455,7 @@ const RegisterUser = () => {
       valor: "",
       modalidadePagamento: "",
       profissional: "",
+      dataProcedimento: "",
       procedimentos: []
     });
     setEditandoId(null);
@@ -569,33 +571,62 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
+      // Converter data para formato ISO
+      let dataProcedimentoISO = null;
+      if (procedimentoData.dataProcedimento && procedimentoData.dataProcedimento.length === 10) {
+        const [day, month, year] = procedimentoData.dataProcedimento.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`); // Meio-dia para evitar problemas de timezone
+
+        if (isNaN(dateObj.getTime())) {
+          setError("Data do procedimento inválida");
+          return;
+        }
+
+        dataProcedimentoISO = dateObj.toISOString();
+      } else {
+        setError("Por favor, insira uma data válida para o procedimento");
+        return;
+      }
+
+      // Converter valor para número
+      const valorNumerico = convertValueToFloat(procedimentoData.valor);
+
       const dadosParaEnvio = {
-        ...procedimentoData,
-        valor: convertValueToFloat(procedimentoData.valor)
+        procedimento: procedimentoData.procedimento,
+        denteFace: procedimentoData.denteFace,
+        valor: valorNumerico,
+        modalidadePagamento: procedimentoData.modalidadePagamento,
+        profissional: procedimentoData.profissional,
+        dataProcedimento: dataProcedimentoISO
       };
 
-      await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
+      // Enviar para a API
+      const response = await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      // Criar novo procedimento para o estado local
       const novoProcedimento = {
         ...dadosParaEnvio,
-        _id: Date.now().toString(),
+        _id: response.data._id || Date.now().toString(), // Usar ID da resposta se disponível
         isPrincipal: false,
         createdAt: new Date().toISOString()
       };
 
+      // Atualizar estado
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
 
+      // Resetar formulário
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
         valor: "",
         modalidadePagamento: "",
-        profissional: ""
+        profissional: "",
+        dataProcedimento: ""
       });
 
       setShowProcedimentoForm(false);
@@ -604,7 +635,14 @@ const RegisterUser = () => {
 
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
-      setError(error.response?.data?.message || "Erro ao adicionar procedimento");
+
+      // Tratamento de erros mais detalhado
+      if (error.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+        setError("Corrija os erros no formulário");
+      } else {
+        setError(error.response?.data?.message || "Erro ao adicionar procedimento");
+      }
     }
   };
 
@@ -1095,6 +1133,30 @@ const RegisterUser = () => {
                   </div>
                 </div>
 
+                <div className="form-group">
+                  <label htmlFor="dataProcedimento">Data do Procedimento</label>
+                  <input
+                    type="text"
+                    id="dataProcedimento"
+                    name="dataProcedimento"
+                    value={procedimentoData.dataProcedimento}
+                    onChange={(e) => {
+                      const formattedValue = formatDateInput(e.target.value);
+                      setProcedimentoData(prev => ({
+                        ...prev,
+                        dataProcedimento: formattedValue
+                      }));
+                    }}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="DD/MM/AAAA"
+                    maxLength={10}
+                  />
+                </div>
+
                 <div className="form-actions">
                   <button
                     type="button"
@@ -1167,6 +1229,7 @@ const RegisterUser = () => {
 
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
+                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
