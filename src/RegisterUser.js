@@ -198,33 +198,36 @@ const RegisterUser = () => {
 
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
-
+  
     // Função auxiliar para validar datas
     const validateDate = (dateValue, fieldName) => {
       if (!dateValue) {
         delete errors[fieldName];
         return true;
       }
-
+  
+      // Verifica formato básico
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
         errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
         return false;
       }
-
+  
+      // Verifica se está completo
       if (dateValue.length !== 10) {
         return true;
       }
-
+  
+      // Validação completa da data
       const [day, month, year] = dateValue.split('/');
       const dayNum = parseInt(day, 10);
       const monthNum = parseInt(month, 10) - 1;
       const yearNum = parseInt(year, 10);
-
+      
       if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
         errors[fieldName] = "Data contém valores inválidos";
         return false;
       }
-
+  
       const dateObj = new Date(yearNum, monthNum, dayNum);
       if (
         dateObj.getFullYear() !== yearNum ||
@@ -234,23 +237,92 @@ const RegisterUser = () => {
         errors[fieldName] = "Data inválida";
         return false;
       }
-
+  
+      // Validações específicas por tipo de data
       if (fieldName === "dataNascimento" && dateObj > new Date()) {
         errors[fieldName] = "Data deve ser no passado";
         return false;
       }
-
+  
+      // Para dataProcedimento, permitir datas futuras (agendamentos)
+      if (fieldName === "dataProcedimento" && dateObj < new Date()) {
+        errors[fieldName] = "Data do procedimento não pode ser no passado";
+        return false;
+      }
+  
       delete errors[fieldName];
       return true;
     };
-
+  
     // Validações específicas por campo
     switch (name) {
+      case "nomeCompleto":
+        if (!value || value.trim().length < 3) {
+          errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
+        } else {
+          delete errors.nomeCompleto;
+        }
+        break;
+  
+      case "email":
+        if (!value) {
+          errors.email = "E-mail é obrigatório";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = "Por favor, insira um e-mail válido";
+        } else {
+          delete errors.email;
+        }
+        break;
+  
+      case "cpf":
+        if (!value) {
+          errors.cpf = "CPF é obrigatório";
+        } else if (value.replace(/\D/g, '').length !== 11) {
+          errors.cpf = "CPF deve ter 11 dígitos";
+        } else {
+          delete errors.cpf;
+        }
+        break;
+  
+      case "telefone":
+        if (!value) {
+          errors.telefone = "Telefone é obrigatório";
+        } else if (value.replace(/\D/g, '').length < 10) {
+          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
+        } else {
+          delete errors.telefone;
+        }
+        break;
+  
       case "dataNascimento":
       case "dataProcedimento":
         validateDate(value, name);
         break;
-
+  
+      case "endereco":
+        if (!value || value.trim().length < 5) {
+          errors.endereco = "Endereço deve ter pelo menos 5 caracteres";
+        } else {
+          delete errors.endereco;
+        }
+        break;
+  
+      case "password":
+        if (!editandoId && (!value || value.length < 6)) {
+          errors.password = "A senha deve ter pelo menos 6 caracteres";
+        } else {
+          delete errors.password;
+        }
+        break;
+  
+      case "confirmPassword":
+        if (!editandoId && formData.password && value !== formData.password) {
+          errors.confirmPassword = "As senhas não coincidem";
+        } else {
+          delete errors.confirmPassword;
+        }
+        break;
+  
       case "peso":
         if (value && !/^\d*\.?\d*$/.test(value)) {
           errors.peso = "O peso deve conter apenas números (ex: 70.5)";
@@ -258,46 +330,24 @@ const RegisterUser = () => {
           delete errors.peso;
         }
         break;
-
-      case "email":
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = "Por favor, insira um e-mail válido";
-        } else {
-          delete errors.email;
-        }
-        break;
-
-      case "cpf":
-        if (value && value.replace(/\D/g, '').length !== 11) {
-          errors.cpf = "CPF deve ter 11 dígitos";
-        } else {
-          delete errors.cpf;
-        }
-        break;
-
-      case "telefone":
-        if (value && value.replace(/\D/g, '').length < 10) {
-          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
-        } else {
-          delete errors.telefone;
-        }
-        break;
-
+  
       case "valor":
         const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
         if (value && isNaN(numericValue)) {
           errors.valor = "Valor monetário inválido";
+        } else if (numericValue < 0) {
+          errors.valor = "O valor não pode ser negativo";
         } else {
           delete errors.valor;
         }
         break;
-
+  
       default:
         if (errors[name]) {
           delete errors[name];
         }
     }
-
+  
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -373,51 +423,76 @@ const RegisterUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     // Validação inicial do formulário
     if (!validateForm()) {
       return;
     }
-
-    // Verificar se dataProcedimento está preenchida
-    if (!formData.dataProcedimento || formData.dataProcedimento.length < 10) {
-      setFieldErrors({ ...fieldErrors, dataProcedimento: "Data do procedimento é obrigatória" });
+  
+    // Validar todos os campos obrigatórios
+    let formIsValid = true;
+    const requiredFields = [
+      'nomeCompleto', 'email', 'cpf', 'telefone', 'endereco',
+      'dataNascimento', 'dataProcedimento', 'procedimento',
+      'denteFace', 'valor', 'modalidadePagamento', 'profissional'
+    ];
+  
+    requiredFields.forEach(field => {
+      if (!formData[field]) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [field]: `${labels[field]} é obrigatório`
+        }));
+        formIsValid = false;
+      }
+    });
+  
+    if (!formIsValid) {
       return;
     }
-
-    // Converter datas para formato ISO com tratamento de erros
+  
+    // Converter datas para formato ISO
     const convertDateToISO = (dateString, fieldName) => {
       if (!dateString || dateString.length !== 10) {
-        setFieldErrors({ ...fieldErrors, [fieldName]: `Data ${fieldName} inválida ou incompleta` });
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Data ${fieldName} inválida ou incompleta`
+        }));
         return null;
       }
-
+  
       try {
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-
+  
         if (isNaN(dateObj.getTime())) {
-          setFieldErrors({ ...fieldErrors, [fieldName]: `Data ${fieldName} inválida` });
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Data ${fieldName} inválida`
+          }));
           return null;
         }
-
+  
         return dateObj.toISOString();
       } catch (error) {
         console.error(`Erro ao converter ${fieldName}:`, error);
-        setFieldErrors({ ...fieldErrors, [fieldName]: `Erro ao processar data ${fieldName}` });
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Erro ao processar data ${fieldName}`
+        }));
         return null;
       }
     };
-
+  
     // Converter datas
     const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
     const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
-
+  
     // Se alguma conversão falhou, retornar
     if (!dataNascimentoISO || !dataProcedimentoISO) {
       return;
     }
-
+  
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
@@ -447,50 +522,49 @@ const RegisterUser = () => {
       peso: Number(formData.peso) || 0,
       procedimento: formData.procedimento.trim(),
       denteFace: formData.denteFace.trim(),
-      valor: Number(formData.valor) || 0,
+      valor: convertValueToFloat(formData.valor),
       modalidadePagamento: formData.modalidadePagamento,
       profissional: formData.profissional.trim()
     };
-
-    // Validação adicional do e-mail
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dadosParaEnvio.email)) {
-      setFieldErrors({ ...fieldErrors, email: "E-mail inválido" });
-      return;
-    }
-
+  
     // Adicionar senha apenas para novo cadastro
     if (!editandoId) {
       if (!formData.password || formData.password.length < 6) {
-        setFieldErrors({ ...fieldErrors, password: "A senha deve ter pelo menos 6 caracteres" });
+        setFieldErrors(prev => ({
+          ...prev,
+          password: "A senha deve ter pelo menos 6 caracteres"
+        }));
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        setFieldErrors({ ...fieldErrors, confirmPassword: "As senhas não coincidem" });
+        setFieldErrors(prev => ({
+          ...prev,
+          confirmPassword: "As senhas não coincidem"
+        }));
         return;
       }
       dadosParaEnvio.password = formData.password;
       dadosParaEnvio.confirmPassword = formData.confirmPassword;
     }
-
+  
     try {
       const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
       const method = editandoId ? "put" : "post";
-
+  
       const response = await api[method](endpoint, dadosParaEnvio);
-
+  
       if (response.data?.errors) {
         setFieldErrors(response.data.errors);
         setError(response.data.message || "Erro de validação");
         return;
       }
-
+  
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
-
-      // Tratamento de erros mais robusto
+      
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
         setError(error.response.data.message || "Corrija os erros no formulário");
@@ -508,6 +582,7 @@ const RegisterUser = () => {
       telefone: "",
       endereco: "",
       dataNascimento: "",
+      dataProcedimento: "",
       password: "",
       confirmPassword: "",
       detalhesDoencas: "",
@@ -527,21 +602,25 @@ const RegisterUser = () => {
       procedimento: "",
       denteFace: "",
       valor: "",
+      valorNumerico: 0,
       modalidadePagamento: "",
       profissional: "",
       procedimentos: []
     });
+    
     setEditandoId(null);
     setModoVisualizacao(false);
     setError("");
     setFieldErrors({});
     setShowProcedimentoForm(false);
+    
     setProcedimentoData({
       procedimento: "",
       denteFace: "",
       valor: "",
       modalidadePagamento: "",
-      profissional: ""
+      profissional: "",
+      dataProcedimento: ""
     });
   };
 
