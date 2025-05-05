@@ -246,9 +246,15 @@ const RegisterUser = () => {
         return false;
       }
 
-      // Para dataProcedimento, permitir datas futuras (agendamentos)
+      // Para dataProcedimento, não permitir datas passadas
       if (fieldName === "dataProcedimento" && dateObj < new Date()) {
         errors[fieldName] = "Data do procedimento não pode ser no passado";
+        return false;
+      }
+
+      // Para dataNovoProcedimento, deve ser data futura
+      if (fieldName === "dataNovoProcedimento" && dateObj <= new Date()) {
+        errors[fieldName] = "Data do novo procedimento deve ser futura";
         return false;
       }
 
@@ -298,6 +304,7 @@ const RegisterUser = () => {
 
       case "dataNascimento":
       case "dataProcedimento":
+      case "dataNovoProcedimento": // Adicionado para validar o novo campo
         validateDate(value, name);
         break;
 
@@ -352,7 +359,7 @@ const RegisterUser = () => {
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1320,28 +1327,28 @@ const RegisterUser = () => {
 
           {/* Novo campo dataNovoProcedimento adicionado */}
           <div className="form-group">
-            <label htmlFor="dataNovoProcedimento">Data do Novo Procedimento</label>
-            <input
-              type="text"
-              id="dataNovoProcedimento"
-              name="dataNovoProcedimento"
-              value={procedimentoData.dataNovoProcedimento}
-              onChange={(e) => {
-                const formattedValue = formatDateInput(e.target.value);
-                setProcedimentoData(prev => ({
-                  ...prev,
-                  dataNovoProcedimento: formattedValue
-                }));
-              }}
-              placeholder="DD/MM/AAAA"
-              maxLength={10}
-              onKeyDown={(e) => {
-                if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-                  e.preventDefault();
-                }
-              }}
-            />
-          </div>
+  <label htmlFor="dataNovoProcedimento">Data do Novo Procedimento</label>
+  <input
+    type="text"
+    id="dataNovoProcedimento"
+    name="dataNovoProcedimento"
+    value={procedimentoData.dataNovoProcedimento}
+    onChange={(e) => {
+      const formattedValue = formatDateInput(e.target.value);
+      setProcedimentoData(prev => ({
+        ...prev,
+        dataNovoProcedimento: formattedValue
+      }));
+    }}
+    placeholder="DD/MM/AAAA"
+    maxLength={10}
+    onKeyDown={(e) => {
+      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+        e.preventDefault();
+      }
+    }}
+  />
+</div>
 
           <div className="form-group">
             <label htmlFor="dataProcedimento">Data do Procedimento</label>
