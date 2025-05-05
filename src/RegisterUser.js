@@ -145,37 +145,80 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await api.get("/api/users", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      // Verificação profunda da resposta da API
-      if (!response || !response.data) {
-        throw new Error("Resposta da API inválida");
+  
+      // Verificação mais robusta da resposta
+      if (!response?.data) {
+        throw new Error("Resposta da API não contém dados");
       }
-
-      // Converter a resposta para array, se necessário
-      const dadosUsuarios = Array.isArray(response.data)
-        ? response.data
-        : response.data.users || response.data.itens || [];
-
-      // Garantir que cada usuário tenha a estrutura correta
-      const usuariosFormatados = dadosUsuarios.map(usuario => ({
-        ...usuario,
-        procedimentos: Array.isArray(usuario.procedimentos) ? usuario.procedimentos : [],
-        historicoProcedimentos: Array.isArray(usuario.historicoProcedimentos)
+  
+      // Converter para array garantidamente
+      const dadosUsuarios = Array.isArray(response.data) 
+        ? response.data 
+        : [];
+  
+      // Formatação segura dos usuários
+      const usuariosFormatados = dadosUsuarios.map(usuario => {
+        // Garante que procedimentos sejam arrays
+        const procedimentos = Array.isArray(usuario.procedimentos) 
+          ? usuario.procedimentos 
+          : [];
+        
+        const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
           ? usuario.historicoProcedimentos
-          : [],
-        _id: usuario._id || Date.now().toString(), // Fallback para ID
-        nomeCompleto: usuario.nomeCompleto || "Nome não informado"
-      }));
-
+          : [];
+  
+        // Formata datas para exibição
+        const formatDate = (date) => {
+          try {
+            return date ? new Date(date).toLocaleDateString('pt-BR') : 'Não informado';
+          } catch {
+            return 'Data inválida';
+          }
+        };
+  
+        return {
+          ...usuario,
+          procedimentos,
+          historicoProcedimentos,
+          _id: usuario._id || Date.now().toString(),
+          nomeCompleto: usuario.nomeCompleto || "Nome não informado",
+          // Adiciona datas formatadas para exibição
+          dataNascimentoFormatada: formatDate(usuario.dataNascimento),
+          dataProcedimentoFormatada: formatDate(usuario.dataProcedimento),
+          dataNovoProcedimentoFormatada: formatDate(usuario.dataNovoProcedimento),
+          // Mantém as datas originais para edição
+          dataNascimento: usuario.dataNascimento,
+          dataProcedimento: usuario.dataProcedimento,
+          dataNovoProcedimento: usuario.dataNovoProcedimento
+        };
+      });
+  
+      // Ordena por data de criação (mais recentes primeiro)
+      usuariosFormatados.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+  
       setUsuarios(usuariosFormatados);
       setError("");
-
+  
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
-      setError("Erro ao carregar usuários. Tente novamente.");
-      setUsuarios([]); // Garante que o estado seja sempre um array
+      
+      // Mensagem mais específica de erro
+      const errorMessage = error.response?.data?.message 
+        ? `Erro ao carregar usuários: ${error.response.data.message}`
+        : "Erro ao conectar com o servidor. Tente novamente.";
+      
+      setError(errorMessage);
+      setUsuarios([]);
+      
+      // Opcional: Mostrar notificação mais visível
+      // alert(errorMessage); 
+      // ou usar um toast notification se disponível
     }
   };
 
@@ -873,10 +916,15 @@ const RegisterUser = () => {
   };
 
   const filteredUsuarios = usuarios.filter(usuario => {
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = searchTerm.toLowerCase().trim();  // Remove espaços e padroniza
+    const cpfSearch = searchTerm.replace(/\D/g, '');      // Remove formatação do CPF
+  
     return (
-      usuario.nomeCompleto.toLowerCase().includes(searchLower) ||
-      usuario.cpf.includes(searchTerm.replace(/\D/g, ""))
+      !searchLower ||  // Se vazio, retorna todos
+      usuario.nomeCompleto?.toLowerCase().includes(searchLower) ||
+      usuario.cpf?.includes(cpfSearch) ||
+      usuario.email?.toLowerCase().includes(searchLower)
+      // usuario.telefone?.replace(/\D/g, '').includes(cpfSearch)  // (Opcional)
     );
   });
 
