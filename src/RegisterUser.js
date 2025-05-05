@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import api from "./api/api";
 import "./RegisterUser.css";
@@ -112,8 +113,7 @@ const RegisterUser = () => {
     valor: "",
     modalidadePagamento: "",
     profissional: "",
-    dataProcedimento: "",
-    dataNovoProcedimento: ""
+    dataProcedimento: ""
   });
 
   const modalidadesPagamento = [
@@ -424,42 +424,24 @@ const RegisterUser = () => {
     return isValid;
   };
 
-  const validateBeforeSubmit = () => {
-    console.group("Validação antes do envio");
-    console.log("dataNascimento:", formData.dataNascimento);
-    console.log("dataProcedimento:", formData.dataProcedimento);
-    console.log("Campo dataNascimento válido?", !fieldErrors.dataNascimento);
-    console.log("Campo dataProcedimento válido?", !fieldErrors.dataProcedimento);
-    console.groupEnd();
-  };
-  
-  // Chame esta função no início do handleSubmit
-  validateBeforeSubmit();
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.group("=== INÍCIO DO HANDLE SUBMIT ===");
-  
+
     // Validação inicial do formulário
-    console.log("[1/6] Validando formulário básico...");
     if (!validateForm()) {
-      console.error("❌ Validação básica do formulário falhou");
-      console.groupEnd();
       return;
     }
-  
+
     // Validar todos os campos obrigatórios
-    console.log("[2/6] Verificando campos obrigatórios...");
     let formIsValid = true;
     const requiredFields = [
       'nomeCompleto', 'email', 'cpf', 'telefone', 'endereco',
       'dataNascimento', 'dataProcedimento', 'procedimento',
       'denteFace', 'valor', 'modalidadePagamento', 'profissional'
     ];
-  
+
     requiredFields.forEach(field => {
       if (!formData[field]) {
-        console.error(`⚠ Campo obrigatório faltando: ${field}`);
         setFieldErrors(prev => ({
           ...prev,
           [field]: `${labels[field]} é obrigatório`
@@ -467,90 +449,54 @@ const RegisterUser = () => {
         formIsValid = false;
       }
     });
-  
+
     if (!formIsValid) {
-      console.error("❌ Campos obrigatórios faltando - abortando envio");
-      console.groupEnd();
       return;
     }
-  
-    // Função auxiliar para conversão de datas com logs
+
+    // Converter datas para formato ISO
     const convertDateToISO = (dateString, fieldName) => {
-      console.log(`🔁 Convertendo ${fieldName}: "${dateString}"`);
-      
       if (!dateString || dateString.length !== 10) {
-        const errorMsg = `${fieldName} inválida ou incompleta`;
-        console.error(`❌ ${errorMsg}`);
-        setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Data ${fieldName} inválida ou incompleta`
+        }));
         return null;
       }
-    
+
       try {
         const [day, month, year] = dateString.split('/');
-        const dayNum = parseInt(day, 10);
-        const monthNum = parseInt(month, 10);
-        const yearNum = parseInt(year, 10);
-        
-        // Validações básicas
-        if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
-          const errorMsg = `${fieldName} contém valores inválidos`;
-          console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Data ${fieldName} inválida`
+          }));
           return null;
         }
-    
-        // Cria o objeto Date (UTC para evitar problemas de fuso horário)
-        const dateObj = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
-        console.log(`📅 Data interpretada (UTC):`, dateObj.toISOString());
-    
-        // Validação específica para dataProcedimento (DEVE SER FUTURO)
-        if (fieldName === "dataProcedimento") {
-          const hojeUTC = new Date();
-          hojeUTC.setHours(0, 0, 0, 0); // Ignora hora atual
-          
-          if (dateObj < hojeUTC) {
-            const errorMsg = "Data do procedimento deve ser futura";
-            console.error(`❌ ${errorMsg}`);
-            setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
-            return null;
-          }
-        }
-    
-        // Validação para dataNascimento (DEVE SER PASSADO)
-        if (fieldName === "dataNascimento" && dateObj > new Date()) {
-          const errorMsg = "Data de nascimento deve ser no passado";
-          console.error(`❌ ${errorMsg}`);
-          setFieldErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
-          return null;
-        }
-    
-        console.log(`✅ ${fieldName} válida:`, dateObj.toISOString());
-        setFieldErrors(prev => ({ ...prev, [fieldName]: undefined }));
+
         return dateObj.toISOString();
-    
       } catch (error) {
-        console.error(`❌ Erro ao converter ${fieldName}:`, error);
-        setFieldErrors(prev => ({ ...prev, [fieldName]: "Formato inválido" }));
+        console.error(`Erro ao converter ${fieldName}:`, error);
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Erro ao processar data ${fieldName}`
+        }));
         return null;
       }
     };
-  
-    // Converter datas para formato ISO
-    console.log("[3/6] Convertendo datas para ISO...");
-    console.log("--- dataNascimento ---");
+
+    // Converter datas
     const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
-    console.log("--- dataProcedimento ---");
     const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
-  
-    // Verificar se as conversões foram bem sucedidas
+
+    // Se alguma conversão falhou, retornar
     if (!dataNascimentoISO || !dataProcedimentoISO) {
-      console.error("❌ Erro na conversão de datas - abortando envio");
-      console.groupEnd();
       return;
     }
-  
+
     // Preparar dados para envio
-    console.log("[4/6] Preparando dados para envio...");
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
       email: formData.email.toLowerCase().trim(),
@@ -559,72 +505,76 @@ const RegisterUser = () => {
       endereco: formData.endereco.trim(),
       dataNascimento: dataNascimentoISO,
       dataProcedimento: dataProcedimentoISO,
-      // ... (restante dos campos)
+      detalhesDoencas: formData.detalhesDoencas.trim(),
+      quaisRemedios: formData.quaisRemedios.trim(),
+      quaisMedicamentos: formData.quaisMedicamentos.trim(),
+      quaisAnestesias: formData.quaisAnestesias.trim(),
+      habitos: {
+        frequenciaFumo: formData.frequenciaFumo,
+        frequenciaAlcool: formData.frequenciaAlcool
+      },
+      exames: {
+        exameSangue: formData.exameSangue.trim(),
+        coagulacao: formData.coagulacao.trim(),
+        cicatrizacao: formData.cicatrizacao.trim()
+      },
+      historicoCirurgia: formData.historicoCirurgia.trim(),
+      historicoOdontologico: formData.historicoOdontologico.trim(),
+      sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+      respiracao: formData.respiracao.trim(),
+      peso: Number(formData.peso) || 0,
+      procedimento: formData.procedimento.trim(),
+      denteFace: formData.denteFace.trim(),
+      valor: convertValueToFloat(formData.valor),
+      modalidadePagamento: formData.modalidadePagamento,
+      profissional: formData.profissional.trim()
     };
-  
-    console.log("📦 Dados preparados para envio:", dadosParaEnvio);
-  
+
     // Adicionar senha apenas para novo cadastro
     if (!editandoId) {
-      console.log("[5/6] Validando senha...");
       if (!formData.password || formData.password.length < 6) {
-        console.error("❌ Senha inválida (mínimo 6 caracteres)");
         setFieldErrors(prev => ({
           ...prev,
           password: "A senha deve ter pelo menos 6 caracteres"
         }));
-        console.groupEnd();
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        console.error("❌ As senhas não coincidem");
         setFieldErrors(prev => ({
           ...prev,
           confirmPassword: "As senhas não coincidem"
         }));
-        console.groupEnd();
         return;
       }
       dadosParaEnvio.password = formData.password;
       dadosParaEnvio.confirmPassword = formData.confirmPassword;
     }
-  
-    // Enviar dados para o servidor
-    console.log("[6/6] Enviando para o servidor...");
+
     try {
       const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
       const method = editandoId ? "put" : "post";
-      const token = localStorage.getItem("token");
-  
-      console.log("🔗 Endpoint:", endpoint);
-      console.log("⚙ Método:", method);
-      console.log("🔐 Token:", token ? "Presente" : "Ausente");
-  
-      const response = await api[method](endpoint, dadosParaEnvio, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-  
-      console.log("✅ Sucesso! Resposta:", response.data);
+
+      const response = await api[method](endpoint, dadosParaEnvio);
+
+      if (response.data?.errors) {
+        setFieldErrors(response.data.errors);
+        setError(response.data.message || "Erro de validação");
+        return;
+      }
+
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
     } catch (error) {
-      console.error("❌ Erro na requisição:", {
-        message: error.message,
-        code: error.code,
-        response: error.response?.data
-      });
-  
+      console.error("Erro ao enviar formulário:", error);
+
       if (error.response?.data?.errors) {
-        console.error("📜 Erros detalhados:", error.response.data.errors);
         setFieldErrors(error.response.data.errors);
         setError(error.response.data.message || "Corrija os erros no formulário");
       } else {
         setError(error.message || "Erro ao conectar com o servidor");
       }
     }
-  
-    console.groupEnd();
   };
 
   const resetForm = () => {
@@ -658,7 +608,6 @@ const RegisterUser = () => {
       valorNumerico: 0,
       modalidadePagamento: "",
       profissional: "",
-      dataNovoProcedimento: "",
       procedimentos: []
     });
 
@@ -674,8 +623,7 @@ const RegisterUser = () => {
       valor: "",
       modalidadePagamento: "",
       profissional: "",
-      dataProcedimento: "",
-      dataNovoProcedimento: ""
+      dataProcedimento: ""
     });
   };
 
@@ -683,29 +631,39 @@ const RegisterUser = () => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
 
-    // Função auxiliar para formatar datas
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
+    // Formatação segura da data de nascimento
+    let dataNascimentoFormatada = '';
+    if (usuario.dataNascimento) {
       try {
-        const date = new Date(dateString);
+        const date = new Date(usuario.dataNascimento);
         if (!isNaN(date.getTime())) {
           const day = String(date.getDate()).padStart(2, '0');
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const year = date.getFullYear();
-          return `${day}/${month}/${year}`;
+          dataNascimentoFormatada = `${day}/${month}/${year}`;
         }
       } catch (e) {
-        console.error("Erro ao formatar data:", e);
+        console.error("Erro ao formatar data de nascimento:", e);
       }
-      return '';
-    };
+    }
 
-    // Formatação dos dados
-    const dataNascimentoFormatada = formatDate(usuario.dataNascimento);
-    const dataProcedimentoFormatada = formatDate(usuario.dataProcedimento);
-    const dataNovoProcedimentoFormatada = formatDate(usuario.dataNovoProcedimento);
+    // Formatação da data do procedimento principal
+    let dataProcedimentoFormatada = '';
+    if (usuario.dataProcedimento) {
+      try {
+        const date = new Date(usuario.dataProcedimento);
+        if (!isNaN(date.getTime())) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          dataProcedimentoFormatada = `${day}/${month}/${year}`;
+        }
+      } catch (e) {
+        console.error("Erro ao formatar data do procedimento:", e);
+      }
+    }
 
-    // Formatação do valor monetário
+    // Formatação do valor monetário (NOVA CORREÇÃO)
     let valorFormatado = '';
     if (usuario.valor !== undefined && usuario.valor !== null) {
       const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
@@ -726,13 +684,12 @@ const RegisterUser = () => {
         procedimento: usuario.procedimento || "",
         denteFace: usuario.denteFace || "",
         valor: usuario.valor || 0,
-        valorFormatado: valorFormatado,
+        valorFormatado: valorFormatado, // Adicionado o valor formatado
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
-        dataProcedimento: dataProcedimentoFormatada, // Mostra apenas para procedimento principal
-        dataNovoProcedimento: "", // Não mostra para procedimento principal
+        dataProcedimento: usuario.dataProcedimento || "",
         isPrincipal: true,
-        createdAt: formatDate(usuario.createdAt)
+        createdAt: usuario.createdAt || new Date().toISOString()
       },
       ...historicoProcedimentos.map(p => {
         // Formata o valor para cada procedimento histórico
@@ -749,11 +706,10 @@ const RegisterUser = () => {
 
         return {
           ...p,
-          valorFormatado: valorProcFormatado,
-          dataProcedimento: "", // Não mostra para procedimentos históricos
-          dataNovoProcedimento: formatDate(p.dataNovoProcedimento || p.createdAt), // Mostra apenas dataNovoProcedimento
+          valorFormatado: valorProcFormatado, // Adicionado o valor formatado
+          dataProcedimento: p.dataProcedimento || p.createdAt,
           isPrincipal: false,
-          createdAt: formatDate(p.createdAt)
+          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
         };
       })
     ];
@@ -764,9 +720,8 @@ const RegisterUser = () => {
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
       dataProcedimento: dataProcedimentoFormatada,
-      dataNovoProcedimento: dataNovoProcedimentoFormatada,
       valor: usuario.valor || 0,
-      valorFormatado: valorFormatado,
+      valorFormatado: valorFormatado, // Adicionado o valor formatado
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -776,7 +731,7 @@ const RegisterUser = () => {
       password: "",
       confirmPassword: ""
     });
-};
+  };
 
   const handleVoltar = () => {
     setEditandoId(null);
@@ -818,7 +773,7 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Converter datas para formato ISO
+      // Converter data para formato ISO
       let dataProcedimentoISO = null;
       if (procedimentoData.dataProcedimento && procedimentoData.dataProcedimento.length === 10) {
         const [day, month, year] = procedimentoData.dataProcedimento.split('/');
@@ -828,21 +783,10 @@ const RegisterUser = () => {
         }
       }
 
-      // Converter dataNovoProcedimento para ISO
-      let dataNovoProcedimentoISO = null;
-      if (procedimentoData.dataNovoProcedimento && procedimentoData.dataNovoProcedimento.length === 10) {
-        const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-        if (!isNaN(dateObj.getTime())) {
-          dataNovoProcedimentoISO = dateObj.toISOString();
-        }
-      }
-
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: dataProcedimentoISO,
-        dataNovoProcedimento: dataNovoProcedimentoISO // Novo campo adicionado
+        dataProcedimento: dataProcedimentoISO
       };
 
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
@@ -854,8 +798,7 @@ const RegisterUser = () => {
         _id: Date.now().toString(),
         isPrincipal: false,
         createdAt: new Date().toISOString(),
-        dataProcedimento: dataProcedimentoISO || new Date().toISOString(),
-        dataNovoProcedimento: dataNovoProcedimentoISO || new Date().toISOString() // Novo campo adicionado
+        dataProcedimento: dataProcedimentoISO || new Date().toISOString()
       };
 
       setFormData(prev => ({
@@ -869,8 +812,7 @@ const RegisterUser = () => {
         valor: "",
         modalidadePagamento: "",
         profissional: "",
-        dataProcedimento: "",
-        dataNovoProcedimento: "" // Novo campo resetado
+        dataProcedimento: ""
       });
 
       setShowProcedimentoForm(false);
@@ -1337,30 +1279,6 @@ const RegisterUser = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="dataNovoProcedimento">Data do Novo Procedimento</label>
-                    <input
-                      type="text"
-                      id="dataNovoProcedimento"
-                      name="dataNovoProcedimento"
-                      value={procedimentoData.dataNovoProcedimento}
-                      onChange={(e) => {
-                        const formattedValue = formatDateInput(e.target.value);
-                        setProcedimentoData(prev => ({
-                          ...prev,
-                          dataNovoProcedimento: formattedValue
-                        }));
-                      }}
-                      placeholder="DD/MM/AAAA"
-                      maxLength={10}
-                      onKeyDown={(e) => {
-                        if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-                          e.preventDefault();
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <div className="form-group">
                     <label htmlFor="denteFace">Dente/Face</label>
                     <input
                       type="text"
@@ -1493,11 +1411,7 @@ const RegisterUser = () => {
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            {procedimento.isPrincipal ? (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
-                            ) : (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
-                            )}
+                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
