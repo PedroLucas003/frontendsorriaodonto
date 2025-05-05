@@ -72,6 +72,7 @@ const RegisterUser = () => {
     telefone: "",
     endereco: "",
     dataNascimento: "",
+    dataProcedimento: "",
     password: "",
     confirmPassword: "",
     detalhesDoencas: "",
@@ -340,15 +341,24 @@ const RegisterUser = () => {
     let dataNascimentoISO = null;
     if (formData.dataNascimento && formData.dataNascimento.length === 10) {
       const [day, month, year] = formData.dataNascimento.split('/');
-
-      // Validação adicional da data
       const dateObj = new Date(`${year}-${month}-${day}`);
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNascimento: "Data inválida" });
         return;
       }
-
       dataNascimentoISO = dateObj.toISOString();
+    }
+
+    // Converter dataProcedimento para formato ISO
+    let dataProcedimentoISO = null;
+    if (formData.dataProcedimento && formData.dataProcedimento.length === 10) {
+      const [day, month, year] = formData.dataProcedimento.split('/');
+      const dateObj = new Date(`${year}-${month}-${day}`);
+      if (isNaN(dateObj.getTime())) {
+        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
+        return;
+      }
+      dataProcedimentoISO = dateObj.toISOString();
     }
 
     // Formatando os campos corretamente antes de enviar
@@ -359,6 +369,7 @@ const RegisterUser = () => {
       telefone: formatFone(formData.telefone.replace(/\D/g, '')), // Formata o telefone
       endereco: formData.endereco,
       dataNascimento: dataNascimentoISO,
+      dataProcedimento: dataProcedimentoISO, // Adicionado aqui
       detalhesDoencas: formData.detalhesDoencas,
       quaisRemedios: formData.quaisRemedios,
       quaisMedicamentos: formData.quaisMedicamentos,
@@ -588,10 +599,10 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       // Converter data para formato ISO
       let dataProcedimentoISO = null;
       if (procedimentoData.dataProcedimento && procedimentoData.dataProcedimento.length === 10) {
@@ -601,17 +612,17 @@ const RegisterUser = () => {
           dataProcedimentoISO = dateObj.toISOString();
         }
       }
-  
+
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
         dataProcedimento: dataProcedimentoISO
       };
-  
+
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-  
+
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
@@ -619,12 +630,12 @@ const RegisterUser = () => {
         createdAt: new Date().toISOString(),
         dataProcedimento: dataProcedimentoISO || new Date().toISOString()
       };
-  
+
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-  
+
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
@@ -633,11 +644,11 @@ const RegisterUser = () => {
         profissional: "",
         dataProcedimento: ""
       });
-  
+
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -980,14 +991,8 @@ const RegisterUser = () => {
                 type="text"
                 id="dataProcedimento"
                 name="dataProcedimento"
-                value={procedimentoData.dataProcedimento}
-                onChange={(e) => {
-                  const formattedValue = formatDateInput(e.target.value);
-                  setProcedimentoData(prev => ({
-                    ...prev,
-                    dataProcedimento: formattedValue
-                  }));
-                }}
+                value={formData.dataProcedimento}
+                onChange={handleChange}
                 placeholder="DD/MM/AAAA"
                 maxLength={10}
               />
