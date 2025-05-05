@@ -220,40 +220,25 @@ const RegisterUser = () => {
   
       // Validação completa da data
       const [day, month, year] = dateValue.split('/');
-      const dayNum = parseInt(day, 10);
-      const monthNum = parseInt(month, 10) - 1;
-      const yearNum = parseInt(year, 10);
+      const dateObj = new Date(`${year}-${month}-${day}`);
   
-      if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
-        errors[fieldName] = "Data contém valores inválidos";
-        return false;
-      }
-  
-      const dateObj = new Date(yearNum, monthNum, dayNum);
-      if (
-        dateObj.getFullYear() !== yearNum ||
-        dateObj.getMonth() !== monthNum ||
-        dateObj.getDate() !== dayNum
-      ) {
+      if (isNaN(dateObj.getTime())) {
         errors[fieldName] = "Data inválida";
         return false;
       }
   
       // Validações específicas por tipo de data
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Remove hora para comparar apenas a data
-  
-      if (fieldName === "dataNascimento" && dateObj > today) {
+      if (fieldName === "dataNascimento" && dateObj > new Date()) {
         errors[fieldName] = "Data de nascimento deve ser no passado";
         return false;
       }
   
-      if (fieldName === "dataProcedimento" && dateObj < today) {
+      if (fieldName === "dataProcedimento" && dateObj < new Date()) {
         errors[fieldName] = "Data do procedimento não pode ser no passado";
         return false;
       }
   
-      if (fieldName === "dataNovoProcedimento" && dateObj <= today) {
+      if (fieldName === "dataNovoProcedimento" && dateObj <= new Date()) {
         errors[fieldName] = "Data do novo procedimento deve ser futura";
         return false;
       }
@@ -397,21 +382,14 @@ const RegisterUser = () => {
     else if (name === "telefone") {
       formattedValue = formatFone(value);
     }
-    else if (name === "dataNascimento" || name === "dataProcedimento" || name === "dataNovoProcedimento") {
+    else if (name === "dataNascimento" || name === "dataNovoProcedimento") {
       // Aplica a máscara de data em tempo real
       formattedValue = formatDateInput(value);
   
       // Validação imediata quando o campo estiver completo (DD/MM/AAAA)
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
-        
-        // Cria a data no fuso horário local e zera o horário
-        const dateObj = new Date(year, month - 1, day);
-        dateObj.setHours(0, 0, 0, 0);
-        
-        // Data atual também com horário zerado
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const dateObj = new Date(`${year}-${month}-${day}`);
   
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
@@ -419,36 +397,37 @@ const RegisterUser = () => {
           const errors = { ...fieldErrors };
           
           // Validações específicas para cada campo de data
-          if (name === "dataNascimento") {
-            if (dateObj >= today) {
-              errors[name] = "Data de nascimento deve ser no passado";
-            } else {
-              delete errors[name];
-            }
-          }
-          
-          if (name === "dataProcedimento") {
-            if (dateObj < today) {
-              errors[name] = "Data do procedimento deve ser hoje ou no futuro";
-            } else {
-              delete errors[name];
-            }
-          }
-  
-          if (name === "dataNovoProcedimento") {
-            if (dateObj <= today) {
-              errors[name] = "Data do novo procedimento deve ser futura";
-            } else {
-              delete errors[name];
-            }
+          if (name === "dataNascimento" && dateObj > new Date()) {
+            errors[name] = "Data de nascimento deve ser no passado";
+          } else if (name === "dataNovoProcedimento" && dateObj <= new Date()) {
+            errors[name] = "Data do novo procedimento deve ser futura";
+          } else {
+            delete errors[name];
           }
           
           setFieldErrors(errors);
         }
       }
     }
+    else if (name === "dataProcedimento") {
+      // Apenas aplica a máscara sem validação de data passada/futura
+      formattedValue = formatDateInput(value);
+      
+      // Validação básica de formato
+      if (formattedValue.length === 10) {
+        const [day, month, year] = formattedValue.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+        
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else {
+          const errors = { ...fieldErrors };
+          delete errors[name];
+          setFieldErrors(errors);
+        }
+      }
+    }
     else if (name === "valor") {
-      // Mantém o código existente para o campo valor
       const rawValue = value.replace(/[^\d,]/g, '');
       const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
       
@@ -465,7 +444,6 @@ const RegisterUser = () => {
   
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     
-    // Chama validateField para validações adicionais
     validateField(name, formattedValue);
     setError("");
   };
@@ -495,12 +473,11 @@ const RegisterUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
   
-    // Validação inicial do formulário
     if (!validateForm()) {
       return;
     }
   
-    // Validar todos os campos obrigatórios
+    // Validar campos obrigatórios
     let formIsValid = true;
     const requiredFields = [
       'nomeCompleto', 'email', 'cpf', 'telefone', 'endereco',
@@ -522,116 +499,57 @@ const RegisterUser = () => {
       return;
     }
   
-    // Função auxiliar para converter e validar datas
-    const convertAndValidateDate = (dateString, fieldName) => {
-      if (!dateString || dateString.length !== 10) {
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: `Data ${fieldName} inválida ou incompleta`
-        }));
-        return null;
-      }
-  
-      try {
-        const [day, month, year] = dateString.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-        
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: `Data ${fieldName} inválida`
-          }));
-          return null;
-        }
-  
-        // Validações específicas por tipo de data
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-  
-        if (fieldName === "dataNascimento" && dateObj > today) {
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: "Data de nascimento deve ser no passado"
-          }));
-          return null;
-        }
-  
-        if (fieldName === "dataProcedimento" && dateObj < today) {
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: "Data do procedimento não pode ser no passado"
-          }));
-          return null;
-        }
-  
-        return dateObj.toISOString();
-      } catch (error) {
-        console.error(`Erro ao converter ${fieldName}:`, error);
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: `Erro ao processar data ${fieldName}`
-        }));
-        return null;
-      }
+    // Função simplificada para converter datas
+    const parseDate = (dateString) => {
+      if (!dateString || dateString.length !== 10) return null;
+      const [day, month, year] = dateString.split('/');
+      return new Date(`${year}-${month}-${day}`);
     };
   
-    // Converter e validar datas
-    const dataNascimentoISO = convertAndValidateDate(formData.dataNascimento, "dataNascimento");
-    const dataProcedimentoISO = convertAndValidateDate(formData.dataProcedimento, "dataProcedimento");
+    // Converter datas
+    const dataNascimentoObj = parseDate(formData.dataNascimento);
+    const dataProcedimentoObj = parseDate(formData.dataProcedimento);
   
-    // Se alguma conversão falhou, retornar
-    if (!dataNascimentoISO || !dataProcedimentoISO) {
+    // Validações específicas
+    if (!dataNascimentoObj || isNaN(dataNascimentoObj.getTime())) {
+      setFieldErrors(prev => ({ ...prev, dataNascimento: "Data de nascimento inválida" }));
+      return;
+    }
+  
+    if (dataNascimentoObj > new Date()) {
+      setFieldErrors(prev => ({ ...prev, dataNascimento: "Data de nascimento deve ser no passado" }));
+      return;
+    }
+  
+    if (!dataProcedimentoObj || isNaN(dataProcedimentoObj.getTime())) {
+      setFieldErrors(prev => ({ ...prev, dataProcedimento: "Data do procedimento inválida" }));
       return;
     }
   
     // Preparar dados para envio
     const dadosParaEnvio = {
-      nomeCompleto: formData.nomeCompleto.trim(),
-      email: formData.email.toLowerCase().trim(),
+      ...formData,
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
-      endereco: formData.endereco.trim(),
-      dataNascimento: dataNascimentoISO,
-      dataProcedimento: dataProcedimentoISO,
-      detalhesDoencas: formData.detalhesDoencas.trim(),
-      quaisRemedios: formData.quaisRemedios.trim(),
-      quaisMedicamentos: formData.quaisMedicamentos.trim(),
-      quaisAnestesias: formData.quaisAnestesias.trim(),
-      habitos: {
-        frequenciaFumo: formData.frequenciaFumo,
-        frequenciaAlcool: formData.frequenciaAlcool
-      },
-      exames: {
-        exameSangue: formData.exameSangue.trim(),
-        coagulacao: formData.coagulacao.trim(),
-        cicatrizacao: formData.cicatrizacao.trim()
-      },
-      historicoCirurgia: formData.historicoCirurgia.trim(),
-      historicoOdontologico: formData.historicoOdontologico.trim(),
-      sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
-      respiracao: formData.respiracao.trim(),
-      peso: Number(formData.peso) || 0,
-      procedimento: formData.procedimento.trim(),
-      denteFace: formData.denteFace.trim(),
+      dataNascimento: dataNascimentoObj.toISOString(),
+      dataProcedimento: dataProcedimentoObj.toISOString(),
       valor: convertValueToFloat(formData.valor),
-      modalidadePagamento: formData.modalidadePagamento,
-      profissional: formData.profissional.trim()
+      // Limpeza dos campos de texto
+      nomeCompleto: formData.nomeCompleto.trim(),
+      email: formData.email.toLowerCase().trim(),
+      endereco: formData.endereco.trim(),
+      detalhesDoencas: formData.detalhesDoencas.trim(),
+      // ... outros campos trim() conforme necessário
     };
   
-    // Adicionar senha apenas para novo cadastro
+    // Tratamento de senha (mantido igual)
     if (!editandoId) {
       if (!formData.password || formData.password.length < 6) {
-        setFieldErrors(prev => ({
-          ...prev,
-          password: "A senha deve ter pelo menos 6 caracteres"
-        }));
+        setFieldErrors(prev => ({ ...prev, password: "A senha deve ter pelo menos 6 caracteres" }));
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        setFieldErrors(prev => ({
-          ...prev,
-          confirmPassword: "As senhas não coincidem"
-        }));
+        setFieldErrors(prev => ({ ...prev, confirmPassword: "As senhas não coincidem" }));
         return;
       }
       dadosParaEnvio.password = formData.password;
@@ -655,7 +573,6 @@ const RegisterUser = () => {
       fetchUsuarios();
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
-  
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
         setError(error.response.data.message || "Corrija os erros no formulário");
