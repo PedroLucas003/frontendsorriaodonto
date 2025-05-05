@@ -198,36 +198,36 @@ const RegisterUser = () => {
 
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
-  
+
     // Função auxiliar para validar datas
     const validateDate = (dateValue, fieldName) => {
       if (!dateValue) {
         delete errors[fieldName];
         return true;
       }
-  
+
       // Verifica formato básico
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
         errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
         return false;
       }
-  
+
       // Verifica se está completo
       if (dateValue.length !== 10) {
         return true;
       }
-  
+
       // Validação completa da data
       const [day, month, year] = dateValue.split('/');
       const dayNum = parseInt(day, 10);
       const monthNum = parseInt(month, 10) - 1;
       const yearNum = parseInt(year, 10);
-      
+
       if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
         errors[fieldName] = "Data contém valores inválidos";
         return false;
       }
-  
+
       const dateObj = new Date(yearNum, monthNum, dayNum);
       if (
         dateObj.getFullYear() !== yearNum ||
@@ -237,23 +237,23 @@ const RegisterUser = () => {
         errors[fieldName] = "Data inválida";
         return false;
       }
-  
+
       // Validações específicas por tipo de data
       if (fieldName === "dataNascimento" && dateObj > new Date()) {
         errors[fieldName] = "Data deve ser no passado";
         return false;
       }
-  
+
       // Para dataProcedimento, permitir datas futuras (agendamentos)
       if (fieldName === "dataProcedimento" && dateObj < new Date()) {
         errors[fieldName] = "Data do procedimento não pode ser no passado";
         return false;
       }
-  
+
       delete errors[fieldName];
       return true;
     };
-  
+
     // Validações específicas por campo
     switch (name) {
       case "nomeCompleto":
@@ -263,7 +263,7 @@ const RegisterUser = () => {
           delete errors.nomeCompleto;
         }
         break;
-  
+
       case "email":
         if (!value) {
           errors.email = "E-mail é obrigatório";
@@ -273,7 +273,7 @@ const RegisterUser = () => {
           delete errors.email;
         }
         break;
-  
+
       case "cpf":
         if (!value) {
           errors.cpf = "CPF é obrigatório";
@@ -283,7 +283,7 @@ const RegisterUser = () => {
           delete errors.cpf;
         }
         break;
-  
+
       case "telefone":
         if (!value) {
           errors.telefone = "Telefone é obrigatório";
@@ -293,12 +293,12 @@ const RegisterUser = () => {
           delete errors.telefone;
         }
         break;
-  
+
       case "dataNascimento":
       case "dataProcedimento":
         validateDate(value, name);
         break;
-  
+
       case "endereco":
         if (!value || value.trim().length < 5) {
           errors.endereco = "Endereço deve ter pelo menos 5 caracteres";
@@ -306,7 +306,7 @@ const RegisterUser = () => {
           delete errors.endereco;
         }
         break;
-  
+
       case "password":
         if (!editandoId && (!value || value.length < 6)) {
           errors.password = "A senha deve ter pelo menos 6 caracteres";
@@ -314,7 +314,7 @@ const RegisterUser = () => {
           delete errors.password;
         }
         break;
-  
+
       case "confirmPassword":
         if (!editandoId && formData.password && value !== formData.password) {
           errors.confirmPassword = "As senhas não coincidem";
@@ -322,7 +322,7 @@ const RegisterUser = () => {
           delete errors.confirmPassword;
         }
         break;
-  
+
       case "peso":
         if (value && !/^\d*\.?\d*$/.test(value)) {
           errors.peso = "O peso deve conter apenas números (ex: 70.5)";
@@ -330,7 +330,7 @@ const RegisterUser = () => {
           delete errors.peso;
         }
         break;
-  
+
       case "valor":
         const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
         if (value && isNaN(numericValue)) {
@@ -341,13 +341,13 @@ const RegisterUser = () => {
           delete errors.valor;
         }
         break;
-  
+
       default:
         if (errors[name]) {
           delete errors[name];
         }
     }
-  
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -369,7 +369,7 @@ const RegisterUser = () => {
     else if (name === "telefone") {
       formattedValue = formatFone(value);
     }
-    else if (name === "dataNascimento") {
+    else if (name === "dataNascimento" || name === "dataProcedimento") {
       // Aplica a máscara de data e validação em tempo real
       formattedValue = formatDateInput(value);
 
@@ -379,12 +379,14 @@ const RegisterUser = () => {
         const dateObj = new Date(`${year}-${month}-${day}`);
 
         if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, dataNascimento: "Data inválida" }));
-        } else if (dateObj > new Date()) {
-          setFieldErrors(prev => ({ ...prev, dataNascimento: "Data deve ser no passado" }));
+          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else if (name === "dataNascimento" && dateObj > new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
+        } else if (name === "dataProcedimento" && dateObj < new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
         } else {
           const errors = { ...fieldErrors };
-          delete errors.dataNascimento;
+          delete errors[name];
           setFieldErrors(errors);
         }
       }
@@ -423,12 +425,12 @@ const RegisterUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     // Validação inicial do formulário
     if (!validateForm()) {
       return;
     }
-  
+
     // Validar todos os campos obrigatórios
     let formIsValid = true;
     const requiredFields = [
@@ -436,7 +438,7 @@ const RegisterUser = () => {
       'dataNascimento', 'dataProcedimento', 'procedimento',
       'denteFace', 'valor', 'modalidadePagamento', 'profissional'
     ];
-  
+
     requiredFields.forEach(field => {
       if (!formData[field]) {
         setFieldErrors(prev => ({
@@ -446,11 +448,11 @@ const RegisterUser = () => {
         formIsValid = false;
       }
     });
-  
+
     if (!formIsValid) {
       return;
     }
-  
+
     // Converter datas para formato ISO
     const convertDateToISO = (dateString, fieldName) => {
       if (!dateString || dateString.length !== 10) {
@@ -460,11 +462,11 @@ const RegisterUser = () => {
         }));
         return null;
       }
-  
+
       try {
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-  
+
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({
             ...prev,
@@ -472,7 +474,7 @@ const RegisterUser = () => {
           }));
           return null;
         }
-  
+
         return dateObj.toISOString();
       } catch (error) {
         console.error(`Erro ao converter ${fieldName}:`, error);
@@ -483,16 +485,16 @@ const RegisterUser = () => {
         return null;
       }
     };
-  
+
     // Converter datas
     const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
     const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
-  
+
     // Se alguma conversão falhou, retornar
     if (!dataNascimentoISO || !dataProcedimentoISO) {
       return;
     }
-  
+
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
@@ -526,7 +528,7 @@ const RegisterUser = () => {
       modalidadePagamento: formData.modalidadePagamento,
       profissional: formData.profissional.trim()
     };
-  
+
     // Adicionar senha apenas para novo cadastro
     if (!editandoId) {
       if (!formData.password || formData.password.length < 6) {
@@ -546,25 +548,25 @@ const RegisterUser = () => {
       dadosParaEnvio.password = formData.password;
       dadosParaEnvio.confirmPassword = formData.confirmPassword;
     }
-  
+
     try {
       const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
       const method = editandoId ? "put" : "post";
-  
+
       const response = await api[method](endpoint, dadosParaEnvio);
-  
+
       if (response.data?.errors) {
         setFieldErrors(response.data.errors);
         setError(response.data.message || "Erro de validação");
         return;
       }
-  
+
       alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
       resetForm();
       fetchUsuarios();
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
-      
+
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
         setError(error.response.data.message || "Corrija os erros no formulário");
@@ -607,13 +609,13 @@ const RegisterUser = () => {
       profissional: "",
       procedimentos: []
     });
-    
+
     setEditandoId(null);
     setModoVisualizacao(false);
     setError("");
     setFieldErrors({});
     setShowProcedimentoForm(false);
-    
+
     setProcedimentoData({
       procedimento: "",
       denteFace: "",
