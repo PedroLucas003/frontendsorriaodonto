@@ -629,7 +629,7 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-  
+
     // Formatação segura da data de nascimento
     let dataNascimentoFormatada = '';
     if (usuario.dataNascimento) {
@@ -645,8 +645,8 @@ const RegisterUser = () => {
         console.error("Erro ao formatar data de nascimento:", e);
       }
     }
-  
-    // Formatação segura da data do procedimento principal (CORREÇÃO AQUI)
+
+    // Formatação da data do procedimento principal
     let dataProcedimentoFormatada = '';
     if (usuario.dataProcedimento) {
       try {
@@ -661,36 +661,66 @@ const RegisterUser = () => {
         console.error("Erro ao formatar data do procedimento:", e);
       }
     }
-  
+
+    // Formatação do valor monetário (NOVA CORREÇÃO)
+    let valorFormatado = '';
+    if (usuario.valor !== undefined && usuario.valor !== null) {
+      const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
+      if (!isNaN(numericValue)) {
+        valorFormatado = numericValue.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      }
+    }
+
     const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
       ? usuario.historicoProcedimentos
       : [];
-  
+
     const procedimentosCompletos = [
       {
         procedimento: usuario.procedimento || "",
         denteFace: usuario.denteFace || "",
         valor: usuario.valor || 0,
+        valorFormatado: valorFormatado, // Adicionado o valor formatado
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
         dataProcedimento: usuario.dataProcedimento || "",
         isPrincipal: true,
         createdAt: usuario.createdAt || new Date().toISOString()
       },
-      ...historicoProcedimentos.map(p => ({
-        ...p,
-        dataProcedimento: p.dataProcedimento || p.createdAt,
-        isPrincipal: false,
-        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
-      }))
+      ...historicoProcedimentos.map(p => {
+        // Formata o valor para cada procedimento histórico
+        let valorProcFormatado = '';
+        if (p.valor !== undefined && p.valor !== null) {
+          const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
+          if (!isNaN(numericValue)) {
+            valorProcFormatado = numericValue.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            });
+          }
+        }
+
+        return {
+          ...p,
+          valorFormatado: valorProcFormatado, // Adicionado o valor formatado
+          dataProcedimento: p.dataProcedimento || p.createdAt,
+          isPrincipal: false,
+          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+        };
+      })
     ];
-  
+
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
-      dataProcedimento: dataProcedimentoFormatada, // Agora formatada corretamente
+      dataProcedimento: dataProcedimentoFormatada,
+      valor: usuario.valor || 0,
+      valorFormatado: valorFormatado, // Adicionado o valor formatado
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
