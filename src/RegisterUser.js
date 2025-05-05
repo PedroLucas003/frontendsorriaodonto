@@ -113,8 +113,7 @@ const RegisterUser = () => {
     valor: "",
     modalidadePagamento: "",
     profissional: "",
-    dataProcedimento: "",
-     dataNovoProcedimento: ""
+    dataNovoProcedimento: ""
   });
 
   const modalidadesPagamento = [
@@ -675,23 +674,23 @@ const RegisterUser = () => {
       }
     }
 
-    // Formatação da data do procedimento principal
-    let dataProcedimentoFormatada = '';
-    if (usuario.dataProcedimento) {
+    // Formatação da data do novo procedimento
+    let dataNovoProcedimentoFormatada = '';
+    if (usuario.dataNovoProcedimento) {
       try {
-        const date = new Date(usuario.dataProcedimento);
+        const date = new Date(usuario.dataNovoProcedimento);
         if (!isNaN(date.getTime())) {
           const day = String(date.getDate()).padStart(2, '0');
           const month = String(date.getMonth() + 1).padStart(2, '0');
           const year = date.getFullYear();
-          dataProcedimentoFormatada = `${day}/${month}/${year}`;
+          dataNovoProcedimentoFormatada = `${day}/${month}/${year}`;
         }
       } catch (e) {
-        console.error("Erro ao formatar data do procedimento:", e);
+        console.error("Erro ao formatar data do novo procedimento:", e);
       }
     }
 
-    // Formatação do valor monetário (NOVA CORREÇÃO)
+    // Formatação do valor monetário
     let valorFormatado = '';
     if (usuario.valor !== undefined && usuario.valor !== null) {
       const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
@@ -712,10 +711,10 @@ const RegisterUser = () => {
         procedimento: usuario.procedimento || "",
         denteFace: usuario.denteFace || "",
         valor: usuario.valor || 0,
-        valorFormatado: valorFormatado, // Adicionado o valor formatado
+        valorFormatado: valorFormatado,
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
-        dataProcedimento: usuario.dataProcedimento || "",
+        dataNovoProcedimento: usuario.dataNovoProcedimento || "",
         isPrincipal: true,
         createdAt: usuario.createdAt || new Date().toISOString()
       },
@@ -734,8 +733,8 @@ const RegisterUser = () => {
 
         return {
           ...p,
-          valorFormatado: valorProcFormatado, // Adicionado o valor formatado
-          dataProcedimento: p.dataProcedimento || p.createdAt,
+          valorFormatado: valorProcFormatado,
+          dataNovoProcedimento: p.dataNovoProcedimento || p.createdAt,
           isPrincipal: false,
           createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
         };
@@ -747,9 +746,9 @@ const RegisterUser = () => {
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
-      dataProcedimento: dataProcedimentoFormatada,
+      dataNovoProcedimento: dataNovoProcedimentoFormatada,
       valor: usuario.valor || 0,
-      valorFormatado: valorFormatado, // Adicionado o valor formatado
+      valorFormatado: valorFormatado,
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -800,60 +799,55 @@ const RegisterUser = () => {
     
     try {
       const token = localStorage.getItem("token");
-  
-      // Função para converter data no formato DD/MM/AAAA para ISO
+    
       const convertDateToISO = (dateString) => {
         if (!dateString || dateString.length !== 10) return null;
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
         return !isNaN(dateObj.getTime()) ? dateObj.toISOString() : null;
       };
-  
-      // Converter datas
-      const dataProcedimentoISO = convertDateToISO(procedimentoData.dataProcedimento);
+    
+      // Converter apenas dataNovoProcedimento
       const dataNovoProcedimentoISO = convertDateToISO(procedimentoData.dataNovoProcedimento);
-  
-      if (!dataProcedimentoISO || !dataNovoProcedimentoISO) {
-        setError("Datas do procedimento inválidas (use DD/MM/AAAA)");
+    
+      if (!dataNovoProcedimentoISO) {
+        setError("Data do novo procedimento inválida (use DD/MM/AAAA)");
         return;
       }
-  
+    
       const dadosParaEnvio = {
         procedimento: procedimentoData.procedimento,
         denteFace: procedimentoData.denteFace,
         valor: convertValueToFloat(procedimentoData.valor),
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional,
-        dataProcedimento: dataProcedimentoISO,
         dataNovoProcedimento: dataNovoProcedimentoISO
       };
-  
-      // Usar a resposta para atualizar o estado
+    
       const { data: novoProcedimento } = await api.put(
         `/api/users/${editandoId}/procedimento`, 
         dadosParaEnvio,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+    
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-  
+    
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
         valor: "",
         modalidadePagamento: "",
         profissional: "",
-        dataProcedimento: "",
         dataNovoProcedimento: ""
       });
-  
+    
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
-  
+    
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -1369,7 +1363,7 @@ const RegisterUser = () => {
   />
 </div>
 
-          <div className="form-group">
+          {/* <div className="form-group">
             <label htmlFor="dataProcedimento">Data do Procedimento</label>
             <input
               type="text"
@@ -1391,7 +1385,7 @@ const RegisterUser = () => {
                 }
               }}
             />
-          </div>
+          </div> */}
 
           <div className="form-group">
             <label htmlFor="valor">Valor</label>
@@ -1517,7 +1511,6 @@ const RegisterUser = () => {
                   <div className="procedimento-details">
                     <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                     <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                    <p><strong>Data do Procedimento:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
                     <p><strong>Próximo Procedimento:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
                     <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                     <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
