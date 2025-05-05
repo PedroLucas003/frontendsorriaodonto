@@ -112,7 +112,8 @@ const RegisterUser = () => {
     valor: "",
     modalidadePagamento: "",
     profissional: "",
-    dataProcedimento: ""
+    dataProcedimento: "",
+    dataNovoProcedimento: ""
   });
 
   const modalidadesPagamento = [
@@ -607,6 +608,7 @@ const RegisterUser = () => {
       valorNumerico: 0,
       modalidadePagamento: "",
       profissional: "",
+      dataNovoProcedimento: "",
       procedimentos: []
     });
 
@@ -772,7 +774,7 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Converter data para formato ISO
+      // Converter datas para formato ISO
       let dataProcedimentoISO = null;
       if (procedimentoData.dataProcedimento && procedimentoData.dataProcedimento.length === 10) {
         const [day, month, year] = procedimentoData.dataProcedimento.split('/');
@@ -782,10 +784,21 @@ const RegisterUser = () => {
         }
       }
 
+      // Converter dataNovoProcedimento para ISO
+      let dataNovoProcedimentoISO = null;
+      if (procedimentoData.dataNovoProcedimento && procedimentoData.dataNovoProcedimento.length === 10) {
+        const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+        if (!isNaN(dateObj.getTime())) {
+          dataNovoProcedimentoISO = dateObj.toISOString();
+        }
+      }
+
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
-        dataProcedimento: dataProcedimentoISO
+        dataProcedimento: dataProcedimentoISO,
+        dataNovoProcedimento: dataNovoProcedimentoISO // Novo campo adicionado
       };
 
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
@@ -797,7 +810,8 @@ const RegisterUser = () => {
         _id: Date.now().toString(),
         isPrincipal: false,
         createdAt: new Date().toISOString(),
-        dataProcedimento: dataProcedimentoISO || new Date().toISOString()
+        dataProcedimento: dataProcedimentoISO || new Date().toISOString(),
+        dataNovoProcedimento: dataNovoProcedimentoISO || new Date().toISOString() // Novo campo adicionado
       };
 
       setFormData(prev => ({
@@ -811,7 +825,8 @@ const RegisterUser = () => {
         valor: "",
         modalidadePagamento: "",
         profissional: "",
-        dataProcedimento: ""
+        dataProcedimento: "",
+        dataNovoProcedimento: "" // Novo campo resetado
       });
 
       setShowProcedimentoForm(false);
@@ -1278,6 +1293,24 @@ const RegisterUser = () => {
                   </div>
 
                   <div className="form-group">
+                    <label htmlFor="dataNovoProcedimento">Data do Novo Procedimento</label>
+                    <input
+                      type="text"
+                      id="dataNovoProcedimento"
+                      name="dataNovoProcedimento"
+                      value={procedimentoData.dataNovoProcedimento}
+                      onChange={handleProcedimentoChange}
+                      placeholder="DD/MM/AAAA"
+                      maxLength={10}
+                      onKeyDown={(e) => {
+                        if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="form-group">
                     <label htmlFor="denteFace">Dente/Face</label>
                     <input
                       type="text"
@@ -1411,6 +1444,7 @@ const RegisterUser = () => {
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
                             <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                            <p><strong>Nova Data:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
