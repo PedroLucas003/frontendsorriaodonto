@@ -191,30 +191,29 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-
+  
     let formattedValue = value;
-
-    // Aplica a mesma formatação e validação do dataProcedimento
+  
     if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
-      formattedValue = formatDateInput(value); // Usa a mesma função auxiliar existente
-
-      // Validação em tempo real (igual ao dataProcedimento)
+      formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
+  
+      // Validação quando o campo está completo (10 caracteres)
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-
+  
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } else if (dateObj < new Date()) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data não pode ser no passado" }));
-        } else {
+        } 
+        // REMOVIDA A VALIDAÇÃO DE DATA NO PASSADO
+        else {
           const errors = { ...fieldErrors };
           delete errors[name];
           setFieldErrors(errors);
         }
       }
     }
-
+  
     setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
   };
 
@@ -789,26 +788,30 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Função auxiliar para converter datas
-      const parseDate = (dateString) => {
-        if (!dateString || dateString.length !== 10) return null;
+      // Função auxiliar para converter e validar datas
+      const parseDate = (dateString, fieldName) => {
+        if (!dateString || dateString.length !== 10) {
+          setFieldErrors(prev => ({ ...prev, [fieldName]: "Data incompleta (DD/MM/AAAA)" }));
+          return null;
+        }
+
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-        return !isNaN(dateObj.getTime()) ? dateObj.toISOString() : null;
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, [fieldName]: "Data inválida" }));
+          return null;
+        }
+
+        return dateObj.toISOString();
       };
 
       // Converter ambas as datas para formato ISO
-      const dataProcedimentoISO = parseDate(procedimentoData.dataProcedimento);
-      const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento);
+      const dataProcedimentoISO = parseDate(procedimentoData.dataProcedimento, "dataProcedimento");
+      const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
 
-      // Validar datas
-      if (!dataProcedimentoISO) {
-        setFieldErrors(prev => ({ ...prev, dataProcedimento: "Data inválida ou incompleta" }));
-        return;
-      }
-
-      if (!dataNovoProcedimentoISO) {
-        setFieldErrors(prev => ({ ...prev, dataNovoProcedimento: "Data inválida ou incompleta" }));
+      // Verifica se alguma conversão falhou
+      if (!dataProcedimentoISO || !dataNovoProcedimentoISO) {
         return;
       }
 
@@ -816,28 +819,32 @@ const RegisterUser = () => {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
         dataProcedimento: dataProcedimentoISO,
-        dataNovoProcedimento: dataNovoProcedimentoISO // Novo campo adicionado
+        dataNovoProcedimento: dataNovoProcedimentoISO
       };
 
+      // Envia para a API
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      // Cria o novo procedimento para adicionar ao estado
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
         isPrincipal: false,
         createdAt: new Date().toISOString(),
         dataProcedimento: dataProcedimentoISO,
-        dataNovoProcedimento: dataNovoProcedimentoISO // Novo campo adicionado
+        dataNovoProcedimento: dataNovoProcedimentoISO,
+        valorFormatado: formatValueForDisplay(procedimentoData.valor) // Formata para exibição
       };
 
+      // Atualiza o estado com o novo procedimento
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
 
-      // Reset do formulário incluindo o novo campo
+      // Reseta o formulário
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
@@ -845,16 +852,24 @@ const RegisterUser = () => {
         modalidadePagamento: "",
         profissional: "",
         dataProcedimento: "",
-        dataNovoProcedimento: "" // Novo campo adicionado
+        dataNovoProcedimento: ""
       });
 
+      // Fecha o formulário e limpa erros
       setShowProcedimentoForm(false);
       setError("");
+      
+      // Atualiza a lista de usuários
       fetchUsuarios();
 
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
+      
+      // Trata erros específicos da API
+      if (error.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+      }
     }
   };
 
