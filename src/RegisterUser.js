@@ -243,26 +243,63 @@ const RegisterUser = () => {
     let formattedValue = value;
   
     if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
-      formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
+      // Aplica a formatação DD/MM/AAAA
+      formattedValue = formatDateInput(value);
   
       // Validação quando o campo está completo (10 caracteres)
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
+        const dayNum = parseInt(day, 10);
+        const monthNum = parseInt(month, 10);
+        const yearNum = parseInt(year, 10);
   
+        // Verifica se os valores são números válidos
+        if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data contém valores inválidos" }));
+          return;
+        }
+  
+        // Valida o mês (1-12)
+        if (monthNum < 1 || monthNum > 12) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Mês inválido (1-12)" }));
+          return;
+        }
+  
+        // Valida o dia baseado no mês
+        const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+        if (dayNum < 1 || dayNum > daysInMonth) {
+          setFieldErrors(prev => ({ 
+            ...prev, 
+            [name]: `Dia inválido para o mês (1-${daysInMonth})` 
+          }));
+          return;
+        }
+  
+        // Cria objeto Date para validação final
+        const dateObj = new Date(yearNum, monthNum - 1, dayNum);
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } 
-        // REMOVIDA A VALIDAÇÃO DE DATA NO PASSADO
-        else {
-          const errors = { ...fieldErrors };
-          delete errors[name];
-          setFieldErrors(errors);
+          return;
         }
+  
+        // Se todas as validações passarem, remove o erro
+        const errors = { ...fieldErrors };
+        delete errors[name];
+        setFieldErrors(errors);
+      } else if (formattedValue.length > 0) {
+        // Se o campo não está completo mas tem conteúdo
+        setFieldErrors(prev => ({ 
+          ...prev, 
+          [name]: "Data incompleta (DD/MM/AAAA)" 
+        }));
       }
     }
   
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
+    // Atualiza o estado com o valor formatado
+    setProcedimentoData(prev => ({ 
+      ...prev, 
+      [name]: formattedValue 
+    }));
   };
 
   const validateField = (name, value) => {
@@ -825,59 +862,130 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+    
     try {
       const token = localStorage.getItem("token");
+      setError(""); // Limpa erros anteriores
+      setFieldErrors({}); // Limpa erros de campo
   
-      // Função auxiliar para converter e validar datas (permite datas no passado)
-      const parseDate = (dateString, fieldName) => {
-        if (!dateString || dateString.length !== 10) {
-          setFieldErrors(prev => ({ ...prev, [fieldName]: "Data incompleta (DD/MM/AAAA)" }));
+      // Função auxiliar para validar e converter datas
+      const parseAndValidateDate = (dateString, fieldName) => {
+        // Verifica se a data está vazia
+        if (!dateString || dateString.trim() === "") {
+          setFieldErrors(prev => ({ ...prev, [fieldName]: "Data é obrigatória" }));
+          return null;
+        }
+  
+        // Verifica formato básico
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+          setFieldErrors(prev => ({ ...prev, [fieldName]: "Formato inválido (DD/MM/AAAA)" }));
           return null;
         }
   
         const [day, month, year] = dateString.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
+        const dayNum = parseInt(day, 10);
+        const monthNum = parseInt(month, 10);
+        const yearNum = parseInt(year, 10);
   
+        // Validação dos componentes da data
+        if (monthNum < 1 || monthNum > 12) {
+          setFieldErrors(prev => ({ ...prev, [fieldName]: "Mês inválido (1-12)" }));
+          return null;
+        }
+  
+        // Valida dias do mês
+        const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+        if (dayNum < 1 || dayNum > daysInMonth) {
+          setFieldErrors(prev => ({ ...prev, [fieldName]: `Dia inválido para o mês (1-${daysInMonth})` }));
+          return null;
+        }
+  
+        // Cria objeto Date para validação adicional
+        const dateObj = new Date(yearNum, monthNum - 1, dayNum);
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [fieldName]: "Data inválida" }));
           return null;
         }
   
-        // Retorna no formato ISO sem timezone (YYYY-MM-DD)
-        return `${year}-${month}-${day}`;
+        // Retorna no formato ISO (YYYY-MM-DD)
+        return `${yearNum}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       };
   
-      // Converter ambas as datas para formato ISO
-      const dataProcedimentoISO = parseDate(procedimentoData.dataProcedimento, "dataProcedimento");
-      const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
+      // Validação dos campos obrigatórios
+      const requiredFields = {
+        procedimento: "Procedimento é obrigatório",
+        denteFace: "Dente/Face é obrigatório",
+        valor: "Valor é obrigatório",
+        modalidadePagamento: "Modalidade de pagamento é obrigatória",
+        profissional: "Profissional é obrigatório",
+        dataProcedimento: "Data do procedimento é obrigatória",
+        dataNovoProcedimento: "Data do novo procedimento é obrigatória"
+      };
   
-      // Verifica se alguma conversão falhou
+      let hasErrors = false;
+      const newFieldErrors = {};
+  
+      // Valida campos obrigatórios
+      Object.keys(requiredFields).forEach(field => {
+        if (!procedimentoData[field] || procedimentoData[field].toString().trim() === "") {
+          newFieldErrors[field] = requiredFields[field];
+          hasErrors = true;
+        }
+      });
+  
+      if (hasErrors) {
+        setFieldErrors(newFieldErrors);
+        return;
+      }
+  
+      // Valida e converte as datas
+      const dataProcedimentoISO = parseAndValidateDate(procedimentoData.dataProcedimento, "dataProcedimento");
+      const dataNovoProcedimentoISO = parseAndValidateDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
+  
+      // Verifica se houve erros na validação das datas
       if (!dataProcedimentoISO || !dataNovoProcedimentoISO) {
         return;
       }
   
+      // Valida o valor monetário
+      const valorNumerico = convertValueToFloat(procedimentoData.valor);
+      if (isNaN(valorNumerico) || valorNumerico < 0) {
+        setFieldErrors(prev => ({ ...prev, valor: "Valor inválido" }));
+        return;
+      }
+  
+      // Prepara os dados para envio
       const dadosParaEnvio = {
-        ...procedimentoData,
-        valor: convertValueToFloat(procedimentoData.valor),
+        procedimento: procedimentoData.procedimento.trim(),
+        denteFace: procedimentoData.denteFace.trim(),
+        valor: valorNumerico,
+        modalidadePagamento: procedimentoData.modalidadePagamento,
+        profissional: procedimentoData.profissional.trim(),
         dataProcedimento: dataProcedimentoISO,
         dataNovoProcedimento: dataNovoProcedimentoISO
       };
   
       // Envia para a API
-      await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.put(
+        `/api/users/${editandoId}/procedimento`,
+        dadosParaEnvio,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      // Verifica se a resposta contém erros
+      if (response.data?.errors) {
+        setFieldErrors(response.data.errors);
+        setError(response.data.message || "Erro ao adicionar procedimento");
+        return;
+      }
   
       // Cria o novo procedimento para adicionar ao estado
       const novoProcedimento = {
         ...dadosParaEnvio,
-        _id: Date.now().toString(),
+        _id: response.data._id || Date.now().toString(), // Usa o ID retornado pela API ou gera um temporário
         isPrincipal: false,
         createdAt: new Date().toISOString(),
-        dataProcedimento: dataProcedimentoISO,
-        dataNovoProcedimento: dataNovoProcedimentoISO,
-        valorFormatado: formatValueForDisplay(procedimentoData.valor)
+        valorFormatado: formatValueForDisplay(valorNumerico)
       };
   
       // Atualiza o estado com o novo procedimento
@@ -897,20 +1005,30 @@ const RegisterUser = () => {
         dataNovoProcedimento: ""
       });
   
-      // Fecha o formulário e limpa erros
-      setShowProcedimentoForm(false);
-      setError("");
+      // Feedback de sucesso
+      setError(""); // Limpa qualquer erro anterior
+      alert("Procedimento adicionado com sucesso!");
       
-      // Atualiza a lista de usuários
+      // Fecha o formulário e atualiza a lista
+      setShowProcedimentoForm(false);
       fetchUsuarios();
   
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
-      setError(error.response?.data?.message || "Erro ao adicionar procedimento");
       
-      // Trata erros específicos da API
-      if (error.response?.data?.errors) {
-        setFieldErrors(error.response.data.errors);
+      // Tratamento de erros mais detalhado
+      if (error.response) {
+        // Erro da API
+        if (error.response.data?.errors) {
+          setFieldErrors(error.response.data.errors);
+        }
+        setError(error.response.data?.message || "Erro ao adicionar procedimento");
+      } else if (error.request) {
+        // Erro de conexão
+        setError("Erro de conexão com o servidor. Verifique sua internet.");
+      } else {
+        // Outros erros
+        setError("Ocorreu um erro inesperado. Tente novamente.");
       }
     }
   };
