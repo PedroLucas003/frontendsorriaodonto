@@ -7,7 +7,7 @@ import "./RegisterUser.css";
 function formatDateInput(value) {
   // Remove tudo que não é dígito
   let cleanedValue = value.replace(/\D/g, '');
-  
+
   // Limita o dia para 0-31
   if (cleanedValue.length > 2) {
     const day = parseInt(cleanedValue.substring(0, 2), 10);
@@ -15,7 +15,7 @@ function formatDateInput(value) {
       cleanedValue = '31' + cleanedValue.substring(2);
     }
   }
-  
+
   // Limita o mês para 0-12
   if (cleanedValue.length > 4) {
     const month = parseInt(cleanedValue.substring(2, 4), 10);
@@ -23,7 +23,7 @@ function formatDateInput(value) {
       cleanedValue = cleanedValue.substring(0, 2) + '12' + cleanedValue.substring(4);
     }
   }
-  
+
   // Aplica a máscara: DD/MM/AAAA
   if (cleanedValue.length > 2) {
     cleanedValue = cleanedValue.substring(0, 2) + '/' + cleanedValue.substring(2);
@@ -31,7 +31,7 @@ function formatDateInput(value) {
   if (cleanedValue.length > 5) {
     cleanedValue = cleanedValue.substring(0, 5) + '/' + cleanedValue.substring(5, 9);
   }
-  
+
   return cleanedValue;
 }
 
@@ -110,7 +110,8 @@ const RegisterUser = () => {
     denteFace: "",
     valor: "",
     modalidadePagamento: "",
-    profissional: ""
+    profissional: "",
+    dataProcedimento: ""
   });
 
   const modalidadesPagamento = [
@@ -204,7 +205,7 @@ const RegisterUser = () => {
         // Validação completa da data
         const [day, month, year] = value.split('/');
         const date = new Date(`${year}-${month}-${day}`);
-        
+
         if (isNaN(date.getTime())) {
           errors.dataNascimento = "Data inválida";
         } else if (date > new Date()) {
@@ -261,9 +262,9 @@ const RegisterUser = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-  
+
     let formattedValue = value;
-  
+
     if (name === "peso") {
       formattedValue = value.replace(/[^0-9.]/g, "");
       if ((formattedValue.match(/\./g) || []).length > 1) {
@@ -279,12 +280,12 @@ const RegisterUser = () => {
     else if (name === "dataNascimento") {
       // Aplica a máscara de data e validação em tempo real
       formattedValue = formatDateInput(value);
-      
+
       // Validação imediata quando o campo estiver completo
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-        
+
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, dataNascimento: "Data inválida" }));
         } else if (dateObj > new Date()) {
@@ -300,7 +301,7 @@ const RegisterUser = () => {
       // ... (código existente para o campo valor)
       return;
     }
-  
+
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     validateField(name, formattedValue);
     setError("");
@@ -330,23 +331,23 @@ const RegisterUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!validateForm()) {
       return;
     }
-  
+
     // Converter data para formato ISO (YYYY-MM-DD) com validação robusta
     let dataNascimentoISO = null;
     if (formData.dataNascimento && formData.dataNascimento.length === 10) {
       const [day, month, year] = formData.dataNascimento.split('/');
-      
+
       // Validação adicional da data
       const dateObj = new Date(`${year}-${month}-${day}`);
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNascimento: "Data inválida" });
         return;
       }
-      
+
       dataNascimentoISO = dateObj.toISOString();
     }
 
@@ -473,7 +474,7 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-  
+
     // Formatação segura da data de nascimento com tratamento de erros
     let dataNascimentoFormatada = '';
     if (usuario.dataNascimento) {
@@ -491,11 +492,30 @@ const RegisterUser = () => {
         console.error("Erro ao formatar data de nascimento:", e);
       }
     }
-  
+
+    // Adicionado: Formatação da data do procedimento principal
+    let dataProcedimentoFormatada = '';
+    if (usuario.dataProcedimento) {
+      try {
+        const date = new Date(usuario.dataProcedimento);
+        if (!isNaN(date.getTime())) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          dataProcedimentoFormatada = `${day}/${month}/${year}`;
+        } else {
+          console.warn("Data do procedimento inválida no banco de dados");
+        }
+      } catch (e) {
+        console.error("Erro ao formatar data do procedimento:", e);
+      }
+    }
+
     const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
       ? usuario.historicoProcedimentos
       : [];
-  
+
+    // Atualizado: Incluindo dataProcedimento nos procedimentos
     const procedimentosCompletos = [
       {
         procedimento: usuario.procedimento || "",
@@ -503,21 +523,24 @@ const RegisterUser = () => {
         valor: usuario.valor || 0,
         modalidadePagamento: usuario.modalidadePagamento || "",
         profissional: usuario.profissional || "",
+        dataProcedimento: usuario.dataProcedimento || "", // Adicionado
         isPrincipal: true,
         createdAt: usuario.createdAt || new Date().toISOString()
       },
       ...historicoProcedimentos.map(p => ({
         ...p,
+        dataProcedimento: p.dataProcedimento || p.createdAt, // Adicionado
         isPrincipal: false,
         createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
       }))
     ];
-  
+
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
+      dataProcedimento: dataProcedimentoFormatada, // Adicionado
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
@@ -565,43 +588,56 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-
+  
     try {
       const token = localStorage.getItem("token");
-
+  
+      // Converter data para formato ISO
+      let dataProcedimentoISO = null;
+      if (procedimentoData.dataProcedimento && procedimentoData.dataProcedimento.length === 10) {
+        const [day, month, year] = procedimentoData.dataProcedimento.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+        if (!isNaN(dateObj.getTime())) {
+          dataProcedimentoISO = dateObj.toISOString();
+        }
+      }
+  
       const dadosParaEnvio = {
         ...procedimentoData,
-        valor: convertValueToFloat(procedimentoData.valor)
+        valor: convertValueToFloat(procedimentoData.valor),
+        dataProcedimento: dataProcedimentoISO
       };
-
+  
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
         isPrincipal: false,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        dataProcedimento: dataProcedimentoISO || new Date().toISOString()
       };
-
+  
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-
+  
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
         valor: "",
         modalidadePagamento: "",
-        profissional: ""
+        profissional: "",
+        dataProcedimento: ""
       });
-
+  
       setShowProcedimentoForm(false);
       setError("");
       fetchUsuarios();
-
+  
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
@@ -665,65 +701,66 @@ const RegisterUser = () => {
       {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit} encType="multipart/form-data">
-  <div className="form-section">
-    <h2>Dados Pessoais</h2>
-    <div className="form-grid">
-      {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
-        <div key={key} className="form-group">
-          <label htmlFor={key}>{labels[key]}</label>
-          <input
-            type={key.includes("password") ? "password" : "text"}
-            id={key}
-            name={key}
-            value={formData[key]}
-            onChange={handleChange}
-            className={fieldErrors[key] ? 'error-field' : ''}
-            disabled={modoVisualizacao && !key.includes("password")}
-          />
-          {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
+        <div className="form-section">
+          <h2>Dados Pessoais</h2>
+          <div className="form-grid">
+            {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
+              <div key={key} className="form-group">
+                <label htmlFor={key}>{labels[key]}</label>
+                <input
+                  type={key.includes("password") ? "password" : "text"}
+                  id={key}
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className={fieldErrors[key] ? 'error-field' : ''}
+                  disabled={modoVisualizacao && !key.includes("password")}
+                />
+                {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
+              </div>
+            ))}
+
+            {/* Campo dataNascimento separado com tratamento especial */}
+            <div className="form-group">
+              <label htmlFor="dataNascimento">{labels.dataNascimento}</label>
+              <input
+                type="text"
+                id="dataNascimento"
+                name="dataNascimento"
+                value={formData.dataNascimento}
+                onChange={handleChange}
+                onKeyDown={(e) => {
+                  // Permite apenas números e teclas de controle
+                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                className={fieldErrors.dataNascimento ? 'error-field' : ''}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+                disabled={modoVisualizacao}
+              />
+              {fieldErrors.dataNascimento && (
+                <span className="field-error">{fieldErrors.dataNascimento}</span>
+              )}
+            </div>
+
+
+            <div className="form-group">
+              <label htmlFor="endereco">{labels.endereco}</label>
+              <textarea
+                id="endereco"
+                name="endereco"
+                value={formData.endereco}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
+                rows={3}
+                disabled={modoVisualizacao}
+              />
+              {fieldErrors.endereco && <span className="field-error">{fieldErrors.endereco}</span>}
+            </div>
+          </div>
         </div>
-      ))}
-
-      {/* Campo dataNascimento separado com tratamento especial */}
-      <div className="form-group">
-        <label htmlFor="dataNascimento">{labels.dataNascimento}</label>
-        <input
-          type="text"
-          id="dataNascimento"
-          name="dataNascimento"
-          value={formData.dataNascimento}
-          onChange={handleChange}
-          onKeyDown={(e) => {
-            // Permite apenas números e teclas de controle
-            if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-              e.preventDefault();
-            }
-          }}
-          className={fieldErrors.dataNascimento ? 'error-field' : ''}
-          placeholder="DD/MM/AAAA"
-          maxLength={10}
-          disabled={modoVisualizacao}
-        />
-        {fieldErrors.dataNascimento && (
-          <span className="field-error">{fieldErrors.dataNascimento}</span>
-        )}
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="endereco">{labels.endereco}</label>
-        <textarea
-          id="endereco"
-          name="endereco"
-          value={formData.endereco}
-          onChange={handleChange}
-          className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
-          rows={3}
-          disabled={modoVisualizacao}
-        />
-        {fieldErrors.endereco && <span className="field-error">{fieldErrors.endereco}</span>}
-      </div>
-    </div>
-  </div>
 
         <div className="form-section">
           <h2>Histórico de Saúde</h2>
@@ -938,6 +975,25 @@ const RegisterUser = () => {
             </div>
 
             <div className="form-group">
+              <label htmlFor="dataProcedimento">Data do Procedimento</label>
+              <input
+                type="text"
+                id="dataProcedimento"
+                name="dataProcedimento"
+                value={procedimentoData.dataProcedimento}
+                onChange={(e) => {
+                  const formattedValue = formatDateInput(e.target.value);
+                  setProcedimentoData(prev => ({
+                    ...prev,
+                    dataProcedimento: formattedValue
+                  }));
+                }}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="valor">{labels.valor}</label>
               <input
                 type="text"
@@ -1104,7 +1160,8 @@ const RegisterUser = () => {
                         denteFace: "",
                         valor: "",
                         modalidadePagamento: "",
-                        profissional: ""
+                        profissional: "",
+                        dataProcedimento: ""
                       });
                       setShowProcedimentoForm(false);
                     }}
@@ -1168,6 +1225,7 @@ const RegisterUser = () => {
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
+                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
