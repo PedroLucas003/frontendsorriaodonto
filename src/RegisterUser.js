@@ -397,14 +397,21 @@ const RegisterUser = () => {
     else if (name === "telefone") {
       formattedValue = formatFone(value);
     }
-    else if (name === "dataNascimento" || name === "dataProcedimento") {
+    else if (name === "dataNascimento" || name === "dataProcedimento" || name === "dataNovoProcedimento") {
       // Aplica a máscara de data em tempo real
       formattedValue = formatDateInput(value);
   
       // Validação imediata quando o campo estiver completo (DD/MM/AAAA)
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
+        
+        // Cria a data no fuso horário local e zera o horário
+        const dateObj = new Date(year, month - 1, day);
+        dateObj.setHours(0, 0, 0, 0);
+        
+        // Data atual também com horário zerado
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
   
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
@@ -413,7 +420,7 @@ const RegisterUser = () => {
           
           // Validações específicas para cada campo de data
           if (name === "dataNascimento") {
-            if (dateObj > new Date()) {
+            if (dateObj >= today) {
               errors[name] = "Data de nascimento deve ser no passado";
             } else {
               delete errors[name];
@@ -421,8 +428,16 @@ const RegisterUser = () => {
           }
           
           if (name === "dataProcedimento") {
-            if (dateObj < new Date()) {
-              errors[name] = "Data do procedimento não pode ser no passado";
+            if (dateObj < today) {
+              errors[name] = "Data do procedimento deve ser hoje ou no futuro";
+            } else {
+              delete errors[name];
+            }
+          }
+  
+          if (name === "dataNovoProcedimento") {
+            if (dateObj <= today) {
+              errors[name] = "Data do novo procedimento deve ser futura";
             } else {
               delete errors[name];
             }
