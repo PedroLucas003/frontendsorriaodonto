@@ -41,10 +41,10 @@ function formatDateForDisplay(dateString) {
     // Corrige o problema do fuso horário criando a data no UTC
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
-
+    
     // Ajusta para o dia correto considerando UTC
     const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
+    
     return adjustedDate.toLocaleDateString('pt-BR');
   } catch (e) {
     console.error("Erro ao formatar data para exibição:", e);
@@ -147,28 +147,28 @@ const RegisterUser = () => {
       const response = await api.get("/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       // Verificação mais robusta da resposta
       if (!response?.data) {
         throw new Error("Resposta da API não contém dados");
       }
-
+  
       // Converter para array garantidamente
-      const dadosUsuarios = Array.isArray(response.data)
-        ? response.data
+      const dadosUsuarios = Array.isArray(response.data) 
+        ? response.data 
         : [];
-
+  
       // Formatação segura dos usuários
       const usuariosFormatados = dadosUsuarios.map(usuario => {
         // Garante que procedimentos sejam arrays
-        const procedimentos = Array.isArray(usuario.procedimentos)
-          ? usuario.procedimentos
+        const procedimentos = Array.isArray(usuario.procedimentos) 
+          ? usuario.procedimentos 
           : [];
-
+        
         const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
           ? usuario.historicoProcedimentos
           : [];
-
+  
         // Formata datas para exibição
         const formatDate = (date) => {
           try {
@@ -177,7 +177,7 @@ const RegisterUser = () => {
             return 'Data inválida';
           }
         };
-
+  
         return {
           ...usuario,
           procedimentos,
@@ -194,28 +194,28 @@ const RegisterUser = () => {
           dataNovoProcedimento: usuario.dataNovoProcedimento
         };
       });
-
+  
       // Ordena por data de criação (mais recentes primeiro)
       usuariosFormatados.sort((a, b) => {
         const dateA = new Date(a.createdAt || 0);
         const dateB = new Date(b.createdAt || 0);
         return dateB - dateA;
       });
-
+  
       setUsuarios(usuariosFormatados);
       setError("");
-
+  
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
-
+      
       // Mensagem mais específica de erro
-      const errorMessage = error.response?.data?.message
+      const errorMessage = error.response?.data?.message 
         ? `Erro ao carregar usuários: ${error.response.data.message}`
         : "Erro ao conectar com o servidor. Tente novamente.";
-
+      
       setError(errorMessage);
       setUsuarios([]);
-
+      
       // Opcional: Mostrar notificação mais visível
       // alert(errorMessage); 
       // ou usar um toast notification se disponível
@@ -239,20 +239,20 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-
+  
     let formattedValue = value;
-
+  
     if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
       formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
-
+  
       // Validação quando o campo está completo (10 caracteres)
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-
+  
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        }
+        } 
         // REMOVIDA A VALIDAÇÃO DE DATA NO PASSADO
         else {
           const errors = { ...fieldErrors };
@@ -261,7 +261,7 @@ const RegisterUser = () => {
         }
       }
     }
-
+  
     setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
   };
 
@@ -433,17 +433,21 @@ const RegisterUser = () => {
     else if (name === "telefone") {
       formattedValue = formatFone(value);
     }
-    else if (name === "dataNascimento") {
+    else if (name === "dataNascimento" || name === "dataProcedimento") {
+      // Aplica a máscara de data e validação em tempo real
       formattedValue = formatDateInput(value);
 
+      // Validação imediata quando o campo estiver completo
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
 
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } else if (dateObj > new Date()) {
+        } else if (name === "dataNascimento" && dateObj > new Date()) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
+        } else if (name === "dataProcedimento" && dateObj < new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
         } else {
           const errors = { ...fieldErrors };
           delete errors[name];
@@ -451,13 +455,8 @@ const RegisterUser = () => {
         }
       }
     }
-    else if (name === "dataProcedimento") {
-      formattedValue = value;
-      const errors = { ...fieldErrors };
-      delete errors[name];
-      setFieldErrors(errors);
-    }
     else if (name === "valor") {
+      // ... (código existente para o campo valor)
       return;
     }
 
@@ -694,46 +693,97 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-
-    const formatDisplayDate = (dateString) => {
+  
+    // Função corrigida para formatar datas sem problemas de timezone
+    const formatDateWithoutTimezone = (dateString) => {
       if (!dateString) return '';
-      if (typeof dateString === 'string' && dateString.includes('/')) {
-        return dateString;
-      }
       try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return '';
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
+        
+        // Ajuste para evitar problemas de timezone
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        
         return `${day}/${month}/${year}`;
       } catch (e) {
         console.error("Erro ao formatar data:", e);
         return '';
       }
     };
-
-    const valorFormatado = usuario.valor !== undefined && usuario.valor !== null
-      ? convertValueToFloat(usuario.valor).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
+  
+    // Formatação das datas usando a nova função
+    let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
+    let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
+    let dataNovoProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataNovoProcedimento);
+  
+    // Formatação do valor monetário
+    let valorFormatado = '';
+    if (usuario.valor !== undefined && usuario.valor !== null) {
+      const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
+      if (!isNaN(numericValue)) {
+        valorFormatado = numericValue.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      }
+    }
+  
+    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
+      ? usuario.historicoProcedimentos
+      : [];
+  
+    const procedimentosCompletos = [
+      {
+        procedimento: usuario.procedimento || "",
+        denteFace: usuario.denteFace || "",
+        valor: usuario.valor || 0,
+        valorFormatado: valorFormatado,
+        modalidadePagamento: usuario.modalidadePagamento || "",
+        profissional: usuario.profissional || "",
+        dataProcedimento: usuario.dataProcedimento || "",
+        dataNovoProcedimento: usuario.dataNovoProcedimento || "",
+        isPrincipal: true,
+        createdAt: usuario.createdAt || new Date().toISOString()
+      },
+      ...historicoProcedimentos.map(p => {
+        let valorProcFormatado = '';
+        if (p.valor !== undefined && p.valor !== null) {
+          const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
+          if (!isNaN(numericValue)) {
+            valorProcFormatado = numericValue.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            });
+          }
+        }
+  
+        return {
+          ...p,
+          valorFormatado: valorProcFormatado,
+          dataProcedimento: p.dataProcedimento || p.createdAt,
+          isPrincipal: false,
+          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+        };
       })
-      : '';
-
+    ];
+  
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
-      dataNascimento: formatDisplayDate(usuario.dataNascimento),
-      dataProcedimento: usuario.dataProcedimento || '',
-      dataNovoProcedimento: usuario.dataNovoProcedimento || '',
+      dataNascimento: dataNascimentoFormatada,
+      dataProcedimento: dataProcedimentoFormatada,
+      dataNovoProcedimento: dataNovoProcedimentoFormatada,
       valor: usuario.valor || 0,
-      valorFormatado,
+      valorFormatado: valorFormatado,
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
       coagulacao: usuario.exames?.coagulacao || "",
       cicatrizacao: usuario.exames?.cicatrizacao || "",
+      procedimentos: procedimentosCompletos,
       password: "",
       confirmPassword: ""
     });
@@ -775,50 +825,50 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-
+  
     try {
       const token = localStorage.getItem("token");
-
+  
       // Função auxiliar para converter e validar datas (permite datas no passado)
       const parseDate = (dateString, fieldName) => {
         if (!dateString || dateString.length !== 10) {
           setFieldErrors(prev => ({ ...prev, [fieldName]: "Data incompleta (DD/MM/AAAA)" }));
           return null;
         }
-
+  
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-
+  
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [fieldName]: "Data inválida" }));
           return null;
         }
-
+  
         // Retorna no formato ISO sem timezone (YYYY-MM-DD)
         return `${year}-${month}-${day}`;
       };
-
+  
       // Converter ambas as datas para formato ISO
       const dataProcedimentoISO = parseDate(procedimentoData.dataProcedimento, "dataProcedimento");
       const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
-
+  
       // Verifica se alguma conversão falhou
       if (!dataProcedimentoISO || !dataNovoProcedimentoISO) {
         return;
       }
-
+  
       const dadosParaEnvio = {
         ...procedimentoData,
         valor: convertValueToFloat(procedimentoData.valor),
         dataProcedimento: dataProcedimentoISO,
         dataNovoProcedimento: dataNovoProcedimentoISO
       };
-
+  
       // Envia para a API
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       // Cria o novo procedimento para adicionar ao estado
       const novoProcedimento = {
         ...dadosParaEnvio,
@@ -829,13 +879,13 @@ const RegisterUser = () => {
         dataNovoProcedimento: dataNovoProcedimentoISO,
         valorFormatado: formatValueForDisplay(procedimentoData.valor)
       };
-
+  
       // Atualiza o estado com o novo procedimento
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
-
+  
       // Reseta o formulário
       setProcedimentoData({
         procedimento: "",
@@ -846,18 +896,18 @@ const RegisterUser = () => {
         dataProcedimento: "",
         dataNovoProcedimento: ""
       });
-
+  
       // Fecha o formulário e limpa erros
       setShowProcedimentoForm(false);
       setError("");
-
+      
       // Atualiza a lista de usuários
       fetchUsuarios();
-
+  
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
       setError(error.response?.data?.message || "Erro ao adicionar procedimento");
-
+      
       // Trata erros específicos da API
       if (error.response?.data?.errors) {
         setFieldErrors(error.response.data.errors);
@@ -868,7 +918,7 @@ const RegisterUser = () => {
   const filteredUsuarios = usuarios.filter(usuario => {
     const searchLower = searchTerm.toLowerCase().trim();  // Remove espaços e padroniza
     const cpfSearch = searchTerm.replace(/\D/g, '');      // Remove formatação do CPF
-
+  
     return (
       !searchLower ||  // Se vazio, retorna todos
       usuario.nomeCompleto?.toLowerCase().includes(searchLower) ||
@@ -1209,8 +1259,15 @@ const RegisterUser = () => {
                 value={formData.dataProcedimento}
                 onChange={handleChange}
                 placeholder="DD/MM/AAAA"
+                maxLength={10}
                 className={fieldErrors.dataProcedimento ? 'error-field' : ''}
                 disabled={modoVisualizacao}
+                onKeyDown={(e) => {
+                  // Permite apenas números e teclas de controle
+                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
               />
               {fieldErrors.dataProcedimento && (
                 <span className="field-error">{fieldErrors.dataProcedimento}</span>
@@ -1383,6 +1440,13 @@ const RegisterUser = () => {
                     value={procedimentoData.dataNovoProcedimento}
                     onChange={handleProcedimentoChange}
                     placeholder="DD/MM/AAAA"
+                    maxLength={10}
+                    onKeyDown={(e) => {
+                      // Permite apenas números e teclas de controle (igual ao dataProcedimento)
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     className={fieldErrors.dataNovoProcedimento ? 'error-field' : ''}
                   />
                   {fieldErrors.dataNovoProcedimento && (
@@ -1585,3 +1649,7 @@ const RegisterUser = () => {
 };
 
 export default RegisterUser;
+
+
+
+
