@@ -1588,7 +1588,7 @@ const RegisterUser = () => {
                   className="procedimento-item"
                 >
                   <div className="procedimento-header">
-                    <h4>Procedimento #{index + 1}</h4>
+                    <h4>Procedimento #{index + 2}</h4> {/* Alterado para index + 2 */}
                     <span>{formatDateForDisplay(procedimento.createdAt)}</span>
                   </div>
 
