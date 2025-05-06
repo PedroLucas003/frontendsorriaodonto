@@ -777,10 +777,7 @@ const RegisterUser = () => {
       });
   
     // Combina o procedimento principal com os secundários ordenados
-    const procedimentosCompletos = [
-      procedimentoPrincipal, 
-      ...procedimentosSecundarios
-    ];
+    const procedimentosCompletos = [procedimentoPrincipal, ...procedimentosSecundarios];
   
     setFormData({
       ...usuario,
@@ -871,11 +868,11 @@ const RegisterUser = () => {
         return;
       }
   
-      // 3. Conversão do valor - CORREÇÃO DO ERRO DE SINTAXE
+      // 3. Conversão do valor - CORREÇÃO DO ERRO
       let valorNumerico;
       try {
         valorNumerico = convertValueToFloat(procedimentoData.valor);
-        if (isNaN(valorNumerico) || valorNumerico <= 0) { // Corrigido aqui - adicionado o parêntese faltante
+        if (isNaN(valorNumerico) || valorNumerico <= 0) {
           throw new Error("Valor inválido");
         }
       } catch (error) {
@@ -902,8 +899,8 @@ const RegisterUser = () => {
   
       // 6. Atualização otimizada do estado local
       setFormData(prev => {
-        // Adiciona o novo procedimento no início da lista de secundários
-        const novosSecundarios = [
+        const novosProcedimentos = [
+          ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
           {
             ...response.data.procedimento,
             _id: response.data.procedimento._id || Date.now().toString(),
@@ -911,24 +908,16 @@ const RegisterUser = () => {
             valorFormatado: formatValueForDisplay(valorNumerico),
             createdAt: new Date().toISOString()
           },
-          ...prev.procedimentos.filter(p => !p.isPrincipal)
-        ];
+          ...prev.procedimentos.filter(p => !p.isPrincipal) // Demais procedimentos
+        ].sort((a, b) => {
+          if (a.isPrincipal) return -1;
+          if (b.isPrincipal) return 1;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
   
-        // Mantém o principal e adiciona os secundários ordenados por data
         return {
           ...prev,
-          procedimentos: [
-            ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal
-            ...novosSecundarios.sort((a, b) => {
-              try {
-                const dateA = new Date(a.createdAt || new Date());
-                const dateB = new Date(b.createdAt || new Date());
-                return dateB - dateA; // Ordena do mais recente para o mais antigo
-              } catch {
-                return 0;
-              }
-            })
-          ]
+          procedimentos: novosProcedimentos
         };
       });
   
@@ -1527,85 +1516,94 @@ const RegisterUser = () => {
 <div className="procedimentos-list">
   {Array.isArray(formData.procedimentos) ? (
     formData.procedimentos.length > 0 ? (
-      <>
-        {/* Sempre mostra o principal primeiro como #1 */}
-        {formData.procedimentos
-          .filter(proc => proc.isPrincipal)
-          .map((procPrincipal) => {
-            const procedimento = {
-              _id: procPrincipal._id || 'principal',
-              procedimento: procPrincipal.procedimento || "Não especificado",
-              denteFace: procPrincipal.denteFace || "Não especificado",
-              valor: typeof procPrincipal.valor === 'number' ? procPrincipal.valor : 0,
-              modalidadePagamento: procPrincipal.modalidadePagamento || "Não especificado",
-              profissional: procPrincipal.profissional || "Não especificado",
-              dataProcedimento: procPrincipal.dataProcedimento || procPrincipal.createdAt,
-              isPrincipal: true,
-              createdAt: procPrincipal.createdAt || new Date().toISOString()
-            };
+      // Primeiro exibe o procedimento principal (se existir)
+      formData.procedimentos
+        .filter(proc => proc.isPrincipal)
+        .map((procPrincipal) => {
+          const procedimento = {
+            _id: procPrincipal._id || 'principal',
+            procedimento: procPrincipal.procedimento || "Não especificado",
+            denteFace: procPrincipal.denteFace || "Não especificado",
+            valor: typeof procPrincipal.valor === 'number' ? procPrincipal.valor : 0,
+            modalidadePagamento: procPrincipal.modalidadePagamento || "Não especificado",
+            profissional: procPrincipal.profissional || "Não especificado",
+            dataProcedimento: procPrincipal.dataProcedimento || procPrincipal.createdAt,
+            isPrincipal: true,
+            createdAt: procPrincipal.createdAt || new Date().toISOString()
+          };
 
-            return (
-              <div
-                key={procedimento._id}
-                className="procedimento-item principal"
-              >
-                <div className="procedimento-header">
-                  <h4>
-                    Procedimento #1
-                    <span className="badge-principal">Principal</span>
-                  </h4>
-                  <span>{formatDateForDisplay(procedimento.createdAt)}</span>
-                </div>
-
-                <div className="procedimento-details">
-                  {/* ... detalhes do procedimento ... */}
-                </div>
+          return (
+            <div
+              key={procedimento._id}
+              className="procedimento-item principal"
+            >
+              <div className="procedimento-header">
+                <h4>
+                  Procedimento Principal
+                  <span className="badge-principal">Principal</span>
+                </h4>
+                <span>{formatDateForDisplay(procedimento.createdAt)}</span>
               </div>
-            );
-          })}
 
-        {/* Mostra os secundários ordenados por data e numerados sequencialmente a partir do 2 */}
-        {formData.procedimentos
-          .filter(proc => !proc.isPrincipal)
-          .sort((a, b) => {
-            try {
-              const dateA = new Date(a.createdAt || new Date());
-              const dateB = new Date(b.createdAt || new Date());
-              return dateB - dateA;
-            } catch {
-              return 0;
-            }
-          })
-          .map((proc, index) => {
-            const procedimento = {
-              _id: proc._id || `secundario-${index}`,
-              procedimento: proc.procedimento || "Não especificado",
-              denteFace: proc.denteFace || "Não especificado",
-              valor: typeof proc.valor === 'number' ? proc.valor : 0,
-              modalidadePagamento: proc.modalidadePagamento || "Não especificado",
-              profissional: proc.profissional || "Não especificado",
-              dataProcedimento: proc.dataProcedimento || proc.createdAt,
-              isPrincipal: false,
-              createdAt: proc.createdAt || new Date().toISOString()
-            };
-
-            return (
-              <div
-                key={procedimento._id}
-                className="procedimento-item"
-              >
-                <div className="procedimento-header">
-                  <h4>Procedimento #{index + 2}</h4>
-                  <span>{formatDateForDisplay(procedimento.createdAt)}</span>
-                </div>
-
-                <div className="procedimento-details">
-                  {/* ... detalhes do procedimento ... */}
-                </div>
+              <div className="procedimento-details">
+                <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
+                <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
+                <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
+                <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
+                <p><strong>Profissional:</strong> {procedimento.profissional}</p>
               </div>
-            );
-          })}
-      </>
+            </div>
+          );
+        })
+        // Depois exibe os procedimentos secundários ordenados por data (mais recente primeiro)
+        .concat(
+          formData.procedimentos
+            .filter(proc => !proc.isPrincipal)
+            .sort((a, b) => {
+              try {
+                const dateA = new Date(a.createdAt || new Date());
+                const dateB = new Date(b.createdAt || new Date());
+                return dateB - dateA;
+              } catch {
+                return 0;
+              }
+            })
+            .map((proc, index) => {
+              const procedimento = {
+                _id: proc._id || `secundario-${index}`,
+                procedimento: proc.procedimento || "Não especificado",
+                denteFace: proc.denteFace || "Não especificado",
+                valor: typeof proc.valor === 'number' ? proc.valor : 0,
+                modalidadePagamento: proc.modalidadePagamento || "Não especificado",
+                profissional: proc.profissional || "Não especificado",
+                dataProcedimento: proc.dataProcedimento || proc.createdAt,
+                isPrincipal: false,
+                createdAt: proc.createdAt || new Date().toISOString()
+              };
+
+              return (
+                <div
+                  key={procedimento._id}
+                  className="procedimento-item"
+                >
+                  <div className="procedimento-header">
+                    <h4>Procedimento #{index + 1}</h4>
+                    <span>{formatDateForDisplay(procedimento.createdAt)}</span>
+                  </div>
+
+                  <div className="procedimento-details">
+                    <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
+                    <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
+                    <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                    <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
+                    <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
+                    <p><strong>Profissional:</strong> {procedimento.profissional}</p>
+                  </div>
+                </div>
+              );
+            })
+        )
     ) : (
       <div className="no-procedimentos">
         <i className="bi bi-clipboard-x"></i>
