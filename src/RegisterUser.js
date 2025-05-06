@@ -240,29 +240,37 @@ const RegisterUser = () => {
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
   
+    // Aplica formatação automática apenas para campos de data
     let formattedValue = value;
-  
+    
     if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
-      formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
-  
-      // Validação quando o campo está completo (10 caracteres)
-      if (formattedValue.length === 10) {
-        const [day, month, year] = formattedValue.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-  
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } 
-        // REMOVIDA A VALIDAÇÃO DE DATA NO PASSADO
-        else {
-          const errors = { ...fieldErrors };
-          delete errors[name];
-          setFieldErrors(errors);
-        }
+      // Remove tudo que não é dígito ou barra
+      const cleaned = value.replace(/[^\d/]/g, '');
+      
+      // Aplica máscara DD/MM/AAAA de forma não-obstrutiva
+      if (cleaned.length <= 2) {
+        formattedValue = cleaned;
+      } else if (cleaned.length <= 5) {
+        formattedValue = `${cleaned.substring(0, 2)}/${cleaned.substring(2)}`;
+      } else {
+        formattedValue = `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4, 8)}`;
       }
     }
   
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
+    // Atualiza o estado sem validações
+    setProcedimentoData(prev => ({
+      ...prev,
+      [name]: formattedValue
+    }));
+  
+    // Remove erros relacionados a estes campos se existirem
+    if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const validateField = (name, value) => {
