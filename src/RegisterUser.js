@@ -1556,7 +1556,7 @@ const RegisterUser = () => {
             </div>
           );
         })
-        // Depois exibe os procedimentos secundários ordenados por data (mais recente primeiro)
+        // Depois exibe os procedimentos secundários ordenados por data (mais antigo primeiro)
         .concat(
           formData.procedimentos
             .filter(proc => !proc.isPrincipal)
@@ -1564,12 +1564,12 @@ const RegisterUser = () => {
               try {
                 const dateA = new Date(a.createdAt || new Date());
                 const dateB = new Date(b.createdAt || new Date());
-                return dateB - dateA;
+                return dateA - dateB; // Alterado para ordem crescente (mais antigo primeiro)
               } catch {
                 return 0;
               }
             })
-            .map((proc, index) => {
+            .map((proc, index, array) => {
               const procedimento = {
                 _id: proc._id || `secundario-${index}`,
                 procedimento: proc.procedimento || "Não especificado",
@@ -1588,7 +1588,7 @@ const RegisterUser = () => {
                   className="procedimento-item"
                 >
                   <div className="procedimento-header">
-                    <h4>Procedimento #{index + 2}</h4> {/* Alterado para index + 2 */}
+                    <h4>Procedimento #{index + 2}</h4>
                     <span>{formatDateForDisplay(procedimento.createdAt)}</span>
                   </div>
 
