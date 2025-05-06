@@ -824,29 +824,30 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+    
     try {
       const token = localStorage.getItem("token");
   
-      const parseDate = (dateString, fieldName) => {
+      // Usando a mesma função de formatação que dataNascimento
+      const convertDateToISO = (dateString) => {
         if (!dateString || dateString.length !== 10) {
-          setFieldErrors({ [fieldName]: "Data incompleta (DD/MM/AAAA)" });
+          setFieldErrors({ dataNovoProcedimento: "Data incompleta (DD/MM/AAAA)" });
           return null;
         }
   
         const [day, month, year] = dateString.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
-  
+        
         if (isNaN(dateObj.getTime())) {
-          setFieldErrors({ [fieldName]: "Data inválida" });
+          setFieldErrors({ dataNovoProcedimento: "Data inválida" });
           return null;
         }
   
         return dateObj.toISOString();
       };
   
-      // Converter APENAS dataNovoProcedimento
-      const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
+      // Converter data (igual ao dataNascimento)
+      const dataNovoProcedimentoISO = convertDateToISO(procedimentoData.dataNovoProcedimento);
       if (!dataNovoProcedimentoISO) return;
   
       const dadosParaEnvio = {
@@ -855,14 +856,14 @@ const RegisterUser = () => {
         valor: convertValueToFloat(procedimentoData.valor),
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional,
-        dataNovoProcedimento: dataNovoProcedimentoISO // Único campo de data
+        dataNovoProcedimento: dataNovoProcedimentoISO // Formatado igual dataNascimento
       };
   
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
   
-      // Atualize o estado sem dataProcedimento
+      // Restante do código permanece igual...
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
@@ -876,6 +877,7 @@ const RegisterUser = () => {
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
   
+      // Limpar formulário
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
