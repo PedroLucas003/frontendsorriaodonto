@@ -114,7 +114,7 @@ const RegisterUser = () => {
   const [procedimentoData, setProcedimentoData] = useState({
     procedimento: "",
     denteFace: "",
-    valor: "",
+    valor: 0,
     modalidadePagamento: "",
     profissional: "",
     dataNovoProcedimento: ""
@@ -239,10 +239,33 @@ const RegisterUser = () => {
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
   
-    let formattedValue = value;
+    // Tratamento especial para o campo de valor
+    if (name === "valor") {
+      // Remove tudo exceto números e vírgula
+      const rawValue = value.replace(/[^\d,]/g, '');
+      
+      // Converte para número (substitui vírgula por ponto para parseFloat)
+      const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+      
+      // Formata para exibição
+      const formattedValue = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
   
+      setProcedimentoData(prev => ({
+        ...prev,
+        valor: numericValue, // Armazena o valor numérico
+        valorFormatado: formattedValue // Armazena a versão formatada
+      }));
+      return;
+    }
+  
+    // Tratamento para data do procedimento
     if (name === "dataNovoProcedimento") {
-      formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
+      const formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
   
       // Validação quando o campo está completo (10 caracteres)
       if (formattedValue.length === 10) {
@@ -251,17 +274,19 @@ const RegisterUser = () => {
   
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } 
-        // REMOVIDA A VALIDAÇÃO DE DATA NO PASSADO
-        else {
+        } else {
           const errors = { ...fieldErrors };
           delete errors[name];
           setFieldErrors(errors);
         }
       }
+  
+      setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
+      return;
     }
   
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
+    // Para todos os outros campos
+    setProcedimentoData(prev => ({ ...prev, [name]: value }));
   };
 
   const validateField = (name, value) => {
@@ -1415,24 +1440,46 @@ const RegisterUser = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="valor">Valor</label>
-                    <input
-                      type="text"
-                      id="valor"
-                      name="valor"
-                      value={formatValueForDisplay(procedimentoData.valor)}
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/[^\d,]/g, '');
-                        const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+  <label htmlFor="valor">Valor</label>
+  <input
+    type="text"
+    id="valor"
+    name="valor"
+    value={procedimentoData.valorFormatado || ''}
+    onChange={(e) => {
+      // Remove tudo exceto números
+      const rawValue = e.target.value.replace(/\D/g, '');
 
-                        setProcedimentoData(prev => ({
-                          ...prev,
-                          valor: numericValue
-                        }));
-                      }}
-                      placeholder="R$ 0,00"
-                    />
-                  </div>
+      // Converte para valor decimal (divide por 100 para centavos)
+      const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+
+      // Formata para exibição
+      const formattedValue = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+      setProcedimentoData(prev => ({
+        ...prev,
+        valor: numericValue, // Armazena como número
+        valorFormatado: formattedValue // Armazena versão formatada
+      }));
+    }}
+    onBlur={() => {
+      // Garante formatação correta ao sair do campo
+      if (!procedimentoData.valorFormatado) {
+        setProcedimentoData(prev => ({
+          ...prev,
+          valor: 0,
+          valorFormatado: 'R$ 0,00'
+        }));
+      }
+    }}
+    placeholder="R$ 0,00"
+  />
+</div>
 
                   <div className="form-group">
                     <label htmlFor="modalidadePagamento">Modalidade de Pagamento</label>
