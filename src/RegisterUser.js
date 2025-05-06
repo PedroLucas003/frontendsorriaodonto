@@ -117,7 +117,6 @@ const RegisterUser = () => {
     valor: "",
     modalidadePagamento: "",
     profissional: "",
-    dataProcedimento: "",
     dataNovoProcedimento: ""
   });
 
@@ -242,7 +241,7 @@ const RegisterUser = () => {
   
     let formattedValue = value;
   
-    if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
+    if (name === "dataNovoProcedimento") {
       formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
   
       // Validação quando o campo está completo (10 caracteres)
@@ -1649,7 +1648,3 @@ const RegisterUser = () => {
 };
 
 export default RegisterUser;
-
-
-
-
