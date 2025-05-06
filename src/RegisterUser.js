@@ -37,18 +37,15 @@ function formatDateInput(value) {
 
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
-  
   try {
-    // Cria a data no UTC para evitar problemas de fuso horário
+    // Corrige o problema do fuso horário criando a data no UTC
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
     
-    // Extrai os componentes da data UTC
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const year = date.getUTCFullYear();
+    // Ajusta para o dia correto considerando UTC
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
     
-    return `${day}/${month}/${year}`;
+    return adjustedDate.toLocaleDateString('pt-BR');
   } catch (e) {
     console.error("Erro ao formatar data para exibição:", e);
     return 'Data inválida';
@@ -881,24 +878,22 @@ const RegisterUser = () => {
         return;
       }
   
-      // 2. Validação e conversão da data - CORREÇÃO DO FUSO HORÁRIO
+      // 2. Validação e conversão da data
       const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
         setFieldErrors({...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)"});
         return;
       }
-
+  
       const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-      
-      // Cria a data no UTC para evitar problemas de fuso horário
-      const dateObj = new Date(Date.UTC(year, month - 1, day));
+      const dateObj = new Date(`${year}-${month}-${day}`);
       
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({...fieldErrors, dataNovoProcedimento: "Data inválida"});
         return;
       }
-
-      // 3. Conversão do valor
+  
+      // 3. Conversão do valor - CORREÇÃO DO ERRO
       let valorNumerico;
       try {
         valorNumerico = convertValueToFloat(procedimentoData.valor);
@@ -917,7 +912,7 @@ const RegisterUser = () => {
         valor: valorNumerico,
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional.trim(),
-        dataNovoProcedimento: dateObj.toISOString() // Já está em UTC
+        dataNovoProcedimento: dateObj.toISOString()
       };
   
       // 5. Envio para a API
@@ -926,23 +921,18 @@ const RegisterUser = () => {
         dadosParaEnvio,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // Cria objeto do novo procedimento com data formatada corretamente
-      const novoProcedimento = {
-        ...response.data.procedimento,
-        _id: response.data.procedimento._id || Date.now().toString(),
-        isPrincipal: false,
-        valorFormatado: formatValueForDisplay(valorNumerico),
-        dataProcedimento: dateObj.toISOString(), // Armazena a data UTC
-        dataProcedimentoFormatada: `${day}/${month}/${year}`, // Armazena a data no formato original
-        createdAt: new Date().toISOString()
-      };
   
       // 6. Atualização otimizada do estado local
       setFormData(prev => {
         const novosProcedimentos = [
           ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
-          novoProcedimento,
+          {
+            ...response.data.procedimento,
+            _id: response.data.procedimento._id || Date.now().toString(),
+            isPrincipal: false,
+            valorFormatado: formatValueForDisplay(valorNumerico),
+            createdAt: new Date().toISOString()
+          },
           ...prev.procedimentos.filter(p => !p.isPrincipal) // Demais procedimentos
         ].sort((a, b) => {
           if (a.isPrincipal) return -1;
@@ -960,8 +950,7 @@ const RegisterUser = () => {
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
-        valor: 0,
-        valorFormatado: "",
+        valor: "",
         modalidadePagamento: "",
         profissional: "",
         dataNovoProcedimento: ""
