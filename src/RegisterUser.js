@@ -240,29 +240,37 @@ const RegisterUser = () => {
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
   
+    // Aplica formatação automática apenas para campos de data
     let formattedValue = value;
-  
+    
     if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
-      formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
-  
-      // Validação quando o campo está completo (10 caracteres)
-      if (formattedValue.length === 10) {
-        const [day, month, year] = formattedValue.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-  
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } 
-        // REMOVIDA A VALIDAÇÃO DE DATA NO PASSADO
-        else {
-          const errors = { ...fieldErrors };
-          delete errors[name];
-          setFieldErrors(errors);
-        }
+      // Remove tudo que não é dígito ou barra
+      const cleaned = value.replace(/[^\d/]/g, '');
+      
+      // Aplica máscara DD/MM/AAAA de forma não-obstrutiva
+      if (cleaned.length <= 2) {
+        formattedValue = cleaned;
+      } else if (cleaned.length <= 5) {
+        formattedValue = `${cleaned.substring(0, 2)}/${cleaned.substring(2)}`;
+      } else {
+        formattedValue = `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}/${cleaned.substring(4, 8)}`;
       }
     }
   
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
+    // Atualiza o estado sem validações
+    setProcedimentoData(prev => ({
+      ...prev,
+      [name]: formattedValue
+    }));
+  
+    // Remove erros relacionados a estes campos se existirem
+    if (name === "dataProcedimento" || name === "dataNovoProcedimento") {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const validateField = (name, value) => {
@@ -307,12 +315,11 @@ const RegisterUser = () => {
         return false;
       }
 
-      // Validações específicas por tipo de data
+      // Validação específica apenas para data de nascimento
       if (fieldName === "dataNascimento" && dateObj > new Date()) {
-        errors[fieldName] = "Data deve ser no passado";
+        errors[fieldName] = "Data de nascimento deve ser no passado";
         return false;
       }
-
 
       delete errors[fieldName];
       return true;
@@ -414,7 +421,7 @@ const RegisterUser = () => {
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -434,10 +441,10 @@ const RegisterUser = () => {
       formattedValue = formatFone(value);
     }
     else if (name === "dataNascimento" || name === "dataProcedimento") {
-      // Aplica a máscara de data e validação em tempo real
+      // Aplica a máscara de data
       formattedValue = formatDateInput(value);
 
-      // Validação imediata quando o campo estiver completo
+      // Validação básica quando o campo estiver completo (DD/MM/AAAA)
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
@@ -445,10 +452,10 @@ const RegisterUser = () => {
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
         } else if (name === "dataNascimento" && dateObj > new Date()) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
-        } else if (name === "dataProcedimento" && dateObj < new Date()) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
+          // Validação específica apenas para data de nascimento (deve ser no passado)
+          setFieldErrors(prev => ({ ...prev, [name]: "Data de nascimento deve ser no passado" }));
         } else {
+          // Data válida - remove qualquer erro existente
           const errors = { ...fieldErrors };
           delete errors[name];
           setFieldErrors(errors);
@@ -456,14 +463,14 @@ const RegisterUser = () => {
       }
     }
     else if (name === "valor") {
-      // ... (código existente para o campo valor)
+      // ... (mantenha o código existente para o campo valor)
       return;
     }
 
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
     validateField(name, formattedValue);
     setError("");
-  };
+};
 
   const validateForm = () => {
     const errors = {};
