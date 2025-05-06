@@ -828,10 +828,9 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
   
-      // Função auxiliar ajustada (mantém apenas dataNovoProcedimento)
       const parseDate = (dateString, fieldName) => {
         if (!dateString || dateString.length !== 10) {
-          setFieldErrors(prev => ({ ...prev, [fieldName]: "Data incompleta (DD/MM/AAAA)" }));
+          setFieldErrors({ [fieldName]: "Data incompleta (DD/MM/AAAA)" });
           return null;
         }
   
@@ -839,20 +838,16 @@ const RegisterUser = () => {
         const dateObj = new Date(`${year}-${month}-${day}`);
   
         if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, [fieldName]: "Data inválida" }));
+          setFieldErrors({ [fieldName]: "Data inválida" });
           return null;
         }
   
-        return `${year}-${month}-${day}`;
+        return dateObj.toISOString();
       };
   
       // Converter APENAS dataNovoProcedimento
       const dataNovoProcedimentoISO = parseDate(procedimentoData.dataNovoProcedimento, "dataNovoProcedimento");
-  
-      // Verifica se a conversão falhou
-      if (!dataNovoProcedimentoISO) {
-        return;
-      }
+      if (!dataNovoProcedimentoISO) return;
   
       const dadosParaEnvio = {
         procedimento: procedimentoData.procedimento,
@@ -860,16 +855,14 @@ const RegisterUser = () => {
         valor: convertValueToFloat(procedimentoData.valor),
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional,
-        // ENVIA APENAS dataNovoProcedimento
-        dataNovoProcedimento: dataNovoProcedimentoISO
+        dataNovoProcedimento: dataNovoProcedimentoISO // Único campo de data
       };
   
-      // Envia para a API
       await api.put(`/api/users/${editandoId}/procedimento`, dadosParaEnvio, {
         headers: { Authorization: `Bearer ${token}` }
       });
   
-      // Cria o novo procedimento SEM dataProcedimento
+      // Atualize o estado sem dataProcedimento
       const novoProcedimento = {
         ...dadosParaEnvio,
         _id: Date.now().toString(),
@@ -878,20 +871,18 @@ const RegisterUser = () => {
         valorFormatado: formatValueForDisplay(procedimentoData.valor)
       };
   
-      // Atualiza o estado
       setFormData(prev => ({
         ...prev,
         procedimentos: [...prev.procedimentos, novoProcedimento]
       }));
   
-      // Reseta APENAS os campos do procedimento
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
         valor: "",
         modalidadePagamento: "",
         profissional: "",
-        dataNovoProcedimento: "" // Mantém apenas este campo
+        dataNovoProcedimento: ""
       });
   
       setShowProcedimentoForm(false);
