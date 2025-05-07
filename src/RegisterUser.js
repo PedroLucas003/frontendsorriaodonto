@@ -356,15 +356,13 @@ const RegisterUser = () => {
         }
         break;
 
-      case "email":
-        if (!value) {
-          errors.email = "E-mail é obrigatório";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = "Por favor, insira um e-mail válido";
-        } else {
-          delete errors.email;
-        }
-        break;
+        case "email":
+          if (!value) {
+            errors.email = "E-mail é obrigatório"; // Apenas valida se estiver vazio
+          } else {
+            delete errors.email; // Aceita qualquer valor que não seja vazio
+          }
+          break;
 
       case "cpf":
         if (!value) {
