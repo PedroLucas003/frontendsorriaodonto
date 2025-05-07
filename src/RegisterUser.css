@@ -767,3 +767,38 @@ tr:last-child td:last-child {
   font-size: 0.8em;
   margin-left: 8px;
 }
+.section-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  transition: background-color 0.2s;
+}
+
+.section-header:hover {
+  background-color: #e0e0e0;
+}
+
+.section-header h2 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.toggle-arrow {
+  font-size: 1.2em;
+  padding: 0 10px;
+  transition: transform 0.2s;
+}
+
+/* Dark mode styles */
+.dark-mode .section-header {
+  background-color: #333;
+  color: #fff;
+}
+
+.dark-mode .section-header:hover {
+  background-color: #444;
+}

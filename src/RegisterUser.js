@@ -73,6 +73,7 @@ function formatValueForDisplay(valor) {
 
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [showProcedimentoSection, setShowProcedimentoSection] = useState(true);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     email: "",
@@ -356,13 +357,13 @@ const RegisterUser = () => {
         }
         break;
 
-        case "email":
-          if (!value) {
-            errors.email = "E-mail é obrigatório"; // Apenas valida se estiver vazio
-          } else {
-            delete errors.email; // Aceita qualquer valor que não seja vazio
-          }
-          break;
+      case "email":
+        if (!value) {
+          errors.email = "E-mail é obrigatório"; // Apenas valida se estiver vazio
+        } else {
+          delete errors.email; // Aceita qualquer valor que não seja vazio
+        }
+        break;
 
       case "cpf":
         if (!value) {
@@ -667,6 +668,10 @@ const RegisterUser = () => {
     }
   };
 
+  const toggleProcedimentoSection = () => {
+    setShowProcedimentoSection(!showProcedimentoSection);
+  };
+
   const resetForm = () => {
     setFormData({
       nomeCompleto: "",
@@ -706,6 +711,7 @@ const RegisterUser = () => {
     setError("");
     setFieldErrors({});
     setShowProcedimentoForm(false);
+    setShowProcedimentoSection(true);
 
     setProcedimentoData({
       procedimento: "",
@@ -720,6 +726,7 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
+    setShowProcedimentoSection(false);
 
     // Função corrigida para formatar datas sem problemas de timezone
     const formatDateWithoutTimezone = (dateString) => {
@@ -1289,124 +1296,125 @@ const RegisterUser = () => {
         </div>
 
         <div className="form-section">
-          <h2>Dados do Procedimento</h2>
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="procedimento">{labels.procedimento}</label>
-              <input
-                type="text"
-                id="procedimento"
-                name="procedimento"
-                value={formData.procedimento}
-                onChange={handleChange}
-                placeholder="Digite o procedimento realizado"
-              />
-            </div>
+          <div className="section-header" onClick={toggleProcedimentoSection}>
+            <h2>Dados do Procedimento</h2>
+            <span className="toggle-arrow">
+              {showProcedimentoSection ? '▼' : '►'}
+            </span>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="denteFace">{labels.denteFace}</label>
-              <input
-                type="text"
-                id="denteFace"
-                name="denteFace"
-                value={formData.denteFace}
-                onChange={handleChange}
-                placeholder="Ex: 11, 22, Face Lingual, etc."
-              />
-            </div>
+          {showProcedimentoSection && (
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="procedimento">{labels.procedimento}</label>
+                <input
+                  type="text"
+                  id="procedimento"
+                  name="procedimento"
+                  value={formData.procedimento}
+                  onChange={handleChange}
+                  placeholder="Digite o procedimento realizado"
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="dataProcedimento">Data do Procedimento</label>
-              <input
-                type="text"
-                id="dataProcedimento"
-                name="dataProcedimento"
-                value={formData.dataProcedimento}
-                onChange={handleChange}
-                placeholder="DD/MM/AAAA"
-                maxLength={10}
-                className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                disabled={modoVisualizacao}
-                onKeyDown={(e) => {
-                  // Permite apenas números e teclas de controle
-                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-              {fieldErrors.dataProcedimento && (
-                <span className="field-error">{fieldErrors.dataProcedimento}</span>
-              )}
-            </div>
+              <div className="form-group">
+                <label htmlFor="denteFace">{labels.denteFace}</label>
+                <input
+                  type="text"
+                  id="denteFace"
+                  name="denteFace"
+                  value={formData.denteFace}
+                  onChange={handleChange}
+                  placeholder="Ex: 11, 22, Face Lingual, etc."
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="valor">{labels.valor}</label>
-              <input
-                type="text"
-                id="valor"
-                name="valor"
-                value={formData.valorFormatado || ''}
-                onChange={(e) => {
-                  // Remove tudo exceto números
-                  const rawValue = e.target.value.replace(/\D/g, '');
+              <div className="form-group">
+                <label htmlFor="dataProcedimento">Data do Procedimento</label>
+                <input
+                  type="text"
+                  id="dataProcedimento"
+                  name="dataProcedimento"
+                  value={formData.dataProcedimento}
+                  onChange={handleChange}
+                  placeholder="DD/MM/AAAA"
+                  maxLength={10}
+                  className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+                  disabled={modoVisualizacao}
+                  onKeyDown={(e) => {
+                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {fieldErrors.dataProcedimento && (
+                  <span className="field-error">{fieldErrors.dataProcedimento}</span>
+                )}
+              </div>
 
-                  // Converte para valor decimal (divide por 100 para centavos)
-                  const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+              <div className="form-group">
+                <label htmlFor="valor">{labels.valor}</label>
+                <input
+                  type="text"
+                  id="valor"
+                  name="valor"
+                  value={formData.valorFormatado || ''}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/\D/g, '');
+                    const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+                    const formattedValue = numericValue.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    });
 
-                  // Formata para exibição
-                  const formattedValue = numericValue.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  });
-
-                  setFormData(prev => ({
-                    ...prev,
-                    valor: numericValue, // Armazena como número
-                    valorFormatado: formattedValue // Armazena versão formatada
-                  }));
-                }}
-                onBlur={() => {
-                  // Garante formatação correta ao sair do campo
-                  if (!formData.valorFormatado) {
                     setFormData(prev => ({
                       ...prev,
-                      valor: 0,
-                      valorFormatado: 'R$ 0,00'
+                      valor: numericValue,
+                      valorFormatado: formattedValue
                     }));
-                  }
-                }}
-                placeholder="R$ 0,00"
-              />
-            </div>
+                  }}
+                  onBlur={() => {
+                    if (!formData.valorFormatado) {
+                      setFormData(prev => ({
+                        ...prev,
+                        valor: 0,
+                        valorFormatado: 'R$ 0,00'
+                      }));
+                    }
+                  }}
+                  placeholder="R$ 0,00"
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
-              <select
-                id="modalidadePagamento"
-                name="modalidadePagamento"
-                value={formData.modalidadePagamento}
-                onChange={handleChange}
-              >
-                <option value="">Selecione...</option>
-                {modalidadesPagamento.map((opcao) => (
-                  <option key={opcao} value={opcao}>{opcao}</option>
-                ))}
-              </select>
-            </div>
+              <div className="form-group">
+                <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
+                <select
+                  id="modalidadePagamento"
+                  name="modalidadePagamento"
+                  value={formData.modalidadePagamento}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecione...</option>
+                  {modalidadesPagamento.map((opcao) => (
+                    <option key={opcao} value={opcao}>{opcao}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="profissional">{labels.profissional}</label>
-              <input
-                type="text"
-                id="profissional"
-                name="profissional"
-                value={formData.profissional}
-                onChange={handleChange}
-              />
+              <div className="form-group">
+                <label htmlFor="profissional">{labels.profissional}</label>
+                <input
+                  type="text"
+                  id="profissional"
+                  name="profissional"
+                  value={formData.profissional}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {editandoId && (
