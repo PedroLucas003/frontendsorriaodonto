@@ -36,43 +36,15 @@ function formatDateInput(value) {
 }
 
 function formatDateForDisplay(dateInput) {
-  // Caso seja vazio ou undefined
   if (!dateInput) return 'Data não informada';
-
-  // Se já estiver no formato DD/MM/AAAA (como digitado no form)
-  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateInput)) {
-    return dateInput;
+  
+  // Se for string ISO (2025-05-03T...)
+  if (typeof dateInput === 'string' && dateInput.includes('T')) {
+    return `${dateInput.substr(8, 2)}/${dateInput.substr(5, 2)}/${dateInput.substr(0, 4)}`;
   }
-
-  try {
-    // Se for uma string ISO do MongoDB (com timezone)
-    if (typeof dateInput === 'string' && dateInput.includes('T')) {
-      // Extrai apenas a parte da data (YYYY-MM-DD)
-      const datePart = dateInput.split('T')[0];
-      const [year, month, day] = datePart.split('-');
-      
-      // Valida os componentes
-      if (year && month && day) {
-        return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
-      }
-    }
-    
-    // Para objetos Date ou outros formatos
-    const date = new Date(dateInput);
-    if (isNaN(date.getTime())) return 'Data inválida';
-
-    // Ajuste para o fuso horário local (mesma lógica do seu código original)
-    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
-    const day = String(adjustedDate.getDate()).padStart(2, '0');
-    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-    const year = adjustedDate.getFullYear();
-
-    return `${day}/${month}/${year}`;
-  } catch (e) {
-    console.error("Erro ao formatar data:", e);
-    return 'Data inválida';
-  }
+  
+  // Para qualquer outro caso, retorna os primeiros 10 caracteres
+  return String(dateInput).substr(0, 10);
 }
 
 function convertValueToFloat(valor) {
@@ -750,28 +722,15 @@ const RegisterUser = () => {
     // Função corrigida para formatar datas sem problemas de timezone
     const formatDateWithoutTimezone = (dateString) => {
       if (!dateString) return '';
-      
-      // Se já estiver formatada, retorna como está
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
-        return dateString;
-      }
-      
       try {
-        // Para datas ISO do BD
-        if (dateString.includes('T')) {
-          const [datePart] = dateString.split('T');
-          const [year, month, day] = datePart.split('-');
-          return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
-        }
-        
-        // Para outros formatos
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return '';
-        
+
+        // Ajuste para evitar problemas de timezone
         const day = String(date.getUTCDate()).padStart(2, '0');
         const month = String(date.getUTCMonth() + 1).padStart(2, '0');
         const year = date.getUTCFullYear();
-        
+
         return `${day}/${month}/${year}`;
       } catch (e) {
         console.error("Erro ao formatar data:", e);
