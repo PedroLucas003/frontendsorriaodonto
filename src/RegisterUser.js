@@ -274,8 +274,8 @@ const RegisterUser = () => {
       
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
-        // Garante que a data seja criada corretamente
-        const dateObj = new Date(`${year}-${month}-${day}T00:00:00`);
+        // Usar meio-dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
         
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
@@ -553,11 +553,12 @@ const RegisterUser = () => {
         }));
         return null;
       }
-
+    
       try {
         const [day, month, year] = dateString.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-
+        // Usar meio-dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+    
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({
             ...prev,
@@ -565,7 +566,7 @@ const RegisterUser = () => {
           }));
           return null;
         }
-
+    
         return dateObj.toISOString();
       } catch (error) {
         console.error(`Erro ao converter ${fieldName}:`, error);
@@ -892,7 +893,8 @@ const RegisterUser = () => {
       }
 
       const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-      const dateObj = new Date(`${year}-${month}-${day}T00:00:00`);
+// Usar o formato que não sofre ajuste de timezone
+const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
 
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
