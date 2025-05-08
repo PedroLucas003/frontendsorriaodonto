@@ -390,7 +390,7 @@ tr:last-child td:last-child {
 }
 
 .procedimento-item.principal {
-  border-left-color: #28a745;
+  border-left-color: #007bff;
   background-color: #f0fff4;
 }
 
@@ -801,4 +801,36 @@ tr:last-child td:last-child {
 
 .dark-mode .section-header:hover {
   background-color: #444;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  margin: 15px 0 10px;
+  transition: background-color 0.2s;
+}
+
+.section-header:hover {
+  background-color: #e0e0e0;
+}
+
+.toggle-arrow {
+  font-size: 1.1em;
+  margin-left: 10px;
+  color: #666;
+}
+
+.dark-mode .section-header {
+  background-color: #2d2d2d;
+}
+
+.dark-mode .section-header:hover {
+  background-color: #3d3d3d;
+}
+
+.dark-mode .toggle-arrow {
+  color: #aaa;
 }
