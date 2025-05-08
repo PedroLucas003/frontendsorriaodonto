@@ -38,25 +38,35 @@ function formatDateInput(value) {
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
+  // Se já estiver no formato DD/MM/AAAA
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+    return dateString;
+  }
+
   try {
-    // Cria a data sem conversão de fuso horário
+    // Para datas ISO do BD
+    if (typeof dateString === 'string' && dateString.includes('T')) {
+      // Remove qualquer informação de timezone e extrai YYYY-MM-DD
+      const isoDate = dateString.split('T')[0];
+      const [year, month, day] = isoDate.split('-');
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+
+    // Fallback para outros formatos
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
-
-    // Ajuste para o fuso horário local
-    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
-    // Extrai os componentes da data LOCAL
-    const day = String(adjustedDate.getDate()).padStart(2, '0');
-    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-    const year = adjustedDate.getFullYear();
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
-    console.error("Erro ao formatar data para exibição:", e);
+    console.error("Erro ao formatar data:", e);
     return 'Data inválida';
   }
 }
+
 function convertValueToFloat(valor) {
   if (!valor) return 0;
   if (typeof valor === 'number') return valor;
@@ -1635,9 +1645,7 @@ const RegisterUser = () => {
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            {procedimento.dataProcedimento && (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
-                            )}
+                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
@@ -1758,3 +1766,4 @@ const RegisterUser = () => {
 };
 
 export default RegisterUser;
+
