@@ -70,7 +70,7 @@ function formatValueForDisplay(valor) {
       currency: 'BRL'
     });
 }
-
+ 
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -359,8 +359,6 @@ const RegisterUser = () => {
       case "email":
         if (!value) {
           errors.email = "E-mail é obrigatório";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          errors.email = "Por favor, insira um e-mail válido";
         } else {
           delete errors.email;
         }
