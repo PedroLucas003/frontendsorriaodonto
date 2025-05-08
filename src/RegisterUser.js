@@ -48,36 +48,17 @@ function formatDateForDisplay(dateInput) {
   }
 
   // 2. Se for uma string ISO (vindo do banco de dados)
-  if (typeof dateInput === 'string' && dateInput.includes('T')) {
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(dateInput)) {
     // Extrai apenas a parte da data (YYYY-MM-DD)
-    const [datePart] = dateInput.split('T');
+    const datePart = dateInput.split('T')[0];
     const [year, month, day] = datePart.split('-');
     
     // Retorna no formato brasileiro
     return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
   }
 
-  // 3. Se for um objeto Date
-  if (dateInput instanceof Date) {
-    if (isNaN(dateInput.getTime())) return 'Data inválida';
-    const day = String(dateInput.getDate()).padStart(2, '0');
-    const month = String(dateInput.getMonth() + 1).padStart(2, '0');
-    const year = dateInput.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-
-  // 4. Se for um timestamp numérico
-  if (typeof dateInput === 'number') {
-    const date = new Date(dateInput);
-    if (isNaN(date.getTime())) return 'Data inválida';
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-
-  // Se nenhum dos casos acima, retorna mensagem de erro específica
-  return 'Formato não suportado';
+  // 3. Para qualquer outro caso não tratado, retorna os primeiros 10 caracteres
+  return String(dateInput).substr(0, 10);
 }
 
 function convertValueToFloat(valor) {
