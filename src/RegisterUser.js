@@ -47,14 +47,15 @@ function formatDateForDisplay(dateInput) {
     return dateInput;
   }
 
-  // 2. Se for uma string ISO (vindo do banco de dados)
-  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(dateInput)) {
-    // Extrai apenas a parte da data (YYYY-MM-DD)
-    const datePart = dateInput.split('T')[0];
-    const [year, month, day] = datePart.split('-');
+  // 2. Tratamento específico para o formato ISO com Z (UTC)
+  if (typeof dateInput === 'string' && dateInput.endsWith('Z')) {
+    // Extrai os componentes diretamente da string
+    const year = dateInput.substring(0, 4);
+    const month = dateInput.substring(5, 7);
+    const day = dateInput.substring(8, 10);
     
     // Retorna no formato brasileiro
-    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    return `${day}/${month}/${year}`;
   }
 
   // 3. Para qualquer outro caso não tratado, retorna os primeiros 10 caracteres
