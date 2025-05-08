@@ -36,15 +36,48 @@ function formatDateInput(value) {
 }
 
 function formatDateForDisplay(dateInput) {
+  // Se o valor for vazio ou não definido
   if (!dateInput) return 'Data não informada';
-  
-  // Se for string ISO (2025-05-03T...)
-  if (typeof dateInput === 'string' && dateInput.includes('T')) {
-    return `${dateInput.substr(8, 2)}/${dateInput.substr(5, 2)}/${dateInput.substr(0, 4)}`;
+
+  // Debug: Mostra exatamente o que está recebendo
+  console.log('DEBUG - Input:', dateInput, 'Tipo:', typeof dateInput);
+
+  // 1. Se já estiver no formato DD/MM/AAAA, retorna como está
+  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateInput)) {
+    return dateInput;
   }
-  
-  // Para qualquer outro caso, retorna os primeiros 10 caracteres
-  return String(dateInput).substr(0, 10);
+
+  // 2. Se for uma string ISO (vindo do banco de dados)
+  if (typeof dateInput === 'string' && dateInput.includes('T')) {
+    // Extrai apenas a parte da data (YYYY-MM-DD)
+    const [datePart] = dateInput.split('T');
+    const [year, month, day] = datePart.split('-');
+    
+    // Retorna no formato brasileiro
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  }
+
+  // 3. Se for um objeto Date
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return 'Data inválida';
+    const day = String(dateInput.getDate()).padStart(2, '0');
+    const month = String(dateInput.getMonth() + 1).padStart(2, '0');
+    const year = dateInput.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  // 4. Se for um timestamp numérico
+  if (typeof dateInput === 'number') {
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  // Se nenhum dos casos acima, retorna mensagem de erro específica
+  return 'Formato não suportado';
 }
 
 function convertValueToFloat(valor) {
