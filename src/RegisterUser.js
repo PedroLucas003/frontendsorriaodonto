@@ -70,7 +70,7 @@ function formatValueForDisplay(valor) {
       currency: 'BRL'
     });
 }
-
+ 
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [formData, setFormData] = useState({
