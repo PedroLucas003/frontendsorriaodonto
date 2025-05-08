@@ -35,32 +35,24 @@ function formatDateInput(value) {
   return cleanedValue;
 }
 
-function formatDateForDisplay(dateInput) {
-  // Se o valor for vazio ou não definido
-  if (!dateInput) return 'Data não informada';
+function formatDateForDisplay(dateString) {
+  if (!dateString) return 'Data não informada';
 
-  // Debug: Mostra exatamente o que está recebendo
-  console.log('DEBUG - Input:', dateInput, 'Tipo:', typeof dateInput);
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Data inválida';
 
-  // 1. Se já estiver no formato DD/MM/AAAA, retorna como está
-  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateInput)) {
-    return dateInput;
-  }
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
 
-  // 2. Tratamento específico para o formato ISO com Z (UTC)
-  if (typeof dateInput === 'string' && dateInput.endsWith('Z')) {
-    // Extrai os componentes diretamente da string
-    const year = dateInput.substring(0, 4);
-    const month = dateInput.substring(5, 7);
-    const day = dateInput.substring(8, 10);
-    
-    // Retorna no formato brasileiro
     return `${day}/${month}/${year}`;
+  } catch (e) {
+    console.error("Erro ao formatar data para exibição:", e);
+    return 'Data inválida';
   }
-
-  // 3. Para qualquer outro caso não tratado, retorna os primeiros 10 caracteres
-  return String(dateInput).substr(0, 10);
 }
+
 
 function convertValueToFloat(valor) {
   if (!valor) return 0;
