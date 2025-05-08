@@ -35,32 +35,48 @@ function formatDateInput(value) {
   return cleanedValue;
 }
 
-function formatDateForDisplay(dateString) {
-  if (!dateString) return 'Data não informada';
+function formatDateForDisplay(dateInput) {
+  // Caso seja vazio ou undefined
+  if (!dateInput) return 'Data não informada';
 
   // Se já estiver no formato DD/MM/AAAA
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
-    return dateString;
+  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateInput)) {
+    return dateInput;
   }
 
   try {
-    // Para datas ISO do BD
-    if (typeof dateString === 'string' && dateString.includes('T')) {
-      // Remove qualquer informação de timezone e extrai YYYY-MM-DD
-      const isoDate = dateString.split('T')[0];
-      const [year, month, day] = isoDate.split('-');
+    // Se for uma string ISO (vindo do BD)
+    if (typeof dateInput === 'string' && dateInput.includes('T')) {
+      // Extrai apenas a parte da data (YYYY-MM-DD)
+      const datePart = dateInput.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      
+      // Valida os componentes
+      if (!year || !month || !day) return 'Data inválida';
+      
       return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
     }
 
-    // Fallback para outros formatos
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Data inválida';
-    
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    // Se for um objeto Date
+    if (dateInput instanceof Date) {
+      if (isNaN(dateInput.getTime())) return 'Data inválida';
+      const day = String(dateInput.getDate()).padStart(2, '0');
+      const month = String(dateInput.getMonth() + 1).padStart(2, '0');
+      const year = dateInput.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
 
-    return `${day}/${month}/${year}`;
+    // Se for um timestamp numérico
+    if (typeof dateInput === 'number') {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) return 'Data inválida';
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    return 'Data inválida';
   } catch (e) {
     console.error("Erro ao formatar data:", e);
     return 'Data inválida';
