@@ -270,22 +270,25 @@ const RegisterUser = () => {
 
     // Tratamento para data do procedimento
     if (name === "dataNovoProcedimento") {
+      // Aplica a máscara de data e validação em tempo real
       const formattedValue = formatDateInput(value);
-      
+
+      // Validação imediata quando o campo estiver completo
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
-        // Usar meio-dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-        
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else if (dateObj < new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
         } else {
           const errors = { ...fieldErrors };
           delete errors[name];
           setFieldErrors(errors);
         }
       }
-      
+
       setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
       return;
     }
@@ -553,12 +556,12 @@ const RegisterUser = () => {
         }));
         return null;
       }
-    
+
       try {
         const [day, month, year] = dateString.split('/');
         // Usar meio-dia para evitar problemas de timezone
         const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-    
+
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({
             ...prev,
@@ -566,7 +569,7 @@ const RegisterUser = () => {
           }));
           return null;
         }
-    
+
         return dateObj.toISOString();
       } catch (error) {
         console.error(`Erro ao converter ${fieldName}:`, error);
@@ -893,11 +896,16 @@ const RegisterUser = () => {
       }
 
       const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-// Usar o formato que não sofre ajuste de timezone
-const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+      const dateObj = new Date(`${year}-${month}-${day}`);
 
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
+        return;
+      }
+
+      // Verifica se a data é no passado
+      if (dateObj < new Date()) {
+        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data do procedimento não pode ser no passado" });
         return;
       }
 
