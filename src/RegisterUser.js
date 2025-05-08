@@ -36,42 +36,41 @@ function formatDateInput(value) {
 }
 
 function formatDateForDisplay(dateInput) {
-  // Caso seja vazio, null ou undefined
+  // Caso seja vazio ou undefined
   if (!dateInput) return 'Data não informada';
 
-  // Se já estiver no formato DD/MM/AAAA
+  // Se já estiver no formato DD/MM/AAAA (como digitado no form)
   if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateInput)) {
     return dateInput;
   }
 
-  // Se for uma string ISO (vindo do BD no formato 2025-05-03T15:00:00.000+00:00)
-  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(dateInput)) {
-    const [datePart] = dateInput.split('T');
-    const [year, month, day] = datePart.split('-');
-    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
-  }
-
-  // Se for um objeto Date
-  if (dateInput instanceof Date) {
-    if (isNaN(dateInput.getTime())) return 'Data inválida';
-    const day = String(dateInput.getDate()).padStart(2, '0');
-    const month = String(dateInput.getMonth() + 1).padStart(2, '0');
-    const year = dateInput.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-
-  // Se for um timestamp numérico
-  if (typeof dateInput === 'number') {
-    const date = new Date(dateInput);
+  try {
+    let date;
+    
+    // Se for uma string ISO do MongoDB (com timezone)
+    if (typeof dateInput === 'string' && dateInput.includes('T')) {
+      // Extrai apenas a parte da data (YYYY-MM-DD)
+      const datePart = dateInput.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+    
+    // Para todos os outros casos (Date object, timestamp, etc)
+    date = new Date(dateInput);
     if (isNaN(date.getTime())) return 'Data inválida';
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
 
-  // Para qualquer outro caso
-  return 'Formato de data desconhecido';
+    // Mantém o ajuste de timezone do original (importante)
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+
+    const day = String(adjustedDate.getDate()).padStart(2, '0');
+    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+    const year = adjustedDate.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  } catch (e) {
+    console.error("Erro ao formatar data:", e);
+    return 'Data inválida';
+  }
 }
 
 function convertValueToFloat(valor) {
