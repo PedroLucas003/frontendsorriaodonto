@@ -39,17 +39,14 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
-    // Cria a data sem conversão de fuso horário
+    // Cria a data no UTC para evitar problemas de fuso horário
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Ajuste para o fuso horário local
-    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
-    // Extrai os componentes da data LOCAL
-    const day = String(adjustedDate.getDate()).padStart(2, '0');
-    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-    const year = adjustedDate.getFullYear();
+    // Extrai os componentes da data UTC
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
@@ -57,6 +54,7 @@ function formatDateForDisplay(dateString) {
     return 'Data inválida';
   }
 }
+
 function convertValueToFloat(valor) {
   if (!valor) return 0;
   if (typeof valor === 'number') return valor;
@@ -75,7 +73,6 @@ function formatValueForDisplay(valor) {
 
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [showProcedimentoSection, setShowProcedimentoSection] = useState(true);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     email: "",
@@ -245,43 +242,40 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-  
-    // Tratamento para valor monetário
+
+    // Tratamento especial para o campo de valor
     if (name === "valor") {
       // Remove tudo exceto números e vírgula
       const rawValue = value.replace(/[^\d,]/g, '');
-      
+
       // Converte para número (substitui vírgula por ponto para parseFloat)
       const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
-      
+
       // Formata para exibição
-      const valorFormatado = numericValue.toLocaleString('pt-BR', {
+      const formattedValue = numericValue.toLocaleString('pt-BR', {
         style: 'currency',
         currency: 'BRL',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-  
+
       setProcedimentoData(prev => ({
         ...prev,
-        valor: numericValue,
-        valorFormatado
+        valor: numericValue, // Armazena o valor numérico
+        valorFormatado: formattedValue // Armazena a versão formatada
       }));
       return;
     }
-  
+
     // Tratamento para data do procedimento
     if (name === "dataNovoProcedimento") {
-      // Aplica a máscara de data
-      const formattedDate = formatDateInput(value);
-  
-      // Validação quando o campo estiver completo
-      if (formattedDate.length === 10) {
-        const [day, month, year] = formattedDate.split('/');
-        
-        // Cria a data no meio do dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-        
+      const formattedValue = formatDateInput(value); // Formatação DD/MM/AAAA
+
+      // Validação quando o campo está completo (10 caracteres)
+      if (formattedValue.length === 10) {
+        const [day, month, year] = formattedValue.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
         } else {
@@ -290,11 +284,11 @@ const RegisterUser = () => {
           setFieldErrors(errors);
         }
       }
-  
-      setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
+
+      setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
       return;
     }
-  
+
     // Para todos os outros campos
     setProcedimentoData(prev => ({ ...prev, [name]: value }));
   };
@@ -365,6 +359,8 @@ const RegisterUser = () => {
       case "email":
         if (!value) {
           errors.email = "E-mail é obrigatório";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = "Por favor, insira um e-mail válido";
         } else {
           delete errors.email;
         }
@@ -561,8 +557,7 @@ const RegisterUser = () => {
 
       try {
         const [day, month, year] = dateString.split('/');
-        // Usar meio-dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+        const dateObj = new Date(`${year}-${month}-${day}`);
 
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({
@@ -727,7 +722,6 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-    setShowProcedimentoSection(false);
 
     // Função corrigida para formatar datas sem problemas de timezone
     const formatDateWithoutTimezone = (dateString) => {
@@ -838,7 +832,6 @@ const RegisterUser = () => {
   const handleVoltar = () => {
     setEditandoId(null);
     setModoVisualizacao(false);
-    setShowProcedimentoSection(true);
     resetForm();
   };
 
@@ -876,7 +869,7 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // 1. Validação dos campos obrigatórios
+      // 1. Validação dos campos
       const errors = {};
       if (!procedimentoData.procedimento?.trim()) errors.procedimento = "Procedimento é obrigatório";
       if (!procedimentoData.denteFace?.trim()) errors.denteFace = "Dente/Face é obrigatório";
@@ -890,7 +883,7 @@ const RegisterUser = () => {
         return;
       }
 
-      // 2. Validação e conversão da data
+      // 2. Validação e conversão da data - CORREÇÃO DO FUSO HORÁRIO
       const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
@@ -899,20 +892,20 @@ const RegisterUser = () => {
 
       const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
 
-      // Cria a data no meio do dia para evitar problemas de timezone
-      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`); // Usar meio-dia para evitar problemas de timezone
+      // Cria a data no UTC para evitar problemas de fuso horário
+      const dateObj = new Date(Date.UTC(year, month - 1, day));
 
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
         return;
       }
 
-      // 3. Conversão e validação do valor
+      // 3. Conversão do valor
       let valorNumerico;
       try {
         valorNumerico = convertValueToFloat(procedimentoData.valor);
         if (isNaN(valorNumerico) || valorNumerico <= 0) {
-          throw new Error("Valor deve ser positivo");
+          throw new Error("Valor inválido");
         }
       } catch (error) {
         setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
@@ -926,7 +919,7 @@ const RegisterUser = () => {
         valor: valorNumerico,
         modalidadePagamento: procedimentoData.modalidadePagamento,
         profissional: procedimentoData.profissional.trim(),
-        dataNovoProcedimento: dateObj.toISOString()
+        dataNovoProcedimento: dateObj.toISOString() // Já está em UTC
       };
 
       // 5. Envio para a API
@@ -936,23 +929,28 @@ const RegisterUser = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // 6. Cria objeto do novo procedimento para atualização local
+      // Cria objeto do novo procedimento com data formatada corretamente
       const novoProcedimento = {
         ...response.data.procedimento,
         _id: response.data.procedimento._id || Date.now().toString(),
         isPrincipal: false,
         valorFormatado: formatValueForDisplay(valorNumerico),
-        dataProcedimento: dateObj.toISOString(),
-        dataNovoProcedimento: dateObj.toISOString()
+        dataProcedimento: dateObj.toISOString(), // Armazena a data UTC
+        dataProcedimentoFormatada: `${day}/${month}/${year}`, // Armazena a data no formato original
+        createdAt: new Date().toISOString()
       };
 
-      // 7. Atualização do estado local
+      // 6. Atualização otimizada do estado local
       setFormData(prev => {
         const novosProcedimentos = [
           ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
-          ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
-          novoProcedimento // Novo procedimento no final
-        ];
+          novoProcedimento,
+          ...prev.procedimentos.filter(p => !p.isPrincipal) // Demais procedimentos
+        ].sort((a, b) => {
+          if (a.isPrincipal) return -1;
+          if (b.isPrincipal) return 1;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
 
         return {
           ...prev,
@@ -960,7 +958,7 @@ const RegisterUser = () => {
         };
       });
 
-      // 8. Reset do formulário e estado
+      // 7. Reset do formulário
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
@@ -975,19 +973,9 @@ const RegisterUser = () => {
       setError("");
       setFieldErrors({});
 
-      // Feedback visual para o usuário
-      alert("Procedimento adicionado com sucesso!");
-
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
-
-      // Tratamento de erros mais detalhado
-      const errorMessage = error.response?.data?.message ||
-        error.message ||
-        "Erro ao adicionar procedimento. Tente novamente.";
-
-      setError(errorMessage);
-
+      setError(error.response?.data?.message || "Erro ao processar o procedimento");
       if (error.response?.data?.errors) {
         setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
       }
@@ -1303,151 +1291,124 @@ const RegisterUser = () => {
         </div>
 
         <div className="form-section">
-          <div
-            className="section-header"
-            onClick={() => !modoVisualizacao && setShowProcedimentoSection(!showProcedimentoSection)}
-            style={{ cursor: modoVisualizacao ? 'default' : 'pointer' }}
-          >
-            <h2>Dados do Procedimento</h2>
-            {!modoVisualizacao && (
-              <span className="toggle-arrow">
-                {showProcedimentoSection ? '▼' : '►'}
-              </span>
-            )}
-          </div>
+          <h2>Dados do Procedimento</h2>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="procedimento">{labels.procedimento}</label>
+              <input
+                type="text"
+                id="procedimento"
+                name="procedimento"
+                value={formData.procedimento}
+                onChange={handleChange}
+                placeholder="Digite o procedimento realizado"
+              />
+            </div>
 
-          {(!modoVisualizacao || showProcedimentoSection) && (
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="procedimento">{labels.procedimento}</label>
-                <input
-                  type="text"
-                  id="procedimento"
-                  name="procedimento"
-                  value={formData.procedimento}
-                  onChange={handleChange}
-                  placeholder="Digite o procedimento realizado"
-                  className={fieldErrors.procedimento ? 'error-field' : ''}
-                />
-                {fieldErrors.procedimento && (
-                  <span className="field-error">{fieldErrors.procedimento}</span>
-                )}
-              </div>
+            <div className="form-group">
+              <label htmlFor="denteFace">{labels.denteFace}</label>
+              <input
+                type="text"
+                id="denteFace"
+                name="denteFace"
+                value={formData.denteFace}
+                onChange={handleChange}
+                placeholder="Ex: 11, 22, Face Lingual, etc."
+              />
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="denteFace">{labels.denteFace}</label>
-                <input
-                  type="text"
-                  id="denteFace"
-                  name="denteFace"
-                  value={formData.denteFace}
-                  onChange={handleChange}
-                  placeholder="Ex: 11, 22, Face Lingual, etc."
-                  className={fieldErrors.denteFace ? 'error-field' : ''}
-                />
-                {fieldErrors.denteFace && (
-                  <span className="field-error">{fieldErrors.denteFace}</span>
-                )}
-              </div>
+            <div className="form-group">
+              <label htmlFor="dataProcedimento">Data do Procedimento</label>
+              <input
+                type="text"
+                id="dataProcedimento"
+                name="dataProcedimento"
+                value={formData.dataProcedimento}
+                onChange={handleChange}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+                className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+                disabled={modoVisualizacao}
+                onKeyDown={(e) => {
+                  // Permite apenas números e teclas de controle
+                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+              />
+              {fieldErrors.dataProcedimento && (
+                <span className="field-error">{fieldErrors.dataProcedimento}</span>
+              )}
+            </div>
 
-              <div className="form-group">
-                <label htmlFor="dataProcedimento">Data do Procedimento</label>
-                <input
-                  type="text"
-                  id="dataProcedimento"
-                  name="dataProcedimento"
-                  value={formData.dataProcedimento}
-                  onChange={handleChange}
-                  placeholder="DD/MM/AAAA"
-                  maxLength={10}
-                  className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                  disabled={modoVisualizacao}
-                  onKeyDown={(e) => {
-                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-                {fieldErrors.dataProcedimento && (
-                  <span className="field-error">{fieldErrors.dataProcedimento}</span>
-                )}
-              </div>
+            <div className="form-group">
+              <label htmlFor="valor">{labels.valor}</label>
+              <input
+                type="text"
+                id="valor"
+                name="valor"
+                value={formData.valorFormatado || ''}
+                onChange={(e) => {
+                  // Remove tudo exceto números
+                  const rawValue = e.target.value.replace(/\D/g, '');
 
-              <div className="form-group">
-                <label htmlFor="valor">{labels.valor}</label>
-                <input
-                  type="text"
-                  id="valor"
-                  name="valor"
-                  value={formData.valorFormatado || ''}
-                  onChange={(e) => {
-                    const rawValue = e.target.value.replace(/\D/g, '');
-                    const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
-                    const formattedValue = numericValue.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    });
+                  // Converte para valor decimal (divide por 100 para centavos)
+                  const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
 
+                  // Formata para exibição
+                  const formattedValue = numericValue.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  });
+
+                  setFormData(prev => ({
+                    ...prev,
+                    valor: numericValue, // Armazena como número
+                    valorFormatado: formattedValue // Armazena versão formatada
+                  }));
+                }}
+                onBlur={() => {
+                  // Garante formatação correta ao sair do campo
+                  if (!formData.valorFormatado) {
                     setFormData(prev => ({
                       ...prev,
-                      valor: numericValue,
-                      valorFormatado: formattedValue
+                      valor: 0,
+                      valorFormatado: 'R$ 0,00'
                     }));
-                  }}
-                  onBlur={() => {
-                    if (!formData.valorFormatado) {
-                      setFormData(prev => ({
-                        ...prev,
-                        valor: 0,
-                        valorFormatado: 'R$ 0,00'
-                      }));
-                    }
-                  }}
-                  placeholder="R$ 0,00"
-                  className={fieldErrors.valor ? 'error-field' : ''}
-                />
-                {fieldErrors.valor && (
-                  <span className="field-error">{fieldErrors.valor}</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
-                <select
-                  id="modalidadePagamento"
-                  name="modalidadePagamento"
-                  value={formData.modalidadePagamento}
-                  onChange={handleChange}
-                  className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
-                >
-                  <option value="">Selecione...</option>
-                  {modalidadesPagamento.map((opcao) => (
-                    <option key={opcao} value={opcao}>{opcao}</option>
-                  ))}
-                </select>
-                {fieldErrors.modalidadePagamento && (
-                  <span className="field-error">{fieldErrors.modalidadePagamento}</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="profissional">{labels.profissional}</label>
-                <input
-                  type="text"
-                  id="profissional"
-                  name="profissional"
-                  value={formData.profissional}
-                  onChange={handleChange}
-                  className={fieldErrors.profissional ? 'error-field' : ''}
-                />
-                {fieldErrors.profissional && (
-                  <span className="field-error">{fieldErrors.profissional}</span>
-                )}
-              </div>
+                  }
+                }}
+                placeholder="R$ 0,00"
+              />
             </div>
-          )}
+
+            <div className="form-group">
+              <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
+              <select
+                id="modalidadePagamento"
+                name="modalidadePagamento"
+                value={formData.modalidadePagamento}
+                onChange={handleChange}
+              >
+                <option value="">Selecione...</option>
+                {modalidadesPagamento.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="profissional">{labels.profissional}</label>
+              <input
+                type="text"
+                id="profissional"
+                name="profissional"
+                value={formData.profissional}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
         </div>
 
         {editandoId && (
@@ -1608,36 +1569,39 @@ const RegisterUser = () => {
             <div className="procedimentos-list">
               {Array.isArray(formData.procedimentos) ? (
                 formData.procedimentos.length > 0 ? (
+                  // Primeiro exibe o procedimento principal (se existir)
                   formData.procedimentos
-                    .sort((a, b) => {
-                      // Ordena: principal primeiro, depois os mais antigos primeiro
-                      if (a.isPrincipal) return -1;
-                      if (b.isPrincipal) return 1;
-                      return new Date(a.dataProcedimento) - new Date(b.dataProcedimento);
-                    })
-                    .map((proc, index) => {
+                    .filter(proc => proc.isPrincipal)
+                    .map((procPrincipal) => {
                       const procedimento = {
-                        _id: proc._id || `proc-${index}`,
-                        procedimento: proc.procedimento || "Não especificado",
-                        denteFace: proc.denteFace || "Não especificado",
-                        valor: typeof proc.valor === 'number' ? proc.valor : 0,
-                        modalidadePagamento: proc.modalidadePagamento || "Não especificado",
-                        profissional: proc.profissional || "Não especificado",
-                        dataProcedimento: proc.dataProcedimento
+                        _id: procPrincipal._id || 'principal',
+                        procedimento: procPrincipal.procedimento || "Não especificado",
+                        denteFace: procPrincipal.denteFace || "Não especificado",
+                        valor: typeof procPrincipal.valor === 'number' ? procPrincipal.valor : 0,
+                        modalidadePagamento: procPrincipal.modalidadePagamento || "Não especificado",
+                        profissional: procPrincipal.profissional || "Não especificado",
+                        dataProcedimento: procPrincipal.dataProcedimento || procPrincipal.createdAt,
+                        isPrincipal: true,
+                        createdAt: procPrincipal.createdAt || new Date().toISOString()
                       };
 
                       return (
-                        <div key={procedimento._id} className="procedimento-item">
+                        <div
+                          key={procedimento._id}
+                          className="procedimento-item principal"
+                        >
                           <div className="procedimento-header">
-                            <h4>Procedimento #{index + 1}</h4>
+                            <h4>
+                              Procedimento Principal
+                              <span className="badge-principal">Principal</span>
+                            </h4>
+                            <span>{formatDateForDisplay(procedimento.createdAt)}</span>
                           </div>
 
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            {procedimento.dataProcedimento && (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
-                            )}
+                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
@@ -1645,6 +1609,54 @@ const RegisterUser = () => {
                         </div>
                       );
                     })
+                    // Depois exibe os procedimentos secundários ordenados por data (mais antigo primeiro)
+                    .concat(
+                      formData.procedimentos
+                        .filter(proc => !proc.isPrincipal)
+                        .sort((a, b) => {
+                          try {
+                            const dateA = new Date(a.createdAt || new Date());
+                            const dateB = new Date(b.createdAt || new Date());
+                            return dateA - dateB; // Alterado para ordem crescente (mais antigo primeiro)
+                          } catch {
+                            return 0;
+                          }
+                        })
+                        .map((proc, index, array) => {
+                          const procedimento = {
+                            _id: proc._id || `secundario-${index}`,
+                            procedimento: proc.procedimento || "Não especificado",
+                            denteFace: proc.denteFace || "Não especificado",
+                            valor: typeof proc.valor === 'number' ? proc.valor : 0,
+                            modalidadePagamento: proc.modalidadePagamento || "Não especificado",
+                            profissional: proc.profissional || "Não especificado",
+                            dataProcedimento: proc.dataProcedimento || proc.createdAt,
+                            isPrincipal: false,
+                            createdAt: proc.createdAt || new Date().toISOString()
+                          };
+
+                          return (
+                            <div
+                              key={procedimento._id}
+                              className="procedimento-item"
+                            >
+                              <div className="procedimento-header">
+                                <h4>Procedimento #{index + 2}</h4>
+                                <span>{formatDateForDisplay(procedimento.createdAt)}</span>
+                              </div>
+
+                              <div className="procedimento-details">
+                                <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
+                                <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
+                                <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                                <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
+                                <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
+                                <p><strong>Profissional:</strong> {procedimento.profissional}</p>
+                              </div>
+                            </div>
+                          );
+                        })
+                    )
                 ) : (
                   <div className="no-procedimentos">
                     <i className="bi bi-clipboard-x"></i>
