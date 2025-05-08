@@ -35,44 +35,28 @@ function formatDateInput(value) {
   return cleanedValue;
 }
 
-function formatDateForDisplay(dateInput) {
-  // Caso seja vazio ou undefined
-  if (!dateInput) return 'Data não informada';
-
-  // Se já estiver no formato DD/MM/AAAA (como digitado no form)
-  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateInput)) {
-    return dateInput;
-  }
+function formatDateForDisplay(dateString) {
+  if (!dateString) return 'Data não informada';
 
   try {
-    let date;
-    
-    // Se for uma string ISO do MongoDB (com timezone)
-    if (typeof dateInput === 'string' && dateInput.includes('T')) {
-      // Extrai apenas a parte da data (YYYY-MM-DD)
-      const datePart = dateInput.split('T')[0];
-      const [year, month, day] = datePart.split('-');
-      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
-    }
-    
-    // Para todos os outros casos (Date object, timestamp, etc)
-    date = new Date(dateInput);
+    // Cria a data sem conversão de fuso horário
+    const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Mantém o ajuste de timezone do original (importante)
+    // Ajuste para o fuso horário local
     const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
 
+    // Extrai os componentes da data LOCAL
     const day = String(adjustedDate.getDate()).padStart(2, '0');
     const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
     const year = adjustedDate.getFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
-    console.error("Erro ao formatar data:", e);
+    console.error("Erro ao formatar data para exibição:", e);
     return 'Data inválida';
   }
 }
-
 function convertValueToFloat(valor) {
   if (!valor) return 0;
   if (typeof valor === 'number') return valor;
@@ -1651,7 +1635,9 @@ const RegisterUser = () => {
                           <div className="procedimento-details">
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataNovoProcedimento)}</p>
+                            {procedimento.dataProcedimento && (
+                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                            )}
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
                             <p><strong>Profissional:</strong> {procedimento.profissional}</p>
