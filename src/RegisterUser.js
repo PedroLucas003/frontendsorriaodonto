@@ -43,10 +43,13 @@ function formatDateForDisplay(dateString) {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Extrai os componentes da data LOCAL (sem UTC)
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    // Ajuste para o fuso horário local
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+
+    // Extrai os componentes da data LOCAL
+    const day = String(adjustedDate.getDate()).padStart(2, '0');
+    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+    const year = adjustedDate.getFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
@@ -54,7 +57,6 @@ function formatDateForDisplay(dateString) {
     return 'Data inválida';
   }
 }
-
 function convertValueToFloat(valor) {
   if (!valor) return 0;
   if (typeof valor === 'number') return valor;
@@ -244,17 +246,16 @@ const RegisterUser = () => {
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
   
-    let formattedValue = value;
-  
+    // Tratamento para valor monetário
     if (name === "valor") {
       // Remove tudo exceto números e vírgula
       const rawValue = value.replace(/[^\d,]/g, '');
-  
+      
       // Converte para número (substitui vírgula por ponto para parseFloat)
       const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
-  
+      
       // Formata para exibição
-      const formattedValue = numericValue.toLocaleString('pt-BR', {
+      const valorFormatado = numericValue.toLocaleString('pt-BR', {
         style: 'currency',
         currency: 'BRL',
         minimumFractionDigits: 2,
@@ -263,8 +264,8 @@ const RegisterUser = () => {
   
       setProcedimentoData(prev => ({
         ...prev,
-        valor: numericValue, // Armazena o valor numérico
-        valorFormatado: formattedValue // Armazena a versão formatada
+        valor: numericValue,
+        valorFormatado
       }));
       return;
     }
@@ -272,13 +273,15 @@ const RegisterUser = () => {
     // Tratamento para data do procedimento
     if (name === "dataNovoProcedimento") {
       // Aplica a máscara de data
-      formattedValue = formatDateInput(value);
+      const formattedDate = formatDateInput(value);
   
-      // Validação imediata apenas do formato quando o campo estiver completo
-      if (formattedValue.length === 10) {
-        const [day, month, year] = formattedValue.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-  
+      // Validação quando o campo estiver completo
+      if (formattedDate.length === 10) {
+        const [day, month, year] = formattedDate.split('/');
+        
+        // Cria a data no meio do dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+        
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
         } else {
@@ -287,10 +290,13 @@ const RegisterUser = () => {
           setFieldErrors(errors);
         }
       }
+  
+      setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
+      return;
     }
   
     // Para todos os outros campos
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
+    setProcedimentoData(prev => ({ ...prev, [name]: value }));
   };
 
   const validateField = (name, value) => {
@@ -866,10 +872,10 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       // 1. Validação dos campos obrigatórios
       const errors = {};
       if (!procedimentoData.procedimento?.trim()) errors.procedimento = "Procedimento é obrigatório";
@@ -878,27 +884,29 @@ const RegisterUser = () => {
       if (!procedimentoData.modalidadePagamento) errors.modalidadePagamento = "Modalidade de pagamento é obrigatória";
       if (!procedimentoData.profissional?.trim()) errors.profissional = "Profissional é obrigatório";
       if (!procedimentoData.dataNovoProcedimento) errors.dataNovoProcedimento = "Data do procedimento é obrigatória";
-  
+
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
         return;
       }
-  
+
       // 2. Validação e conversão da data
       const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
         return;
       }
-  
+
       const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
+
+      // Cria a data no meio do dia para evitar problemas de timezone
       const dateObj = new Date(`${year}-${month}-${day}T12:00:00`); // Usar meio-dia para evitar problemas de timezone
-  
+
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
         return;
       }
-  
+
       // 3. Conversão e validação do valor
       let valorNumerico;
       try {
@@ -910,7 +918,7 @@ const RegisterUser = () => {
         setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
         return;
       }
-  
+
       // 4. Preparação dos dados para envio
       const dadosParaEnvio = {
         procedimento: procedimentoData.procedimento.trim(),
@@ -920,14 +928,14 @@ const RegisterUser = () => {
         profissional: procedimentoData.profissional.trim(),
         dataNovoProcedimento: dateObj.toISOString()
       };
-  
+
       // 5. Envio para a API
       const response = await api.put(
         `/api/users/${editandoId}/procedimento`,
         dadosParaEnvio,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+
       // 6. Cria objeto do novo procedimento para atualização local
       const novoProcedimento = {
         ...response.data.procedimento,
@@ -937,7 +945,7 @@ const RegisterUser = () => {
         dataProcedimento: dateObj.toISOString(),
         dataNovoProcedimento: dateObj.toISOString()
       };
-  
+
       // 7. Atualização do estado local
       setFormData(prev => {
         const novosProcedimentos = [
@@ -945,13 +953,13 @@ const RegisterUser = () => {
           ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
           novoProcedimento // Novo procedimento no final
         ];
-  
+
         return {
           ...prev,
           procedimentos: novosProcedimentos
         };
       });
-  
+
       // 8. Reset do formulário e estado
       setProcedimentoData({
         procedimento: "",
@@ -962,24 +970,24 @@ const RegisterUser = () => {
         profissional: "",
         dataNovoProcedimento: ""
       });
-  
+
       setShowProcedimentoForm(false);
       setError("");
       setFieldErrors({});
-  
+
       // Feedback visual para o usuário
       alert("Procedimento adicionado com sucesso!");
-  
+
     } catch (error) {
       console.error("Erro ao adicionar procedimento:", error);
-      
+
       // Tratamento de erros mais detalhado
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          "Erro ao adicionar procedimento. Tente novamente.";
-      
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "Erro ao adicionar procedimento. Tente novamente.";
+
       setError(errorMessage);
-      
+
       if (error.response?.data?.errors) {
         setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
       }
