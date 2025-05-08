@@ -39,12 +39,21 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
-    // Extrai apenas a parte da data (ignora o tempo e timezone)
-    const dateOnly = dateString.split('T')[0];
-    const [year, month, day] = dateOnly.split('-');
-    
-    // Formata como DD/MM/AAAA
-    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    // Se já estiver no formato DD/MM/AAAA, retorna direto
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      return dateString;
+    }
+
+    // Para datas ISO (do banco de dados)
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Data inválida';
+
+    // Ajuste para o fuso horário local
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
   } catch (e) {
     console.error("Erro ao formatar data para exibição:", e);
     return 'Data inválida';
@@ -239,15 +248,15 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-  
+
     // Tratamento para valor monetário
     if (name === "valor") {
       // Remove tudo exceto números e vírgula
       const rawValue = value.replace(/[^\d,]/g, '');
-      
+
       // Converte para número (substitui vírgula por ponto para parseFloat)
       const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
-      
+
       // Formata para exibição
       const valorFormatado = numericValue.toLocaleString('pt-BR', {
         style: 'currency',
@@ -255,7 +264,7 @@ const RegisterUser = () => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-  
+
       setProcedimentoData(prev => ({
         ...prev,
         valor: numericValue,
@@ -263,19 +272,19 @@ const RegisterUser = () => {
       }));
       return;
     }
-  
+
     // Tratamento para data do procedimento
     if (name === "dataNovoProcedimento") {
       // Aplica a máscara de data
       const formattedDate = formatDateInput(value);
-  
+
       // Validação quando o campo estiver completo
       if (formattedDate.length === 10) {
         const [day, month, year] = formattedDate.split('/');
-        
+
         // Cria a data no meio do dia para evitar problemas de timezone
         const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-        
+
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
         } else {
@@ -284,11 +293,11 @@ const RegisterUser = () => {
           setFieldErrors(errors);
         }
       }
-  
+
       setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
       return;
     }
-  
+
     // Para todos os outros campos
     setProcedimentoData(prev => ({ ...prev, [name]: value }));
   };
@@ -722,26 +731,32 @@ const RegisterUser = () => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
     setShowProcedimentoSection(false);
-
-    // Função corrigida para formatar datas sem problemas de timezone
+  
+    // Função para formatar datas sem problemas de timezone
     const formatDateWithoutTimezone = (dateString) => {
       if (!dateString) return '';
+      
       try {
+        // Se já estiver no formato DD/MM/AAAA, retorna direto
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+          return dateString;
+        }
+        
+        // Para datas ISO (do banco de dados)
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return '';
-
-        // Ajuste para evitar problemas de timezone
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = date.getUTCFullYear();
-
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        
         return `${day}/${month}/${year}`;
       } catch (e) {
         console.error("Erro ao formatar data:", e);
         return '';
       }
     };
-
+  
     // Formatação das datas usando a nova função
     let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
     let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
@@ -866,128 +881,120 @@ const RegisterUser = () => {
 
 
   const handleAddProcedimento = async (e) => {
-  e.preventDefault();
-
-  try {
-    const token = localStorage.getItem("token");
-
-    // Validação dos campos obrigatórios
-    const errors = {};
-    if (!procedimentoData.procedimento?.trim()) errors.procedimento = "Procedimento é obrigatório";
-    if (!procedimentoData.denteFace?.trim()) errors.denteFace = "Dente/Face é obrigatório";
-    if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
-    if (!procedimentoData.modalidadePagamento) errors.modalidadePagamento = "Modalidade de pagamento é obrigatória";
-    if (!procedimentoData.profissional?.trim()) errors.profissional = "Profissional é obrigatório";
-    if (!procedimentoData.dataNovoProcedimento) errors.dataNovoProcedimento = "Data do procedimento é obrigatória";
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    // Validação e conversão da data
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
-      setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
-      return;
-    }
-
-    const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-
-    // Cria a data no formato UTC para evitar problemas de timezone
-    const dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-    
-    if (isNaN(dateObj.getTime())) {
-      setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
-      return;
-    }
-
-    // Formata a data para ISO string (sem timezone)
-    const isoDateString = dateObj.toISOString();
-
-    // Conversão e validação do valor
-    let valorNumerico;
+    e.preventDefault();
+  
     try {
-      valorNumerico = convertValueToFloat(procedimentoData.valor);
-      if (isNaN(valorNumerico) || valorNumerico <= 0) {
-        throw new Error("Valor deve ser positivo");
+      const token = localStorage.getItem("token");
+  
+      // Validação dos campos obrigatórios
+      const errors = {};
+      if (!procedimentoData.procedimento?.trim()) errors.procedimento = "Procedimento é obrigatório";
+      if (!procedimentoData.denteFace?.trim()) errors.denteFace = "Dente/Face é obrigatório";
+      if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
+      if (!procedimentoData.modalidadePagamento) errors.modalidadePagamento = "Modalidade de pagamento é obrigatória";
+      if (!procedimentoData.profissional?.trim()) errors.profissional = "Profissional é obrigatório";
+      if (!procedimentoData.dataNovoProcedimento) errors.dataNovoProcedimento = "Data do procedimento é obrigatória";
+  
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
       }
-    } catch (error) {
-      setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-      return;
-    }
-
-    // Preparação dos dados para envio
-    const dadosParaEnvio = {
-      procedimento: procedimentoData.procedimento.trim(),
-      denteFace: procedimentoData.denteFace.trim(),
-      valor: valorNumerico,
-      modalidadePagamento: procedimentoData.modalidadePagamento,
-      profissional: procedimentoData.profissional.trim(),
-      dataNovoProcedimento: isoDateString // Usando a string ISO diretamente
-    };
-
-    // Resto do código permanece o mesmo...
-    const response = await api.put(
-      `/api/users/${editandoId}/procedimento`,
-      dadosParaEnvio,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // Cria objeto do novo procedimento para atualização local
-    const novoProcedimento = {
-      ...response.data.procedimento,
-      _id: response.data.procedimento._id || Date.now().toString(),
-      isPrincipal: false,
-      valorFormatado: formatValueForDisplay(valorNumerico),
-      dataProcedimento: isoDateString,
-      dataNovoProcedimento: isoDateString
-    };
-
-    // Atualização do estado local
-    setFormData(prev => {
-      const novosProcedimentos = [
-        ...prev.procedimentos.filter(p => p.isPrincipal),
-        ...prev.procedimentos.filter(p => !p.isPrincipal),
-        novoProcedimento
-      ];
-
-      return {
-        ...prev,
-        procedimentos: novosProcedimentos
+  
+      // Validação e conversão da data
+      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+      if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
+        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
+        return;
+      }
+  
+      const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
+      
+      // Cria a data como string no formato YYYY-MM-DD (sem timezone)
+      const dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      
+      // Conversão e validação do valor
+      let valorNumerico;
+      try {
+        valorNumerico = convertValueToFloat(procedimentoData.valor);
+        if (isNaN(valorNumerico)) {
+          throw new Error("Valor inválido");
+        }
+      } catch (error) {
+        setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+        return;
+      }
+  
+      // Preparação dos dados para envio
+      const dadosParaEnvio = {
+        procedimento: procedimentoData.procedimento.trim(),
+        denteFace: procedimentoData.denteFace.trim(),
+        valor: valorNumerico,
+        modalidadePagamento: procedimentoData.modalidadePagamento,
+        profissional: procedimentoData.profissional.trim(),
+        dataNovoProcedimento: dateStr // Envia como string no formato YYYY-MM-DD
       };
-    });
-
-    // Reset do formulário
-    setProcedimentoData({
-      procedimento: "",
-      denteFace: "",
-      valor: 0,
-      valorFormatado: "",
-      modalidadePagamento: "",
-      profissional: "",
-      dataNovoProcedimento: ""
-    });
-
-    setShowProcedimentoForm(false);
-    setError("");
-    setFieldErrors({});
-
-    alert("Procedimento adicionado com sucesso!");
-
-  } catch (error) {
-    console.error("Erro ao adicionar procedimento:", error);
-    const errorMessage = error.response?.data?.message ||
-      error.message ||
-      "Erro ao adicionar procedimento. Tente novamente.";
-
-    setError(errorMessage);
-
-    if (error.response?.data?.errors) {
-      setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+  
+      // Envio para a API
+      const response = await api.put(
+        `/api/users/${editandoId}/procedimento`,
+        dadosParaEnvio,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      // Cria objeto do novo procedimento para atualização local
+      const novoProcedimento = {
+        ...response.data.procedimento,
+        _id: response.data.procedimento._id || Date.now().toString(),
+        isPrincipal: false,
+        valorFormatado: formatValueForDisplay(valorNumerico),
+        dataProcedimento: dateStr,
+        dataNovoProcedimento: dateStr
+      };
+  
+      // Atualização do estado local
+      setFormData(prev => {
+        const novosProcedimentos = [
+          ...prev.procedimentos.filter(p => p.isPrincipal),
+          ...prev.procedimentos.filter(p => !p.isPrincipal),
+          novoProcedimento
+        ];
+  
+        return {
+          ...prev,
+          procedimentos: novosProcedimentos
+        };
+      });
+  
+      // Reset do formulário
+      setProcedimentoData({
+        procedimento: "",
+        denteFace: "",
+        valor: 0,
+        valorFormatado: "",
+        modalidadePagamento: "",
+        profissional: "",
+        dataNovoProcedimento: ""
+      });
+  
+      setShowProcedimentoForm(false);
+      setError("");
+      setFieldErrors({});
+  
+      alert("Procedimento adicionado com sucesso!");
+  
+    } catch (error) {
+      console.error("Erro ao adicionar procedimento:", error);
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "Erro ao adicionar procedimento. Tente novamente.";
+  
+      setError(errorMessage);
+  
+      if (error.response?.data?.errors) {
+        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+      }
     }
-  }
-};
+  };
 
   const filteredUsuarios = usuarios.filter(usuario => {
     const searchLower = searchTerm.toLowerCase().trim();  // Remove espaços e padroniza
@@ -1298,36 +1305,36 @@ const RegisterUser = () => {
         </div>
 
         <div className="form-section">
-  <div
-    className="section-header"
-    onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
-    style={{ cursor: 'pointer' }} // Sempre permitir clique
-  >
-    <h2>Dados do Procedimento</h2>
-    {/* Sempre mostrar a setinha */}
-    <span className="toggle-arrow">
-      {showProcedimentoSection ? '▼' : '►'}
-    </span>
-  </div>
+          <div
+            className="section-header"
+            onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
+            style={{ cursor: 'pointer' }} // Sempre permitir clique
+          >
+            <h2>Dados do Procedimento</h2>
+            {/* Sempre mostrar a setinha */}
+            <span className="toggle-arrow">
+              {showProcedimentoSection ? '▼' : '►'}
+            </span>
+          </div>
 
-  {showProcedimentoSection && (
-    <div className="form-grid">
-      <div className="form-group">
-        <label htmlFor="procedimento">{labels.procedimento}</label>
-        <input
-          type="text"
-          id="procedimento"
-          name="procedimento"
-          value={formData.procedimento}
-          onChange={handleChange}
-          placeholder="Digite o procedimento realizado"
-          className={fieldErrors.procedimento ? 'error-field' : ''}
-          disabled={modoVisualizacao}
-        />
-        {fieldErrors.procedimento && (
-          <span className="field-error">{fieldErrors.procedimento}</span>
-        )}
-      </div>
+          {showProcedimentoSection && (
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="procedimento">{labels.procedimento}</label>
+                <input
+                  type="text"
+                  id="procedimento"
+                  name="procedimento"
+                  value={formData.procedimento}
+                  onChange={handleChange}
+                  placeholder="Digite o procedimento realizado"
+                  className={fieldErrors.procedimento ? 'error-field' : ''}
+                  disabled={modoVisualizacao}
+                />
+                {fieldErrors.procedimento && (
+                  <span className="field-error">{fieldErrors.procedimento}</span>
+                )}
+              </div>
 
               <div className="form-group">
                 <label htmlFor="denteFace">{labels.denteFace}</label>
