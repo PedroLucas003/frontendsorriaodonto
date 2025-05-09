@@ -145,11 +145,6 @@ const RegisterUser = () => {
     "Diariamente"
   ];
 
-useEffect(() => {
-  // Atualiza o estado baseado no modoVisualizacao quando ele mudar
-  setShowProcedimentoSection(!modoVisualizacao);
-}, [modoVisualizacao]);
-
   useEffect(() => {
     fetchUsuarios();
   }, []);
@@ -781,6 +776,7 @@ useEffect(() => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
+     setShowProcedimentoSection(false);
 
     // Função corrigida para formatar datas sem problemas de timezone
     const formatDateWithoutTimezone = (dateString) => {
@@ -892,6 +888,7 @@ useEffect(() => {
     setEditandoId(null);
     setModoVisualizacao(false);
     setShowProcedimentoSection(true);
+     setShowProcedimentoSection(true);
     resetForm();
   };
 
@@ -1376,22 +1373,16 @@ useEffect(() => {
         </div>
 
         <div className="form-section">
-  <div
-    className="section-header"
-    onClick={() => {
-      if (!modoVisualizacao) {
-        setShowProcedimentoSection(!showProcedimentoSection);
-      }
-    }}
-    style={{ cursor: modoVisualizacao ? 'default' : 'pointer' }}
-  >
-    <h2>Dados do Procedimento</h2>
-    {!modoVisualizacao && (
-      <span className="toggle-arrow">
-        {showProcedimentoSection ? '▼' : '►'}
-      </span>
-    )}
-  </div>
+          <div
+            className="section-header"
+            onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
+            style={{ cursor: 'pointer' }}
+          >
+            <h2>Dados do Procedimento</h2>
+            <span className="toggle-arrow">
+              {showProcedimentoSection ? '▼' : '►'}
+            </span>
+          </div>
 
           {(!modoVisualizacao || showProcedimentoSection) && (
             <div className="form-grid">
