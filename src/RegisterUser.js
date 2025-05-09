@@ -39,12 +39,14 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
+    // Cria a data a partir da string ISO
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    // Extrai os componentes da data em UTC para evitar problemas de timezone
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
@@ -52,7 +54,6 @@ function formatDateForDisplay(dateString) {
     return 'Data inválida';
   }
 }
-
 
 function convertValueToFloat(valor) {
   if (!valor) return 0;
@@ -268,29 +269,29 @@ const RegisterUser = () => {
     }
   
     // Tratamento para data do procedimento
-    if (name === "dataNovoProcedimento") {
-      // Aplica a máscara de data
-      const formattedDate = formatDateInput(value);
-  
-      // Validação quando o campo estiver completo
-      if (formattedDate.length === 10) {
-        const [day, month, year] = formattedDate.split('/');
-        
-        // Cria a data no meio do dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-        
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } else {
-          const errors = { ...fieldErrors };
-          delete errors[name];
-          setFieldErrors(errors);
-        }
+      if (name === "dataNovoProcedimento") {
+    // Aplica a máscara de data
+    const formattedDate = formatDateInput(value);
+    
+    // Validação quando o campo estiver completo
+    if (formattedDate.length === 10) {
+      const [day, month, year] = formattedDate.split('/');
+      
+      // Cria a data em UTC (usando meio-dia para evitar problemas)
+      const dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      
+      if (isNaN(dateObj.getTime())) {
+        setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+      } else {
+        const errors = { ...fieldErrors };
+        delete errors[name];
+        setFieldErrors(errors);
       }
-  
-      setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
-      return;
     }
+
+    setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
+    return;
+  }
   
     // Para todos os outros campos
     setProcedimentoData(prev => ({ ...prev, [name]: value }));
@@ -548,37 +549,38 @@ const RegisterUser = () => {
 
     // Converter datas para formato ISO
     const convertDateToISO = (dateString, fieldName) => {
-      if (!dateString || dateString.length !== 10) {
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: `Data ${fieldName} inválida ou incompleta`
-        }));
-        return null;
-      }
+  if (!dateString || dateString.length !== 10) {
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: `Data ${fieldName} inválida ou incompleta`
+    }));
+    return null;
+  }
 
-      try {
-        const [day, month, year] = dateString.split('/');
-        // Usar meio-dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+  try {
+    const [day, month, year] = dateString.split('/');
+    
+    // Cria a data em UTC (usando Date.UTC e new Date())
+    const dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: `Data ${fieldName} inválida`
-          }));
-          return null;
-        }
+    if (isNaN(dateObj.getTime())) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldName]: `Data ${fieldName} inválida`
+      }));
+      return null;
+    }
 
-        return dateObj.toISOString();
-      } catch (error) {
-        console.error(`Erro ao converter ${fieldName}:`, error);
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: `Erro ao processar data ${fieldName}`
-        }));
-        return null;
-      }
-    };
+    return dateObj.toISOString();
+  } catch (error) {
+    console.error(`Erro ao converter ${fieldName}:`, error);
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: `Erro ao processar data ${fieldName}`
+    }));
+    return null;
+  }
+};
 
     // Converter datas
     const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
