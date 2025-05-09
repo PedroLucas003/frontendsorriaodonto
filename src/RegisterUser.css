@@ -865,3 +865,14 @@ tr:last-child td:last-child {
 .btn-edit-procedimento:hover, .btn-delete-procedimento:hover {
   opacity: 0.8;
 }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none; /* impede seleção de texto ao clicar */
+}
+
+.toggle-arrow {
+  margin-left: 10px;
+  font-size: 1.2em;
+}

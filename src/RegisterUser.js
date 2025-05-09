@@ -776,7 +776,7 @@ const RegisterUser = () => {
   const handleEdit = (usuario) => {
     setEditandoId(usuario._id);
     setModoVisualizacao(true);
-     setShowProcedimentoSection(false);
+    setShowProcedimentoSection(false);
 
     // Função corrigida para formatar datas sem problemas de timezone
     const formatDateWithoutTimezone = (dateString) => {
@@ -888,7 +888,7 @@ const RegisterUser = () => {
     setEditandoId(null);
     setModoVisualizacao(false);
     setShowProcedimentoSection(true);
-     setShowProcedimentoSection(true);
+    setShowProcedimentoSection(true);
     resetForm();
   };
 
@@ -1384,7 +1384,7 @@ const RegisterUser = () => {
             </span>
           </div>
 
-          {(!modoVisualizacao || showProcedimentoSection) && (
+          {showProcedimentoSection && (
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="procedimento">{labels.procedimento}</label>
