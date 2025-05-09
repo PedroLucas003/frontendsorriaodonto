@@ -39,14 +39,17 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
-    // Cria a data a partir da string ISO
+    // Cria a data sem conversão de fuso horário
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Extrai os componentes da data em UTC para evitar problemas de timezone
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const year = date.getUTCFullYear();
+    // Ajuste para o fuso horário local
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+
+    // Extrai os componentes da data LOCAL
+    const day = String(adjustedDate.getDate()).padStart(2, '0');
+    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+    const year = adjustedDate.getFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
@@ -74,6 +77,7 @@ function formatValueForDisplay(valor) {
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showProcedimentoSection, setShowProcedimentoSection] = useState(true);
+  const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     email: "",
@@ -241,17 +245,61 @@ const RegisterUser = () => {
     return `(${cleanedValue.slice(0, 2)}) ${cleanedValue.slice(2, 7)}-${cleanedValue.slice(7, 11)}`;
   };
 
+  const handleDeleteProcedimento = async (procedimentoId) => {
+    if (!window.confirm("Tem certeza que deseja excluir este procedimento?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await api.delete(`/api/users/${editandoId}/procedimento/${procedimentoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Atualiza o estado local removendo o procedimento
+      setFormData(prev => ({
+        ...prev,
+        procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
+      }));
+
+      alert("Procedimento excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir procedimento:", error);
+      setError("Erro ao excluir procedimento. Tente novamente.");
+    }
+  };
+
+  const handleEditProcedimento = (procedimentoId) => {
+    const procedimento = formData.procedimentos.find(p => p._id === procedimentoId);
+    if (!procedimento) return;
+
+    setEditandoProcedimentoId(procedimentoId);
+
+    // Preenche o formulário com os dados do procedimento
+    setProcedimentoData({
+      procedimento: procedimento.procedimento || "",
+      denteFace: procedimento.denteFace || "",
+      valor: procedimento.valor || 0,
+      modalidadePagamento: procedimento.modalidadePagamento || "",
+      profissional: procedimento.profissional || "",
+      dataNovoProcedimento: formatDateForDisplay(procedimento.dataProcedimento || procedimento.createdAt) || "",
+      valorFormatado: formatValueForDisplay(procedimento.valor) || ""
+    });
+
+    setShowProcedimentoForm(true);
+  };
+
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
-  
+
     // Tratamento para valor monetário
     if (name === "valor") {
       // Remove tudo exceto números e vírgula
       const rawValue = value.replace(/[^\d,]/g, '');
-      
+
       // Converte para número (substitui vírgula por ponto para parseFloat)
       const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
-      
+
       // Formata para exibição
       const valorFormatado = numericValue.toLocaleString('pt-BR', {
         style: 'currency',
@@ -259,7 +307,7 @@ const RegisterUser = () => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-  
+
       setProcedimentoData(prev => ({
         ...prev,
         valor: numericValue,
@@ -267,32 +315,32 @@ const RegisterUser = () => {
       }));
       return;
     }
-  
+
     // Tratamento para data do procedimento
-      if (name === "dataNovoProcedimento") {
-    // Aplica a máscara de data
-    const formattedDate = formatDateInput(value);
-    
-    // Validação quando o campo estiver completo
-    if (formattedDate.length === 10) {
-      const [day, month, year] = formattedDate.split('/');
-      
-      // Cria a data em UTC (usando meio-dia para evitar problemas)
-      const dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-      
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-      } else {
-        const errors = { ...fieldErrors };
-        delete errors[name];
-        setFieldErrors(errors);
+    if (name === "dataNovoProcedimento") {
+      // Aplica a máscara de data
+      const formattedDate = formatDateInput(value);
+
+      // Validação quando o campo estiver completo
+      if (formattedDate.length === 10) {
+        const [day, month, year] = formattedDate.split('/');
+
+        // Cria a data no meio do dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else {
+          const errors = { ...fieldErrors };
+          delete errors[name];
+          setFieldErrors(errors);
+        }
       }
+
+      setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
+      return;
     }
 
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
-    return;
-  }
-  
     // Para todos os outros campos
     setProcedimentoData(prev => ({ ...prev, [name]: value }));
   };
@@ -549,38 +597,37 @@ const RegisterUser = () => {
 
     // Converter datas para formato ISO
     const convertDateToISO = (dateString, fieldName) => {
-  if (!dateString || dateString.length !== 10) {
-    setFieldErrors(prev => ({
-      ...prev,
-      [fieldName]: `Data ${fieldName} inválida ou incompleta`
-    }));
-    return null;
-  }
+      if (!dateString || dateString.length !== 10) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Data ${fieldName} inválida ou incompleta`
+        }));
+        return null;
+      }
 
-  try {
-    const [day, month, year] = dateString.split('/');
-    
-    // Cria a data em UTC (usando Date.UTC e new Date())
-    const dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      try {
+        const [day, month, year] = dateString.split('/');
+        // Usar meio-dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
 
-    if (isNaN(dateObj.getTime())) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: `Data ${fieldName} inválida`
-      }));
-      return null;
-    }
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Data ${fieldName} inválida`
+          }));
+          return null;
+        }
 
-    return dateObj.toISOString();
-  } catch (error) {
-    console.error(`Erro ao converter ${fieldName}:`, error);
-    setFieldErrors(prev => ({
-      ...prev,
-      [fieldName]: `Erro ao processar data ${fieldName}`
-    }));
-    return null;
-  }
-};
+        return dateObj.toISOString();
+      } catch (error) {
+        console.error(`Erro ao converter ${fieldName}:`, error);
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Erro ao processar data ${fieldName}`
+        }));
+        return null;
+      }
+    };
 
     // Converter datas
     const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
@@ -875,7 +922,7 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // 1. Validação dos campos obrigatórios
+      // Validação dos campos obrigatórios
       const errors = {};
       if (!procedimentoData.procedimento?.trim()) errors.procedimento = "Procedimento é obrigatório";
       if (!procedimentoData.denteFace?.trim()) errors.denteFace = "Dente/Face é obrigatório";
@@ -889,7 +936,7 @@ const RegisterUser = () => {
         return;
       }
 
-      // 2. Validação e conversão da data
+      // Validação e conversão da data
       const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
@@ -897,28 +944,26 @@ const RegisterUser = () => {
       }
 
       const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-
-      // Cria a data no meio do dia para evitar problemas de timezone
-      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`); // Usar meio-dia para evitar problemas de timezone
+      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
 
       if (isNaN(dateObj.getTime())) {
         setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
         return;
       }
 
-      // 3. Conversão e validação do valor
+      // Conversão e validação do valor
       let valorNumerico;
       try {
         valorNumerico = convertValueToFloat(procedimentoData.valor);
-        if (isNaN(valorNumerico) || valorNumerico <= 0) {
-          throw new Error("Valor deve ser positivo");
+        if (isNaN(valorNumerico)) {
+          throw new Error("Valor inválido");
         }
       } catch (error) {
         setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
         return;
       }
 
-      // 4. Preparação dos dados para envio
+      // Preparação dos dados para envio
       const dadosParaEnvio = {
         procedimento: procedimentoData.procedimento.trim(),
         denteFace: procedimentoData.denteFace.trim(),
@@ -928,38 +973,60 @@ const RegisterUser = () => {
         dataNovoProcedimento: dateObj.toISOString()
       };
 
-      // 5. Envio para a API
-      const response = await api.put(
-        `/api/users/${editandoId}/procedimento`,
-        dadosParaEnvio,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      let response;
+      if (editandoProcedimentoId) {
+        // Atualizar procedimento existente
+        response = await api.put(
+          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+          dadosParaEnvio,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // Adicionar novo procedimento
+        response = await api.put(
+          `/api/users/${editandoId}/procedimento`,
+          dadosParaEnvio,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
-      // 6. Cria objeto do novo procedimento para atualização local
-      const novoProcedimento = {
-        ...response.data.procedimento,
-        _id: response.data.procedimento._id || Date.now().toString(),
+      // Cria objeto do procedimento para atualização local
+      const procedimentoAtualizado = {
+        ...(editandoProcedimentoId ?
+          { _id: editandoProcedimentoId } :
+          { _id: response.data.procedimento._id || Date.now().toString() }
+        ),
+        ...dadosParaEnvio,
         isPrincipal: false,
         valorFormatado: formatValueForDisplay(valorNumerico),
         dataProcedimento: dateObj.toISOString(),
         dataNovoProcedimento: dateObj.toISOString()
       };
 
-      // 7. Atualização do estado local
+      // Atualização do estado local
       setFormData(prev => {
-        const novosProcedimentos = [
-          ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
-          ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
-          novoProcedimento // Novo procedimento no final
-        ];
-
-        return {
-          ...prev,
-          procedimentos: novosProcedimentos
-        };
+        if (editandoProcedimentoId) {
+          // Atualiza o procedimento existente
+          return {
+            ...prev,
+            procedimentos: prev.procedimentos.map(p =>
+              p._id === editandoProcedimentoId ? procedimentoAtualizado : p
+            )
+          };
+        } else {
+          // Adiciona novo procedimento
+          return {
+            ...prev,
+            procedimentos: [
+              ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
+              ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
+              procedimentoAtualizado // Novo procedimento no final
+            ]
+          };
+        }
       });
 
-      // 8. Reset do formulário e estado
+      // Reset do formulário e estado
       setProcedimentoData({
         procedimento: "",
         denteFace: "",
@@ -970,20 +1037,19 @@ const RegisterUser = () => {
         dataNovoProcedimento: ""
       });
 
+      setEditandoProcedimentoId(null);
       setShowProcedimentoForm(false);
       setError("");
       setFieldErrors({});
 
       // Feedback visual para o usuário
-      alert("Procedimento adicionado com sucesso!");
+      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
 
     } catch (error) {
-      console.error("Erro ao adicionar procedimento:", error);
-
-      // Tratamento de erros mais detalhado
+      console.error("Erro ao adicionar/editar procedimento:", error);
       const errorMessage = error.response?.data?.message ||
         error.message ||
-        "Erro ao adicionar procedimento. Tente novamente.";
+        "Erro ao adicionar/editar procedimento. Tente novamente.";
 
       setError(errorMessage);
 
@@ -1629,6 +1695,24 @@ const RegisterUser = () => {
                         <div key={procedimento._id} className="procedimento-item">
                           <div className="procedimento-header">
                             <h4>Procedimento #{index + 1}</h4>
+                            {!proc.isPrincipal && (
+                              <div className="procedimento-actions">
+                                <button
+                                  onClick={() => handleEditProcedimento(procedimento._id)}
+                                  className="btn-edit-procedimento"
+                                  title="Editar procedimento"
+                                >
+                                  <i className="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProcedimento(procedimento._id)}
+                                  className="btn-delete-procedimento"
+                                  title="Excluir procedimento"
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           <div className="procedimento-details">
