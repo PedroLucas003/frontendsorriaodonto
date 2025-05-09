@@ -252,20 +252,23 @@ const RegisterUser = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await api.delete(`/api/users/${editandoId}/procedimento/${procedimentoId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.delete(
+        `/api/users/${editandoId}/procedimento/${procedimentoId}`, // Corrigido para singular
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
-      // Atualiza o estado local removendo o procedimento
-      setFormData(prev => ({
-        ...prev,
-        procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
-      }));
-
-      alert("Procedimento excluído com sucesso!");
+      if (response.status === 200) {
+        setFormData(prev => ({
+          ...prev,
+          procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
+        }));
+        alert("Procedimento excluído com sucesso!");
+      }
     } catch (error) {
       console.error("Erro ao excluir procedimento:", error);
-      setError("Erro ao excluir procedimento. Tente novamente.");
+      setError(error.response?.data?.message || "Erro ao excluir procedimento. Tente novamente.");
     }
   };
 
@@ -918,6 +921,7 @@ const RegisterUser = () => {
 
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
     try {
       const token = localStorage.getItem("token");
@@ -1698,14 +1702,24 @@ const RegisterUser = () => {
                             {!proc.isPrincipal && (
                               <div className="procedimento-actions">
                                 <button
-                                  onClick={() => handleEditProcedimento(procedimento._id)}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEditProcedimento(procedimento._id);
+                                  }}
                                   className="btn-edit-procedimento"
                                   title="Editar procedimento"
                                 >
                                   <i className="bi bi-pencil"></i>
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteProcedimento(procedimento._id)}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteProcedimento(procedimento._id);
+                                  }}
                                   className="btn-delete-procedimento"
                                   title="Excluir procedimento"
                                 >
@@ -1841,4 +1855,3 @@ const RegisterUser = () => {
 };
 
 export default RegisterUser;
-
