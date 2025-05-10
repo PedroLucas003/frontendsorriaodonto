@@ -35,6 +35,38 @@ function formatDateInput(value) {
   return cleanedValue;
 }
 
+function formatDataNovoProcedimento(dateString) {
+  console.log('[formatDataNovoProcedimento] Entrada:', dateString);
+
+  if (!dateString) {
+    console.log('[formatDataNovoProcedimento] Data vazia - retornando string vazia');
+    return '';
+  }
+
+  try {
+    const date = new Date(dateString);
+    console.log('[formatDataNovoProcedimento] Objeto Date criado:', date);
+
+    if (isNaN(date.getTime())) {
+      console.log('[formatDataNovoProcedimento] Data inválida');
+      return 'Data inválida';
+    }
+
+    // Extrai componentes UTC para evitar problemas de timezone
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+
+    const formattedDate = `${day}/${month}/${year}`;
+    console.log('[formatDataNovoProcedimento] Data formatada:', formattedDate);
+
+    return formattedDate;
+  } catch (e) {
+    console.error('[formatDataNovoProcedimento] Erro ao formatar data:', e);
+    return 'Data inválida';
+  }
+}
+
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
@@ -773,116 +805,116 @@ const RegisterUser = () => {
     });
   };
 
-  const handleEdit = (usuario) => {
-    setEditandoId(usuario._id);
-    setModoVisualizacao(true);
-    setShowProcedimentoSection(false);
+const handleEdit = (usuario) => {
+  setEditandoId(usuario._id);
+  setModoVisualizacao(true);
+  setShowProcedimentoSection(false);
 
-    // Função corrigida para formatar datas sem problemas de timezone
-    const formatDateWithoutTimezone = (dateString) => {
-      if (!dateString) return '';
-      try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
-
-        // Ajuste para evitar problemas de timezone
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = date.getUTCFullYear();
-
-        return `${day}/${month}/${year}`;
-      } catch (e) {
-        console.error("Erro ao formatar data:", e);
-        return '';
-      }
-    };
-
-    // Formatação das datas usando a nova função
-    let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
-    let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
-    let dataNovoProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataNovoProcedimento);
-
-    // Formatação do valor monetário
-    let valorFormatado = '';
-    if (usuario.valor !== undefined && usuario.valor !== null) {
-      const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
-      if (!isNaN(numericValue)) {
-        valorFormatado = numericValue.toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        });
-      }
+  // Função corrigida para formatar datas sem problemas de timezone
+  const formatDateWithoutTimezone = (dateString) => {
+    console.log('[formatDateWithoutTimezone] Formatando:', dateString);
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      console.error('[formatDateWithoutTimezone] Erro:', e);
+      return '';
     }
-
-    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
-      ? usuario.historicoProcedimentos
-      : [];
-
-    // Cria o procedimento principal
-    const procedimentoPrincipal = {
-      procedimento: usuario.procedimento || "",
-      denteFace: usuario.denteFace || "",
-      valor: usuario.valor || 0,
-      valorFormatado: valorFormatado,
-      modalidadePagamento: usuario.modalidadePagamento || "",
-      profissional: usuario.profissional || "",
-      dataProcedimento: usuario.dataProcedimento || "",
-      dataNovoProcedimento: usuario.dataNovoProcedimento || "",
-      isPrincipal: true,
-      createdAt: usuario.createdAt || new Date().toISOString()
-    };
-
-    // Processa e ordena os procedimentos secundários (do mais recente para o mais antigo)
-    const procedimentosSecundarios = historicoProcedimentos
-      .map(p => {
-        let valorProcFormatado = '';
-        if (p.valor !== undefined && p.valor !== null) {
-          const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
-          if (!isNaN(numericValue)) {
-            valorProcFormatado = numericValue.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            });
-          }
-        }
-
-        return {
-          ...p,
-          valorFormatado: valorProcFormatado,
-          dataProcedimento: p.dataProcedimento || p.createdAt,
-          isPrincipal: false,
-          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
-        };
-      })
-      .sort((a, b) => {
-        // Ordena por data de criação (mais recente primeiro)
-        const dateA = new Date(a.createdAt || 0);
-        const dateB = new Date(b.createdAt || 0);
-        return dateB - dateA;
-      });
-
-    // Combina o procedimento principal com os secundários ordenados
-    const procedimentosCompletos = [procedimentoPrincipal, ...procedimentosSecundarios];
-
-    setFormData({
-      ...usuario,
-      cpf: formatCPF(usuario.cpf),
-      telefone: formatFone(usuario.telefone),
-      dataNascimento: dataNascimentoFormatada,
-      dataProcedimento: dataProcedimentoFormatada,
-      dataNovoProcedimento: dataNovoProcedimentoFormatada,
-      valor: usuario.valor || 0,
-      valorFormatado: valorFormatado,
-      frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
-      frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
-      exameSangue: usuario.exames?.exameSangue || "",
-      coagulacao: usuario.exames?.coagulacao || "",
-      cicatrizacao: usuario.exames?.cicatrizacao || "",
-      procedimentos: procedimentosCompletos,
-      password: "",
-      confirmPassword: ""
-    });
   };
+
+  // Formatação das datas usando a função específica para dataNovoProcedimento
+  let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
+  let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
+  let dataNovoProcedimentoFormatada = formatDataNovoProcedimento(usuario.dataNovoProcedimento);
+
+  // Formatação do valor monetário
+  let valorFormatado = '';
+  if (usuario.valor !== undefined && usuario.valor !== null) {
+    const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
+    if (!isNaN(numericValue)) {
+      valorFormatado = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+  }
+
+  const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
+    ? usuario.historicoProcedimentos
+    : [];
+
+  // Cria o procedimento principal
+  const procedimentoPrincipal = {
+    procedimento: usuario.procedimento || "",
+    denteFace: usuario.denteFace || "",
+    valor: usuario.valor || 0,
+    valorFormatado: valorFormatado,
+    modalidadePagamento: usuario.modalidadePagamento || "",
+    profissional: usuario.profissional || "",
+    dataProcedimento: formatDataNovoProcedimento(usuario.dataProcedimento) || "",
+    dataNovoProcedimento: formatDataNovoProcedimento(usuario.dataNovoProcedimento) || "",
+    isPrincipal: true,
+    createdAt: usuario.createdAt || new Date().toISOString()
+  };
+
+  // Processa e ordena os procedimentos secundários (do mais recente para o mais antigo)
+  const procedimentosSecundarios = historicoProcedimentos
+    .map(p => {
+      let valorProcFormatado = '';
+      if (p.valor !== undefined && p.valor !== null) {
+        const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
+        if (!isNaN(numericValue)) {
+          valorProcFormatado = numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
+        }
+      }
+
+      return {
+        ...p,
+        valorFormatado: valorProcFormatado,
+        dataProcedimento: formatDataNovoProcedimento(p.dataProcedimento || p.createdAt),
+        dataNovoProcedimento: formatDataNovoProcedimento(p.dataNovoProcedimento || p.createdAt),
+        isPrincipal: false,
+        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+      };
+    })
+    .sort((a, b) => {
+      // Ordena por data de criação (mais recente primeiro)
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateB - dateA;
+    });
+
+  // Combina o procedimento principal com os secundários ordenados
+  const procedimentosCompletos = [procedimentoPrincipal, ...procedimentosSecundarios];
+
+  setFormData({
+    ...usuario,
+    cpf: formatCPF(usuario.cpf),
+    telefone: formatFone(usuario.telefone),
+    dataNascimento: dataNascimentoFormatada,
+    dataProcedimento: dataProcedimentoFormatada,
+    dataNovoProcedimento: dataNovoProcedimentoFormatada,
+    valor: usuario.valor || 0,
+    valorFormatado: valorFormatado,
+    frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
+    frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
+    exameSangue: usuario.exames?.exameSangue || "",
+    coagulacao: usuario.exames?.coagulacao || "",
+    cicatrizacao: usuario.exames?.cicatrizacao || "",
+    procedimentos: procedimentosCompletos,
+    password: "",
+    confirmPassword: ""
+  });
+};
 
   const handleVoltar = () => {
     setEditandoId(null);
@@ -1627,15 +1659,10 @@ const RegisterUser = () => {
                     type="text"
                     id="novo-dataNovoProcedimento"
                     name="dataNovoProcedimento"
-                    value={procedimentoData.dataNovoProcedimento}
+                    value={formatDataNovoProcedimento(procedimentoData.dataNovoProcedimento)}
                     onChange={handleProcedimentoChange}
                     placeholder="DD/MM/AAAA"
                     maxLength={10}
-                    onKeyDown={(e) => {
-                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
                     className={fieldErrors.dataNovoProcedimento ? 'error-field' : ''}
                   />
                   {fieldErrors.dataNovoProcedimento && (
@@ -1732,7 +1759,7 @@ const RegisterUser = () => {
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
                             {procedimento.dataProcedimento && (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
+                              <p><strong>Data:</strong> {formatDataNovoProcedimento(procedimento.dataProcedimento)}</p>
                             )}
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
