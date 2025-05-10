@@ -39,17 +39,13 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
-    // Cria a data sem conversão de fuso horário
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Ajuste para o fuso horário local
-    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
-    // Extrai os componentes da data LOCAL
-    const day = String(adjustedDate.getDate()).padStart(2, '0');
-    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-    const year = adjustedDate.getFullYear();
+    // Remova o ajuste de fuso horário
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
