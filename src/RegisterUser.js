@@ -35,38 +35,6 @@ function formatDateInput(value) {
   return cleanedValue;
 }
 
-function formatDataNovoProcedimento(dateString) {
-  console.log('[formatDataNovoProcedimento] Entrada:', dateString);
-
-  if (!dateString) {
-    console.log('[formatDataNovoProcedimento] Data vazia - retornando string vazia');
-    return '';
-  }
-
-  try {
-    const date = new Date(dateString);
-    console.log('[formatDataNovoProcedimento] Objeto Date criado:', date);
-
-    if (isNaN(date.getTime())) {
-      console.log('[formatDataNovoProcedimento] Data inválida');
-      return 'Data inválida';
-    }
-
-    // Extrai componentes UTC para evitar problemas de timezone
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const year = date.getUTCFullYear();
-
-    const formattedDate = `${day}/${month}/${year}`;
-    console.log('[formatDataNovoProcedimento] Data formatada:', formattedDate);
-
-    return formattedDate;
-  } catch (e) {
-    console.error('[formatDataNovoProcedimento] Erro ao formatar data:', e);
-    return 'Data inválida';
-  }
-}
-
 function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
@@ -434,42 +402,35 @@ const RegisterUser = () => {
     };
 
     // Validações específicas por campo
-    switch (name) {
-      case "nomeCompleto":
-        if (!value || value.trim().length < 3) {
-          errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
-        } else {
-          delete errors.nomeCompleto;
-        }
-        break;
+ switch (name) {
+    case "nomeCompleto":
+      if (!value || value.trim().length < 3) {
+        errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
+      } else {
+        delete errors.nomeCompleto;
+      }
+      break;
 
-      case "email":
-        if (!value) {
-          errors.email = "E-mail é obrigatório";
-        } else {
-          delete errors.email;
-        }
-        break;
+    case "cpf":
+      if (!value) {
+        errors.cpf = "CPF é obrigatório";
+      } else if (value.replace(/\D/g, '').length !== 11) {
+        errors.cpf = "CPF deve ter 11 dígitos";
+      } else {
+        delete errors.cpf;
+      }
+      break;
 
-      case "cpf":
-        if (!value) {
-          errors.cpf = "CPF é obrigatório";
-        } else if (value.replace(/\D/g, '').length !== 11) {
-          errors.cpf = "CPF deve ter 11 dígitos";
-        } else {
-          delete errors.cpf;
-        }
-        break;
+    case "telefone":
+      if (!value) {
+        errors.telefone = "Telefone é obrigatório";
+      } else if (value.replace(/\D/g, '').length < 10) {
+        errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
+      } else {
+        delete errors.telefone;
+      }
+      break;
 
-      case "telefone":
-        if (!value) {
-          errors.telefone = "Telefone é obrigatório";
-        } else if (value.replace(/\D/g, '').length < 10) {
-          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
-        } else {
-          delete errors.telefone;
-        }
-        break;
 
       case "dataNascimento":
       case "dataProcedimento":
@@ -529,54 +490,57 @@ const RegisterUser = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+const handleChange = (e) => {
+  const { name, value } = e.target;
 
-    let formattedValue = value;
+  let formattedValue = value;
 
-    if (name === "peso") {
-      formattedValue = value.replace(/[^0-9.]/g, "");
-      if ((formattedValue.match(/\./g) || []).length > 1) {
-        formattedValue = formattedValue.substring(0, formattedValue.lastIndexOf('.'));
+  if (name === "peso") {
+    formattedValue = value.replace(/[^0-9.]/g, "");
+    if ((formattedValue.match(/\./g) || []).length > 1) {
+      formattedValue = formattedValue.substring(0, formattedValue.lastIndexOf('.'));
+    }
+  }
+  else if (name === "cpf") {
+    formattedValue = formatCPF(value);
+  }
+  else if (name === "telefone") {
+    formattedValue = formatFone(value);
+  }
+  else if (name === "dataNascimento" || name === "dataProcedimento") {
+    formattedValue = formatDateInput(value);
+
+    if (formattedValue.length === 10) {
+      const [day, month, year] = formattedValue.split('/');
+      const dateObj = new Date(`${year}-${month}-${day}`);
+
+      if (isNaN(dateObj.getTime())) {
+        setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+      } else if (name === "dataNascimento" && dateObj > new Date()) {
+        setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
+      } else if (name === "dataProcedimento" && dateObj < new Date()) {
+        setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
+      } else {
+        const errors = { ...fieldErrors };
+        delete errors[name];
+        setFieldErrors(errors);
       }
     }
-    else if (name === "cpf") {
-      formattedValue = formatCPF(value);
-    }
-    else if (name === "telefone") {
-      formattedValue = formatFone(value);
-    }
-    else if (name === "dataNascimento" || name === "dataProcedimento") {
-      // Aplica a máscara de data e validação em tempo real
-      formattedValue = formatDateInput(value);
+  }
+  else if (name === "valor") {
+    return;
+  }
 
-      // Validação imediata quando o campo estiver completo
-      if (formattedValue.length === 10) {
-        const [day, month, year] = formattedValue.split('/');
-        const dateObj = new Date(`${year}-${month}-${day}`);
-
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } else if (name === "dataNascimento" && dateObj > new Date()) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
-        } else if (name === "dataProcedimento" && dateObj < new Date()) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
-        } else {
-          const errors = { ...fieldErrors };
-          delete errors[name];
-          setFieldErrors(errors);
-        }
-      }
-    }
-    else if (name === "valor") {
-      // ... (código existente para o campo valor)
-      return;
-    }
-
-    setFormData(prev => ({ ...prev, [name]: formattedValue }));
+  // Atualização específica para o campo email (aceita qualquer valor sem transformação)
+  setFormData(prev => ({ ...prev, [name]: formattedValue }));
+  
+  // Valida todos os campos exceto email
+  if (name !== "email") {
     validateField(name, formattedValue);
-    setError("");
-  };
+  }
+  
+  setError("");
+};
 
   const validateForm = () => {
     const errors = {};
@@ -611,7 +575,7 @@ const RegisterUser = () => {
     // Validar todos os campos obrigatórios
     let formIsValid = true;
     const requiredFields = [
-      'nomeCompleto', 'email', 'cpf', 'telefone', 'endereco',
+      'nomeCompleto', 'cpf', 'telefone', 'endereco',
       'dataNascimento', 'dataProcedimento', 'procedimento',
       'denteFace', 'valor', 'modalidadePagamento', 'profissional'
     ];
@@ -676,7 +640,7 @@ const RegisterUser = () => {
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
-      email: formData.email.toLowerCase().trim(),
+      email: formData.email,
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
       endereco: formData.endereco.trim(),
@@ -805,116 +769,116 @@ const RegisterUser = () => {
     });
   };
 
-const handleEdit = (usuario) => {
-  setEditandoId(usuario._id);
-  setModoVisualizacao(true);
-  setShowProcedimentoSection(false);
+  const handleEdit = (usuario) => {
+    setEditandoId(usuario._id);
+    setModoVisualizacao(true);
+    setShowProcedimentoSection(false);
 
-  // Função corrigida para formatar datas sem problemas de timezone
-  const formatDateWithoutTimezone = (dateString) => {
-    console.log('[formatDateWithoutTimezone] Formatando:', dateString);
-    if (!dateString) return '';
-    
-    try {
-      const date = new Date(dateString);
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const year = date.getUTCFullYear();
-      
-      return `${day}/${month}/${year}`;
-    } catch (e) {
-      console.error('[formatDateWithoutTimezone] Erro:', e);
-      return '';
-    }
-  };
+    // Função corrigida para formatar datas sem problemas de timezone
+    const formatDateWithoutTimezone = (dateString) => {
+      if (!dateString) return '';
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
 
-  // Formatação das datas usando a função específica para dataNovoProcedimento
-  let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
-  let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
-  let dataNovoProcedimentoFormatada = formatDataNovoProcedimento(usuario.dataNovoProcedimento);
+        // Ajuste para evitar problemas de timezone
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
 
-  // Formatação do valor monetário
-  let valorFormatado = '';
-  if (usuario.valor !== undefined && usuario.valor !== null) {
-    const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
-    if (!isNaN(numericValue)) {
-      valorFormatado = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
-    }
-  }
-
-  const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
-    ? usuario.historicoProcedimentos
-    : [];
-
-  // Cria o procedimento principal
-  const procedimentoPrincipal = {
-    procedimento: usuario.procedimento || "",
-    denteFace: usuario.denteFace || "",
-    valor: usuario.valor || 0,
-    valorFormatado: valorFormatado,
-    modalidadePagamento: usuario.modalidadePagamento || "",
-    profissional: usuario.profissional || "",
-    dataProcedimento: formatDataNovoProcedimento(usuario.dataProcedimento) || "",
-    dataNovoProcedimento: formatDataNovoProcedimento(usuario.dataNovoProcedimento) || "",
-    isPrincipal: true,
-    createdAt: usuario.createdAt || new Date().toISOString()
-  };
-
-  // Processa e ordena os procedimentos secundários (do mais recente para o mais antigo)
-  const procedimentosSecundarios = historicoProcedimentos
-    .map(p => {
-      let valorProcFormatado = '';
-      if (p.valor !== undefined && p.valor !== null) {
-        const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
-        if (!isNaN(numericValue)) {
-          valorProcFormatado = numericValue.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          });
-        }
+        return `${day}/${month}/${year}`;
+      } catch (e) {
+        console.error("Erro ao formatar data:", e);
+        return '';
       }
+    };
 
-      return {
-        ...p,
-        valorFormatado: valorProcFormatado,
-        dataProcedimento: formatDataNovoProcedimento(p.dataProcedimento || p.createdAt),
-        dataNovoProcedimento: formatDataNovoProcedimento(p.dataNovoProcedimento || p.createdAt),
-        isPrincipal: false,
-        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
-      };
-    })
-    .sort((a, b) => {
-      // Ordena por data de criação (mais recente primeiro)
-      const dateA = new Date(a.createdAt || 0);
-      const dateB = new Date(b.createdAt || 0);
-      return dateB - dateA;
+    // Formatação das datas usando a nova função
+    let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
+    let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
+    let dataNovoProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataNovoProcedimento);
+
+    // Formatação do valor monetário
+    let valorFormatado = '';
+    if (usuario.valor !== undefined && usuario.valor !== null) {
+      const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
+      if (!isNaN(numericValue)) {
+        valorFormatado = numericValue.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      }
+    }
+
+    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
+      ? usuario.historicoProcedimentos
+      : [];
+
+    // Cria o procedimento principal
+    const procedimentoPrincipal = {
+      procedimento: usuario.procedimento || "",
+      denteFace: usuario.denteFace || "",
+      valor: usuario.valor || 0,
+      valorFormatado: valorFormatado,
+      modalidadePagamento: usuario.modalidadePagamento || "",
+      profissional: usuario.profissional || "",
+      dataProcedimento: usuario.dataProcedimento || "",
+      dataNovoProcedimento: usuario.dataNovoProcedimento || "",
+      isPrincipal: true,
+      createdAt: usuario.createdAt || new Date().toISOString()
+    };
+
+    // Processa e ordena os procedimentos secundários (do mais recente para o mais antigo)
+    const procedimentosSecundarios = historicoProcedimentos
+      .map(p => {
+        let valorProcFormatado = '';
+        if (p.valor !== undefined && p.valor !== null) {
+          const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
+          if (!isNaN(numericValue)) {
+            valorProcFormatado = numericValue.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            });
+          }
+        }
+
+        return {
+          ...p,
+          valorFormatado: valorProcFormatado,
+          dataProcedimento: p.dataProcedimento || p.createdAt,
+          isPrincipal: false,
+          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+        };
+      })
+      .sort((a, b) => {
+        // Ordena por data de criação (mais recente primeiro)
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+
+    // Combina o procedimento principal com os secundários ordenados
+    const procedimentosCompletos = [procedimentoPrincipal, ...procedimentosSecundarios];
+
+    setFormData({
+      ...usuario,
+      cpf: formatCPF(usuario.cpf),
+      telefone: formatFone(usuario.telefone),
+      dataNascimento: dataNascimentoFormatada,
+      dataProcedimento: dataProcedimentoFormatada,
+      dataNovoProcedimento: dataNovoProcedimentoFormatada,
+      valor: usuario.valor || 0,
+      valorFormatado: valorFormatado,
+      frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
+      frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
+      exameSangue: usuario.exames?.exameSangue || "",
+      coagulacao: usuario.exames?.coagulacao || "",
+      cicatrizacao: usuario.exames?.cicatrizacao || "",
+      procedimentos: procedimentosCompletos,
+      password: "",
+      confirmPassword: ""
     });
-
-  // Combina o procedimento principal com os secundários ordenados
-  const procedimentosCompletos = [procedimentoPrincipal, ...procedimentosSecundarios];
-
-  setFormData({
-    ...usuario,
-    cpf: formatCPF(usuario.cpf),
-    telefone: formatFone(usuario.telefone),
-    dataNascimento: dataNascimentoFormatada,
-    dataProcedimento: dataProcedimentoFormatada,
-    dataNovoProcedimento: dataNovoProcedimentoFormatada,
-    valor: usuario.valor || 0,
-    valorFormatado: valorFormatado,
-    frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
-    frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
-    exameSangue: usuario.exames?.exameSangue || "",
-    coagulacao: usuario.exames?.coagulacao || "",
-    cicatrizacao: usuario.exames?.cicatrizacao || "",
-    procedimentos: procedimentosCompletos,
-    password: "",
-    confirmPassword: ""
-  });
-};
+  };
 
   const handleVoltar = () => {
     setEditandoId(null);
@@ -1659,10 +1623,15 @@ const handleEdit = (usuario) => {
                     type="text"
                     id="novo-dataNovoProcedimento"
                     name="dataNovoProcedimento"
-                    value={formatDataNovoProcedimento(procedimentoData.dataNovoProcedimento)}
+                    value={procedimentoData.dataNovoProcedimento}
                     onChange={handleProcedimentoChange}
                     placeholder="DD/MM/AAAA"
                     maxLength={10}
+                    onKeyDown={(e) => {
+                      if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     className={fieldErrors.dataNovoProcedimento ? 'error-field' : ''}
                   />
                   {fieldErrors.dataNovoProcedimento && (
@@ -1759,7 +1728,7 @@ const handleEdit = (usuario) => {
                             <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
                             <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
                             {procedimento.dataProcedimento && (
-                              <p><strong>Data:</strong> {formatDataNovoProcedimento(procedimento.dataProcedimento)}</p>
+                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
                             )}
                             <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
                             <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
