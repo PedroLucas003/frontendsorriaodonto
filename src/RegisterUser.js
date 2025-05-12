@@ -398,34 +398,34 @@ const RegisterUser = () => {
     };
 
     // Validações específicas por campo
- switch (name) {
-    case "nomeCompleto":
-      if (!value || value.trim().length < 3) {
-        errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
-      } else {
-        delete errors.nomeCompleto;
-      }
-      break;
+    switch (name) {
+      case "nomeCompleto":
+        if (!value || value.trim().length < 3) {
+          errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
+        } else {
+          delete errors.nomeCompleto;
+        }
+        break;
 
-    case "cpf":
-      if (!value) {
-        errors.cpf = "CPF é obrigatório";
-      } else if (value.replace(/\D/g, '').length !== 11) {
-        errors.cpf = "CPF deve ter 11 dígitos";
-      } else {
-        delete errors.cpf;
-      }
-      break;
+      case "cpf":
+        if (!value) {
+          errors.cpf = "CPF é obrigatório";
+        } else if (value.replace(/\D/g, '').length !== 11) {
+          errors.cpf = "CPF deve ter 11 dígitos";
+        } else {
+          delete errors.cpf;
+        }
+        break;
 
-    case "telefone":
-      if (!value) {
-        errors.telefone = "Telefone é obrigatório";
-      } else if (value.replace(/\D/g, '').length < 10) {
-        errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
-      } else {
-        delete errors.telefone;
-      }
-      break;
+      case "telefone":
+        if (!value) {
+          errors.telefone = "Telefone é obrigatório";
+        } else if (value.replace(/\D/g, '').length < 10) {
+          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
+        } else {
+          delete errors.telefone;
+        }
+        break;
 
 
       case "dataNascimento":
@@ -486,57 +486,57 @@ const RegisterUser = () => {
     return Object.keys(errors).length === 0;
   };
 
-const handleChange = (e) => {
-  const { name, value } = e.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  let formattedValue = value;
+    let formattedValue = value;
 
-  if (name === "peso") {
-    formattedValue = value.replace(/[^0-9.]/g, "");
-    if ((formattedValue.match(/\./g) || []).length > 1) {
-      formattedValue = formattedValue.substring(0, formattedValue.lastIndexOf('.'));
-    }
-  }
-  else if (name === "cpf") {
-    formattedValue = formatCPF(value);
-  }
-  else if (name === "telefone") {
-    formattedValue = formatFone(value);
-  }
-  else if (name === "dataNascimento" || name === "dataProcedimento") {
-    formattedValue = formatDateInput(value);
-
-    if (formattedValue.length === 10) {
-      const [day, month, year] = formattedValue.split('/');
-      const dateObj = new Date(`${year}-${month}-${day}`);
-
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-      } else if (name === "dataNascimento" && dateObj > new Date()) {
-        setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
-      } else if (name === "dataProcedimento" && dateObj < new Date()) {
-        setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
-      } else {
-        const errors = { ...fieldErrors };
-        delete errors[name];
-        setFieldErrors(errors);
+    if (name === "peso") {
+      formattedValue = value.replace(/[^0-9.]/g, "");
+      if ((formattedValue.match(/\./g) || []).length > 1) {
+        formattedValue = formattedValue.substring(0, formattedValue.lastIndexOf('.'));
       }
     }
-  }
-  else if (name === "valor") {
-    return;
-  }
+    else if (name === "cpf") {
+      formattedValue = formatCPF(value);
+    }
+    else if (name === "telefone") {
+      formattedValue = formatFone(value);
+    }
+    else if (name === "dataNascimento" || name === "dataProcedimento") {
+      formattedValue = formatDateInput(value);
 
-  // Atualização específica para o campo email (aceita qualquer valor sem transformação)
-  setFormData(prev => ({ ...prev, [name]: formattedValue }));
-  
-  // Valida todos os campos exceto email
-  if (name !== "email") {
-    validateField(name, formattedValue);
-  }
-  
-  setError("");
-};
+      if (formattedValue.length === 10) {
+        const [day, month, year] = formattedValue.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else if (name === "dataNascimento" && dateObj > new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
+        } else if (name === "dataProcedimento" && dateObj < new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
+        } else {
+          const errors = { ...fieldErrors };
+          delete errors[name];
+          setFieldErrors(errors);
+        }
+      }
+    }
+    else if (name === "valor") {
+      return;
+    }
+
+    // Atualização específica para o campo email (aceita qualquer valor sem transformação)
+    setFormData(prev => ({ ...prev, [name]: formattedValue }));
+
+    // Valida todos os campos exceto email
+    if (name !== "email") {
+      validateField(name, formattedValue);
+    }
+
+    setError("");
+  };
 
   const validateForm = () => {
     const errors = {};
@@ -1186,11 +1186,11 @@ const handleChange = (e) => {
                 name="detalhesDoencas"
                 value={formData.detalhesDoencas}
                 onChange={handleChange}
-                className={`resizable-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
-                rows={3}
+                className={`half-size-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
               />
             </div>
 
+            {/* Quais remédios - reduzido pela metade */}
             <div className="form-group">
               <label htmlFor="quaisRemedios">{labels.quaisRemedios}</label>
               <textarea
@@ -1198,11 +1198,11 @@ const handleChange = (e) => {
                 name="quaisRemedios"
                 value={formData.quaisRemedios}
                 onChange={handleChange}
-                className={`resizable-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
-                rows={3}
+                className={`half-size-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
               />
             </div>
 
+            {/* Alergia a medicamentos - reduzido pela metade */}
             <div className="form-group">
               <label htmlFor="quaisMedicamentos">{labels.quaisMedicamentos}</label>
               <textarea
@@ -1210,11 +1210,11 @@ const handleChange = (e) => {
                 name="quaisMedicamentos"
                 value={formData.quaisMedicamentos}
                 onChange={handleChange}
-                className={`resizable-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
-                rows={3}
+                className={`half-size-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
               />
             </div>
 
+            {/* Alergia a anestesias - mesmo tamanho que respiração */}
             <div className="form-group">
               <label htmlFor="quaisAnestesias">{labels.quaisAnestesias}</label>
               <textarea
@@ -1222,8 +1222,7 @@ const handleChange = (e) => {
                 name="quaisAnestesias"
                 value={formData.quaisAnestesias}
                 onChange={handleChange}
-                className={`resizable-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
-                rows={3}
+                className={`respiracao-size-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
               />
             </div>
 
@@ -1662,82 +1661,82 @@ const handleChange = (e) => {
             )}
 
             <div className="procedimentos-list">
-  {Array.isArray(formData.procedimentos) ? (
-    formData.procedimentos.length > 0 ? (
-      formData.procedimentos
-        .sort((a, b) => {
-          // Ordena: principal primeiro, depois os mais antigos primeiro
-          if (a.isPrincipal) return -1;
-          if (b.isPrincipal) return 1;
-          return new Date(a.dataProcedimento) - new Date(b.dataProcedimento);
-        })
-        .map((proc, index) => {
-          const procedimento = {
-            _id: proc._id || `proc-${index}`,
-            procedimento: proc.procedimento || "Não especificado",
-            denteFace: proc.denteFace || "Não especificado",
-            valor: typeof proc.valor === 'number' ? proc.valor : 0,
-            modalidadePagamento: proc.modalidadePagamento || "Não especificado",
-            profissional: proc.profissional || "Não especificado",
-            dataProcedimento: proc.dataProcedimento
-          };
+              {Array.isArray(formData.procedimentos) ? (
+                formData.procedimentos.length > 0 ? (
+                  formData.procedimentos
+                    .sort((a, b) => {
+                      // Ordena: principal primeiro, depois os mais antigos primeiro
+                      if (a.isPrincipal) return -1;
+                      if (b.isPrincipal) return 1;
+                      return new Date(a.dataProcedimento) - new Date(b.dataProcedimento);
+                    })
+                    .map((proc, index) => {
+                      const procedimento = {
+                        _id: proc._id || `proc-${index}`,
+                        procedimento: proc.procedimento || "Não especificado",
+                        denteFace: proc.denteFace || "Não especificado",
+                        valor: typeof proc.valor === 'number' ? proc.valor : 0,
+                        modalidadePagamento: proc.modalidadePagamento || "Não especificado",
+                        profissional: proc.profissional || "Não especificado",
+                        dataProcedimento: proc.dataProcedimento
+                      };
 
-          return (
-            <div key={procedimento._id} className="procedimento-item">
-              <div className="procedimento-details single-line">
-                <span><strong>Procedimento:</strong> {procedimento.procedimento}</span>
-                <span><strong>Dente/Face:</strong> {procedimento.denteFace}</span>
-                {procedimento.dataProcedimento && (
-                  <span><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</span>
-                )}
-                <span><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</span>
-                <span><strong>Pagamento:</strong> {procedimento.modalidadePagamento}</span>
-                <span><strong>Profissional:</strong> {procedimento.profissional}</span>
-                {!proc.isPrincipal && (
-                  <div className="procedimento-actions">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleEditProcedimento(procedimento._id);
-                      }}
-                      className="btn-edit-procedimento"
-                      title="Editar procedimento"
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDeleteProcedimento(procedimento._id);
-                      }}
-                      className="btn-delete-procedimento"
-                      title="Excluir procedimento"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                      return (
+                        <div key={procedimento._id} className="procedimento-item">
+                          <div className="procedimento-details single-line">
+                            {procedimento.dataProcedimento && (
+                              <span><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</span>
+                            )}
+                            <span><strong>Procedimento:</strong> {procedimento.procedimento}</span>
+                            <span><strong>Dente/Face:</strong> {procedimento.denteFace}</span>
+                            <span><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</span>
+                            <span><strong>Pagamento:</strong> {procedimento.modalidadePagamento}</span>
+                            <span><strong>Profissional:</strong> {procedimento.profissional}</span>
+                            {!proc.isPrincipal && (
+                              <div className="procedimento-actions">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEditProcedimento(procedimento._id);
+                                  }}
+                                  className="btn-edit-procedimento"
+                                  title="Editar procedimento"
+                                >
+                                  <i className="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteProcedimento(procedimento._id);
+                                  }}
+                                  className="btn-delete-procedimento"
+                                  title="Excluir procedimento"
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="no-procedimentos">
+                    <i className="bi bi-clipboard-x"></i>
+                    <p>Nenhum procedimento cadastrado ainda.</p>
                   </div>
-                )}
-              </div>
+                )
+              ) : (
+                <div className="no-procedimentos error">
+                  <i className="bi bi-exclamation-triangle"></i>
+                  <p>Dados de procedimentos inválidos.</p>
+                </div>
+              )}
             </div>
-          );
-        })
-    ) : (
-      <div className="no-procedimentos">
-        <i className="bi bi-clipboard-x"></i>
-        <p>Nenhum procedimento cadastrado ainda.</p>
-      </div>
-    )
-  ) : (
-    <div className="no-procedimentos error">
-      <i className="bi bi-exclamation-triangle"></i>
-      <p>Dados de procedimentos inválidos.</p>
-    </div>
-  )}
-</div>
           </div>
         )}
 
