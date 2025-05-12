@@ -876,3 +876,19 @@ tr:last-child td:last-child {
   margin-left: 10px;
   font-size: 1.2em;
 }
+.procedimento-details.single-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.procedimento-details.single-line span {
+  white-space: nowrap;
+}
+
+.procedimento-actions {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+}

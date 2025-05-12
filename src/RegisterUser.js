@@ -1170,7 +1170,6 @@ const handleChange = (e) => {
                 onChange={handleChange}
                 className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
                 rows={3}
-                disabled={modoVisualizacao}
               />
               {fieldErrors.endereco && <span className="field-error">{fieldErrors.endereco}</span>}
             </div>
@@ -1419,7 +1418,6 @@ const handleChange = (e) => {
                   placeholder="DD/MM/AAAA"
                   maxLength={10}
                   className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                  disabled={modoVisualizacao}
                   onKeyDown={(e) => {
                     if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
                       e.preventDefault();
@@ -1664,86 +1662,82 @@ const handleChange = (e) => {
             )}
 
             <div className="procedimentos-list">
-              {Array.isArray(formData.procedimentos) ? (
-                formData.procedimentos.length > 0 ? (
-                  formData.procedimentos
-                    .sort((a, b) => {
-                      // Ordena: principal primeiro, depois os mais antigos primeiro
-                      if (a.isPrincipal) return -1;
-                      if (b.isPrincipal) return 1;
-                      return new Date(a.dataProcedimento) - new Date(b.dataProcedimento);
-                    })
-                    .map((proc, index) => {
-                      const procedimento = {
-                        _id: proc._id || `proc-${index}`,
-                        procedimento: proc.procedimento || "Não especificado",
-                        denteFace: proc.denteFace || "Não especificado",
-                        valor: typeof proc.valor === 'number' ? proc.valor : 0,
-                        modalidadePagamento: proc.modalidadePagamento || "Não especificado",
-                        profissional: proc.profissional || "Não especificado",
-                        dataProcedimento: proc.dataProcedimento
-                      };
+  {Array.isArray(formData.procedimentos) ? (
+    formData.procedimentos.length > 0 ? (
+      formData.procedimentos
+        .sort((a, b) => {
+          // Ordena: principal primeiro, depois os mais antigos primeiro
+          if (a.isPrincipal) return -1;
+          if (b.isPrincipal) return 1;
+          return new Date(a.dataProcedimento) - new Date(b.dataProcedimento);
+        })
+        .map((proc, index) => {
+          const procedimento = {
+            _id: proc._id || `proc-${index}`,
+            procedimento: proc.procedimento || "Não especificado",
+            denteFace: proc.denteFace || "Não especificado",
+            valor: typeof proc.valor === 'number' ? proc.valor : 0,
+            modalidadePagamento: proc.modalidadePagamento || "Não especificado",
+            profissional: proc.profissional || "Não especificado",
+            dataProcedimento: proc.dataProcedimento
+          };
 
-                      return (
-                        <div key={procedimento._id} className="procedimento-item">
-                          <div className="procedimento-header">
-                            <h4>Procedimento #{index + 1}</h4>
-                            {!proc.isPrincipal && (
-                              <div className="procedimento-actions">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleEditProcedimento(procedimento._id);
-                                  }}
-                                  className="btn-edit-procedimento"
-                                  title="Editar procedimento"
-                                >
-                                  <i className="bi bi-pencil"></i>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDeleteProcedimento(procedimento._id);
-                                  }}
-                                  className="btn-delete-procedimento"
-                                  title="Excluir procedimento"
-                                >
-                                  <i className="bi bi-trash"></i>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="procedimento-details">
-                            <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
-                            <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            {procedimento.dataProcedimento && (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
-                            )}
-                            <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
-                            <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
-                            <p><strong>Profissional:</strong> {procedimento.profissional}</p>
-                          </div>
-                        </div>
-                      );
-                    })
-                ) : (
-                  <div className="no-procedimentos">
-                    <i className="bi bi-clipboard-x"></i>
-                    <p>Nenhum procedimento cadastrado ainda.</p>
+          return (
+            <div key={procedimento._id} className="procedimento-item">
+              <div className="procedimento-details single-line">
+                <span><strong>Procedimento:</strong> {procedimento.procedimento}</span>
+                <span><strong>Dente/Face:</strong> {procedimento.denteFace}</span>
+                {procedimento.dataProcedimento && (
+                  <span><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</span>
+                )}
+                <span><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</span>
+                <span><strong>Pagamento:</strong> {procedimento.modalidadePagamento}</span>
+                <span><strong>Profissional:</strong> {procedimento.profissional}</span>
+                {!proc.isPrincipal && (
+                  <div className="procedimento-actions">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEditProcedimento(procedimento._id);
+                      }}
+                      className="btn-edit-procedimento"
+                      title="Editar procedimento"
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteProcedimento(procedimento._id);
+                      }}
+                      className="btn-delete-procedimento"
+                      title="Excluir procedimento"
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </div>
-                )
-              ) : (
-                <div className="no-procedimentos error">
-                  <i className="bi bi-exclamation-triangle"></i>
-                  <p>Dados de procedimentos inválidos.</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+          );
+        })
+    ) : (
+      <div className="no-procedimentos">
+        <i className="bi bi-clipboard-x"></i>
+        <p>Nenhum procedimento cadastrado ainda.</p>
+      </div>
+    )
+  ) : (
+    <div className="no-procedimentos error">
+      <i className="bi bi-exclamation-triangle"></i>
+      <p>Dados de procedimentos inválidos.</p>
+    </div>
+  )}
+</div>
           </div>
         )}
 
