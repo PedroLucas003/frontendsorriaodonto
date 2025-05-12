@@ -1177,128 +1177,119 @@ const RegisterUser = () => {
         </div>
 
         <div className="form-section">
-  <h2>Histórico de Saúde</h2>
-  <div className="historico-saude-container">
-    {/* Detalhes de doenças - ocupa linha inteira */}
-    <div className="form-group">
-      <label htmlFor="detalhesDoencas">Detalhes de doenças</label>
-      <textarea
-        id="detalhesDoencas"
-        name="detalhesDoencas"
-        value={formData.detalhesDoencas}
-        onChange={handleChange}
-        className="respiracao-size-field no-resize"
-      />
-    </div>
+          <h2>Histórico de Saúde</h2>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="detalhesDoencas">{labels.detalhesDoencas}</label>
+              <textarea
+                id="detalhesDoencas"
+                name="detalhesDoencas"
+                value={formData.detalhesDoencas}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
 
-    {/* Quais remédios - ocupa linha inteira */}
-    <div className="form-group">
-      <label htmlFor="quaisRemedios">Quais remédios</label>
-      <textarea
-        id="quaisRemedios"
-        name="quaisRemedios"
-        value={formData.quaisRemedios}
-        onChange={handleChange}
-        className="respiracao-size-field no-resize"
-      />
-    </div>
+            <div className="form-group">
+              <label htmlFor="quaisRemedios">{labels.quaisRemedios}</label>
+              <textarea
+                id="quaisRemedios"
+                name="quaisRemedios"
+                value={formData.quaisRemedios}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
 
-    {/* Alergia a medicamentos - ocupa linha inteira */}
-    <div className="form-group">
-      <label htmlFor="quaisMedicamentos">Alergia a medicamentos</label>
-      <textarea
-        id="quaisMedicamentos"
-        name="quaisMedicamentos"
-        value={formData.quaisMedicamentos}
-        onChange={handleChange}
-        className="respiracao-size-field no-resize"
-      />
-    </div>
+            <div className="form-group">
+              <label htmlFor="quaisMedicamentos">{labels.quaisMedicamentos}</label>
+              <textarea
+                id="quaisMedicamentos"
+                name="quaisMedicamentos"
+                value={formData.quaisMedicamentos}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
 
-    {/* Alergia a anestesias - ocupa linha inteira */}
-    <div className="form-group">
-      <label htmlFor="quaisAnestesias">Alergia a anestesias</label>
-      <textarea
-        id="quaisAnestesias"
-        name="quaisAnestesias"
-        value={formData.quaisAnestesias}
-        onChange={handleChange}
-        className="respiracao-size-field no-resize"
-      />
-    </div>
+            <div className="form-group">
+              <label htmlFor="quaisAnestesias">{labels.quaisAnestesias}</label>
+              <textarea
+                id="quaisAnestesias"
+                name="quaisAnestesias"
+                value={formData.quaisAnestesias}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
 
-    {/* Campos de fumo e álcool lado a lado */}
-    <div className="habitos-container">
-      <div className="form-group habitos-field">
-        <label htmlFor="frequenciaFumo">Frequência de fumo</label>
-        <select
-          id="frequenciaFumo"
-          name="frequenciaFumo"
-          value={formData.frequenciaFumo}
-          onChange={handleChange}
-          className="respiracao-size-select"
-        >
-          {frequencias.map((opcao) => (
-            <option key={opcao} value={opcao}>{opcao}</option>
-          ))}
-        </select>
-      </div>
+            <div className="form-group">
+              <label htmlFor="frequenciaFumo">{labels.frequenciaFumo}</label>
+              <select
+                id="frequenciaFumo"
+                name="frequenciaFumo"
+                value={formData.frequenciaFumo}
+                onChange={handleChange}
+              >
+                {frequencias.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+            </div>
 
-      <div className="form-group habitos-field">
-        <label htmlFor="frequenciaAlcool">Frequência de álcool</label>
-        <select
-          id="frequenciaAlcool"
-          name="frequenciaAlcool"
-          value={formData.frequenciaAlcool}
-          onChange={handleChange}
-          className="respiracao-size-select"
-        >
-          {frequencias.map((opcao) => (
-            <option key={opcao} value={opcao}>{opcao}</option>
-          ))}
-        </select>
-      </div>
-    </div>
+            <div className="form-group">
+              <label htmlFor="frequenciaAlcool">{labels.frequenciaAlcool}</label>
+              <select
+                id="frequenciaAlcool"
+                name="frequenciaAlcool"
+                value={formData.frequenciaAlcool}
+                onChange={handleChange}
+              >
+                {frequencias.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+            </div>
 
-    {/* Campos de respiração e peso lado a lado */}
-    <div className="respiracao-peso-container">
-      <div className="form-group respiracao-peso-field">
-        <label htmlFor="respiracao">Respiração</label>
-        <input
-          type="text"
-          id="respiracao"
-          name="respiracao"
-          value={formData.respiracao}
-          onChange={handleChange}
-          className="respiracao-size-input"
-        />
-      </div>
+            <div className="form-group">
+              <label htmlFor="respiracao">{labels.respiracao}</label>
+              <input
+                type="text"
+                id="respiracao"
+                name="respiracao"
+                value={formData.respiracao}
+                onChange={handleChange}
+              />
+            </div>
 
-      <div className="form-group respiracao-peso-field">
-        <label htmlFor="peso">Peso (kg)</label>
-        <input
-          type="number"
-          id="peso"
-          name="peso"
-          value={formData.peso}
-          onChange={handleChange}
-          step="0.1"
-          className="respiracao-size-input"
-        />
-      </div>
-    </div>
-  </div>
-</div>
+            <div className="form-group">
+              <label htmlFor="peso">{labels.peso}</label>
+              <input
+                type="number"
+                id="peso"
+                name="peso"
+                value={formData.peso}
+                onChange={handleChange}
+                step="0.1"
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="form-section">
           <h2>Exames e Sangramento</h2>
-          <div className="exames-sangramento-container">
-            <div className="form-group exame-sangue-container">
+          <div className="form-grid">
+            <div className="form-group full-width">
               <label htmlFor="exameSangue">Exame de Sangue</label>
               <textarea
                 id="exameSangue"
                 name="exameSangue"
-                className="exame-sangue-textarea"
+                className="large-text-area"
+                rows={5}
                 value={formData.exameSangue}
                 onChange={handleChange}
               />
@@ -1343,26 +1334,28 @@ const RegisterUser = () => {
 
         <div className="form-section">
           <h2>Histórico Médico e Odontológico</h2>
-          <div className="historico-medico-container">
-            <div className="form-group historico-cirurgia-container">
-              <label htmlFor="historicoCirurgia">Histórico de Cirurgia</label>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="historicoCirurgia">{labels.historicoCirurgia}</label>
               <textarea
                 id="historicoCirurgia"
                 name="historicoCirurgia"
-                className="historico-cirurgia-textarea"
                 value={formData.historicoCirurgia}
                 onChange={handleChange}
+                rows={2}
+                className="medium-text-area"
               />
             </div>
 
-            <div className="form-group historico-odontologico-container">
-              <label htmlFor="historicoOdontologico">Histórico Odontológico</label>
+            <div className="form-group full-width">
+              <label htmlFor="historicoOdontologico">{labels.historicoOdontologico}</label>
               <textarea
                 id="historicoOdontologico"
                 name="historicoOdontologico"
-                className="historico-odontologico-textarea"
                 value={formData.historicoOdontologico}
                 onChange={handleChange}
+                rows={3}
+                className="large-text-area"
               />
             </div>
           </div>
