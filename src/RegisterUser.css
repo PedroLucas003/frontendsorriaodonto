@@ -27,157 +27,6 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
-/* ===== NOVOS ESTILOS PARA HISTÓRICO DE SAÚDE ===== */
-.historico-saude-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
-}
-
-/* Container para campos de hábitos (fumo e álcool) */
-.habitos-container {
-  display: flex;
-  gap: 15px;
-  width: 100%;
-}
-
-.habitos-field {
-  flex: 1;
-}
-
-/* Container para campos de respiração e peso */
-.respiracao-peso-container {
-  display: flex;
-  gap: 15px;
-  width: 100%;
-}
-
-.respiracao-peso-field {
-  flex: 1;
-}
-
-/* Estilos para manter consistência de tamanho */
-.respiracao-size-select,
-.respiracao-size-input {
-  height: 40px;
-  width: 100%;
-  padding: 8px;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.respiracao-size-select:focus,
-.respiracao-size-input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
-  outline: none;
-}
-
-/* Ajuste para selects */
-.respiracao-size-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-}
-
-/* ===== ESTILOS PARA EXAMES E SANGRAMENTO ===== */
-.exames-sangramento-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-}
-
-.exame-sangue-container {
-  grid-column: 1 / -1;
-}
-
-.exame-sangue-textarea {
-  height: 80px;
-  min-height: 80px;
-  max-height: 160px;
-  width: 100%;
-  resize: vertical;
-}
-
-.small-fields-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-}
-
-.small-text-field {
-  height: 60px;
-  min-height: 60px;
-  max-height: 120px;
-  width: 100%;
-  resize: vertical;
-}
-
-/* ===== ESTILOS PARA HISTÓRICO MÉDICO E ODONTOLÓGICO ===== */
-.historico-medico-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-}
-
-.historico-cirurgia-textarea {
-  height: 60px;
-  min-height: 60px;
-  max-height: 120px;
-  width: 100%;
-  resize: vertical;
-}
-
-.historico-odontologico-textarea {
-  height: 80px;
-  min-height: 80px;
-  max-height: 160px;
-  width: 100%;
-  resize: vertical;
-}
-
-/* ===== ESTILOS PARA CAMPOS PEQUENOS ===== */
-.small-textarea {
-  height: 60px;
-  min-height: 60px;
-  max-height: 120px;
-  resize: vertical;
-}
-
-.medium-textarea {
-  height: 80px;
-  min-height: 80px;
-  max-height: 160px;
-  resize: vertical;
-}
-
-.half-size-textarea {
-  height: 60px;
-  min-height: 60px;
-  max-height: 120px;
-  resize: vertical;
-}
-
-.respiracao-size-textarea {
-  height: 40px;
-  min-height: 40px;
-  max-height: 80px;
-  resize: vertical;
-}
-
-/* ===== AJUSTES PARA FORM-GRID ===== */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-  align-items: start;
-}
-
 /* ===== TEMA DARK ===== */
 .dark-mode {
   background-color: #121212;
@@ -203,25 +52,6 @@ h2 {
   background-color: #333;
   color: #fff;
   border-color: #444;
-}
-
-.dark-mode .exame-sangue-textarea,
-.dark-mode .small-text-field,
-.dark-mode .historico-cirurgia-textarea,
-.dark-mode .historico-odontologico-textarea,
-.dark-mode .small-textarea,
-.dark-mode .medium-textarea {
-  background-color: #333;
-  color: #fff;
-  border-color: #555;
-}
-
-/* Dark mode para os novos campos */
-.dark-mode .respiracao-size-select,
-.dark-mode .respiracao-size-input {
-  background-color: #333;
-  color: #fff;
-  border-color: #555;
 }
 
 /* ===== BOTÕES PRINCIPAIS ===== */
@@ -400,6 +230,13 @@ h2 {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+  align-items: center;
+}
+
 .form-group {
   margin-bottom: 15px;
   display: flex;
@@ -436,6 +273,7 @@ textarea:hover {
 
 textarea {
   resize: vertical;
+  min-height: 100px;
 }
 
 .large-text-area {
@@ -446,9 +284,14 @@ textarea {
   min-height: 100px;
 }
 
-.small-text-field {
+.resizable-textarea {
+  resize: vertical;
   min-height: 60px;
-  max-height: 120px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
 }
 
 /* ===== TABELA - DESIGN ATUALIZADO ===== */
@@ -493,10 +336,12 @@ tr:hover td {
   background-color: #f8f9fa;
 }
 
+/* Linhas zebradas para melhor legibilidade */
 tr:nth-child(even) {
   background-color: #f9f9f9;
 }
 
+/* Célula de "Nenhum dado" */
 .no-data {
   text-align: center;
   padding: 20px;
@@ -504,6 +349,7 @@ tr:nth-child(even) {
   font-style: italic;
 }
 
+/* Borda arredondada na primeira e última célula */
 tr:first-child th:first-child {
   border-top-left-radius: 10px;
 }
@@ -536,7 +382,6 @@ tr:last-child td:last-child {
   border-left: 4px solid #007bff;
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  position: relative;
 }
 
 .procedimento-item:hover {
@@ -573,17 +418,6 @@ tr:last-child td:last-child {
   gap: 10px;
 }
 
-.procedimento-details.single-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.procedimento-details.single-line span {
-  white-space: nowrap;
-}
-
 .procedimento-details p {
   margin: 5px 0;
   font-size: 14px;
@@ -592,35 +426,6 @@ tr:last-child td:last-child {
 .procedimento-details strong {
   color: #555;
   font-weight: 600;
-}
-
-.procedimento-actions {
-  display: flex;
-  gap: 5px;
-  margin-left: auto;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.btn-edit-procedimento, .btn-delete-procedimento {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 5px;
-}
-
-.btn-edit-procedimento {
-  color: #007bff;
-}
-
-.btn-delete-procedimento {
-  color: #dc3545;
-}
-
-.btn-edit-procedimento:hover, .btn-delete-procedimento:hover {
-  opacity: 0.8;
 }
 
 .badge-principal {
@@ -643,20 +448,6 @@ tr:last-child td:last-child {
 .no-procedimentos.error {
   color: #dc3545;
   background: #f8d7da;
-}
-
-.procedimento-item.principal {
-  border-left: 4px solid #4CAF50;
-  background-color: rgba(76, 175, 80, 0.05);
-}
-
-.badge-principal {
-  background-color: #4CAF50;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.8em;
-  margin-left: 8px;
 }
 
 /* ===== MODAL ===== */
@@ -784,32 +575,6 @@ tr:last-child td:last-child {
   cursor: pointer;
 }
 
-/* ===== SEÇÕES COLAPSÁVEIS ===== */
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  padding: 12px 15px;
-  background-color: #f0f0f0;
-  border-radius: 6px;
-  margin: 15px 0 10px;
-  transition: background-color 0.2s;
-  user-select: none;
-}
-
-.section-header:hover {
-  background-color: #e0e0e0;
-}
-
-.toggle-arrow {
-  font-size: 1.2em;
-  margin-left: 10px;
-  color: #666;
-  padding: 0 10px;
-  transition: transform 0.2s;
-}
-
 /* ===== DARK MODE ===== */
 .dark-mode table {
   background-color: #2d3748;
@@ -896,53 +661,16 @@ tr:last-child td:last-child {
   border-color: #555;
 }
 
-.dark-mode .section-header {
-  background-color: #2d2d2d;
-  color: #fff;
-}
-
-.dark-mode .section-header:hover {
-  background-color: #3d3d3d;
-}
-
-.dark-mode .toggle-arrow {
-  color: #aaa;
-}
-
 /* ===== RESPONSIVIDADE ===== */
 @media (max-width: 1024px) {
   .form-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  /* Ajuste para os novos containers em telas médias */
-  .habitos-container,
-  .respiracao-peso-container {
-    flex-direction: column;
-    gap: 15px;
   }
 }
 
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
-  }
-
-  .small-fields-container {
-    grid-template-columns: 1fr;
-  }
-  
-  .exame-sangue-textarea,
-  .historico-odontologico-textarea {
-    height: 70px;
-    min-height: 70px;
-  }
-  
-  .small-text-field,
-  .historico-cirurgia-textarea,
-  .small-textarea {
-    height: 50px;
-    min-height: 50px;
   }
 
   table {
@@ -970,6 +698,7 @@ tr:last-child td:last-child {
     margin-bottom: 15px;
   }
 
+  /* Ajuste para botões em mobile */
   .btn-table {
     width: 36px;
     height: 36px;
@@ -1025,70 +754,125 @@ tr:last-child td:last-child {
 .dark-mode .procedimentos-list::-webkit-scrollbar-thumb {
   background: #555;
 }
-
-/* Ajuste para o campo Alergia a anestesias */
-#quaisAnestesias {
-  height: 40px;
-  min-height: 40px;
-  max-height: 80px;
-  resize: vertical;
-  width: 100%;
+.procedimento-item.principal {
+  border-left: 4px solid #4CAF50;
+  background-color: rgba(76, 175, 80, 0.05);
 }
 
-/* Container para os campos de exames */
-.exames-sangramento-container {
+.badge-principal {
+  background-color: #4CAF50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+.section-header {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  transition: background-color 0.2s;
 }
 
-/* Estilo para cada campo pequeno */
-.small-text-field {
-  height: 40px;
-  min-height: 40px;
-  max-height: 80px;
-  resize: vertical;
-  width: 100%;
+.section-header:hover {
+  background-color: #e0e0e0;
 }
 
-/* Ajuste para o container dos campos pequenos */
-.small-fields-container {
+.section-header h2 {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.toggle-arrow {
+  font-size: 1.2em;
+  padding: 0 10px;
+  transition: transform 0.2s;
+}
+
+/* Dark mode styles */
+.dark-mode .section-header {
+  background-color: #333;
+  color: #fff;
+}
+
+.dark-mode .section-header:hover {
+  background-color: #444;
+}
+.section-header {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  margin: 15px 0 10px;
+  transition: background-color 0.2s;
 }
 
-/* Mantenha o campo Exame de Sangue maior */
-.exame-sangue-textarea {
-  height: 80px;
-  min-height: 80px;
-  max-height: 160px;
-  resize: vertical;
-  width: 100%;
+.section-header:hover {
+  background-color: #e0e0e0;
 }
 
-.respiracao-size-field {
-  height: 40px;
-  min-height: 40px;
-  max-height: 40px;
-  width: 100%;
-  resize: none;
-  overflow-y: auto;
-  padding: 8px;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s ease;
+.toggle-arrow {
+  font-size: 1.1em;
+  margin-left: 10px;
+  color: #666;
 }
 
-.respiracao-size-field:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
-  outline: none;
+.dark-mode .section-header {
+  background-color: #2d2d2d;
 }
 
-.no-resize {
-  resize: none;
+.dark-mode .section-header:hover {
+  background-color: #3d3d3d;
+}
+
+.dark-mode .toggle-arrow {
+  color: #aaa;
+}
+.procedimento-item {
+  position: relative;
+}
+
+.procedimento-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.btn-edit-procedimento, .btn-delete-procedimento {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 5px;
+}
+
+.btn-edit-procedimento {
+  color: #007bff;
+}
+
+.btn-delete-procedimento {
+  color: #dc3545;
+}
+
+.btn-edit-procedimento:hover, .btn-delete-procedimento:hover {
+  opacity: 0.8;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none; /* impede seleção de texto ao clicar */
+}
+
+.toggle-arrow {
+  margin-left: 10px;
+  font-size: 1.2em;
 }
