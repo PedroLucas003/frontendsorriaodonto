@@ -1179,55 +1179,57 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Histórico de Saúde</h2>
           <div className="form-grid">
+            {/* Detalhes de doenças */}
             <div className="form-group">
-              <label htmlFor="detalhesDoencas">{labels.detalhesDoencas}</label>
+              <label htmlFor="detalhesDoencas">Detalhes de doenças</label>
               <textarea
                 id="detalhesDoencas"
                 name="detalhesDoencas"
                 value={formData.detalhesDoencas}
                 onChange={handleChange}
-                className={`half-size-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
+                className="respiracao-size-field"
               />
             </div>
 
-            {/* Quais remédios - reduzido pela metade */}
+            {/* Quais remédios */}
             <div className="form-group">
-              <label htmlFor="quaisRemedios">{labels.quaisRemedios}</label>
+              <label htmlFor="quaisRemedios">Quais remédios</label>
               <textarea
                 id="quaisRemedios"
                 name="quaisRemedios"
                 value={formData.quaisRemedios}
                 onChange={handleChange}
-                className={`half-size-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
+                className="respiracao-size-field"
               />
             </div>
 
-            {/* Alergia a medicamentos - reduzido pela metade */}
+            {/* Alergia a medicamentos */}
             <div className="form-group">
-              <label htmlFor="quaisMedicamentos">{labels.quaisMedicamentos}</label>
+              <label htmlFor="quaisMedicamentos">Alergia a medicamentos</label>
               <textarea
                 id="quaisMedicamentos"
                 name="quaisMedicamentos"
                 value={formData.quaisMedicamentos}
                 onChange={handleChange}
-                className={`half-size-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
+                className="respiracao-size-field"
               />
             </div>
 
-            {/* Alergia a anestesias - mesmo tamanho que respiração */}
+            {/* Alergia a anestesias */}
             <div className="form-group">
-              <label htmlFor="quaisAnestesias">{labels.quaisAnestesias}</label>
+              <label htmlFor="quaisAnestesias">Alergia a anestesias</label>
               <textarea
                 id="quaisAnestesias"
                 name="quaisAnestesias"
                 value={formData.quaisAnestesias}
                 onChange={handleChange}
-                className={`respiracao-size-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
+                className="respiracao-size-field"
               />
             </div>
 
+            {/* Mantenha os outros campos como estão... */}
             <div className="form-group">
-              <label htmlFor="frequenciaFumo">{labels.frequenciaFumo}</label>
+              <label htmlFor="frequenciaFumo">Frequência de fumo</label>
               <select
                 id="frequenciaFumo"
                 name="frequenciaFumo"
@@ -1241,7 +1243,7 @@ const RegisterUser = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="frequenciaAlcool">{labels.frequenciaAlcool}</label>
+              <label htmlFor="frequenciaAlcool">Frequência de álcool</label>
               <select
                 id="frequenciaAlcool"
                 name="frequenciaAlcool"
@@ -1255,7 +1257,7 @@ const RegisterUser = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="respiracao">{labels.respiracao}</label>
+              <label htmlFor="respiracao">Respiração</label>
               <input
                 type="text"
                 id="respiracao"
@@ -1266,7 +1268,7 @@ const RegisterUser = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="peso">{labels.peso}</label>
+              <label htmlFor="peso">Peso (kg)</label>
               <input
                 type="number"
                 id="peso"
