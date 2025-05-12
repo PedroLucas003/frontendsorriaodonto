@@ -27,119 +27,140 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
-/* ===== CLASSES PADRÃO PARA CAMPOS ===== */
-.textarea-sm {  /* Tamanho do campo respiração */
-  height: 40px;
-  min-height: 40px;
-  max-height: 80px;
-  resize: vertical;
-  width: 100%;
-}
-
-.textarea-md {  /* Tamanho médio */
-  height: 60px;
-  min-height: 60px;
-  max-height: 120px;
-  resize: vertical;
-  width: 100%;
-}
-
-.textarea-lg {  /* Campos maiores */
-  height: 80px;
-  min-height: 80px;
-  max-height: 160px;
-  resize: vertical;
-  width: 100%;
-}
-
-.input-field {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.input-field:hover {
-  border-color: #007bff;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
-}
-
-/* ===== LAYOUT DE FORMULÁRIOS ===== */
-.form-section {
-  margin-bottom: 30px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-  align-items: start;
-}
-
-.form-group {
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-label {
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: #555;
-}
-
-/* ===== HISTÓRICO DE SAÚDE ===== */
-.historico-saude-grid {
+/* ===== ESTILOS PARA EXAMES E SANGRAMENTO ===== */
+.exames-sangramento-container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  width: 100%;
+  gap: 15px;
 }
 
-.historico-saude-grid .form-group:has(textarea) {
+.exame-sangue-container {
   grid-column: 1 / -1;
 }
 
-@media (min-width: 768px) {
-  .historico-saude-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ===== EXAMES E SANGRAMENTO ===== */
-.exames-sangramento-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.exame-sangue-textarea {
+  height: 80px; /* Reduzido pela metade */
+  min-height: 80px;
+  max-height: 160px;
   width: 100%;
+  resize: vertical;
 }
 
 .small-fields-container {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 15px;
-  width: 100%;
 }
 
-/* ===== HISTÓRICO MÉDICO ===== */
+.small-text-field {
+  height: 60px;
+  min-height: 60px;
+  max-height: 120px;
+  width: 100%;
+  resize: vertical;
+}
+
+/* ===== ESTILOS PARA HISTÓRICO MÉDICO E ODONTOLÓGICO ===== */
 .historico-medico-container {
   display: grid;
   grid-template-columns: 1fr;
   gap: 15px;
 }
 
-/* ===== BOTÕES ===== */
+.historico-cirurgia-textarea {
+  height: 60px;
+  min-height: 60px;
+  max-height: 120px;
+  width: 100%;
+  resize: vertical;
+}
+
+.historico-odontologico-textarea {
+  height: 80px; /* Reduzido pela metade */
+  min-height: 80px;
+  max-height: 160px;
+  width: 100%;
+  resize: vertical;
+}
+
+/* ===== ESTILOS PARA CAMPOS PEQUENOS ===== */
+.small-textarea {
+  height: 60px;
+  min-height: 60px;
+  max-height: 120px;
+  resize: vertical;
+}
+
+.medium-textarea {
+  height: 80px;
+  min-height: 80px;
+  max-height: 160px;
+  resize: vertical;
+}
+
+/* Campos reduzidos pela metade */
+.half-size-textarea {
+  height: 60px;
+  min-height: 60px;
+  max-height: 120px;
+  resize: vertical;
+}
+
+/* Tamanho igual ao campo respiração */
+.respiracao-size-textarea {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+}
+
+/* ===== AJUSTES PARA FORM-GRID ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+  align-items: start; /* Alterado de center para start para melhor alinhamento */
+}
+
+/* ===== TEMA DARK ===== */
+.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode label {
+  color: #e0e0e0;
+}
+
+.dark-mode .form-section {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background-color: #333;
+  color: #fff;
+  border-color: #444;
+}
+
+.dark-mode .exame-sangue-textarea,
+.dark-mode .small-text-field,
+.dark-mode .historico-cirurgia-textarea,
+.dark-mode .historico-odontologico-textarea,
+.dark-mode .small-textarea,
+.dark-mode .medium-textarea {
+  background-color: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+/* ===== BOTÕES PRINCIPAIS ===== */
 .btn {
   position: relative;
   display: flex;
@@ -189,7 +210,184 @@ label {
   top: -50%;
 }
 
-/* ===== TABELA ===== */
+/* ===== BOTÕES DE AÇÃO NA TABELA ===== */
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn-table {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.7);
+  width: 100px;
+  height: 36px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-edit {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-view {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-table:hover {
+  background: #000000;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.btn-table .btn-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+}
+
+.btn-table i {
+  position: absolute;
+  top: 150%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.btn-table:hover i {
+  top: 50%;
+}
+
+.btn-table:hover .btn-text {
+  top: -50%;
+}
+
+/* Botão de Tema */
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.theme-btn {
+  padding: 8px 15px;
+  border-radius: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.theme-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Botão Voltar */
+.btn-voltar {
+  background-color: #4a6cf7;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  left: 20px;
+  top: 20px;
+}
+
+.btn-voltar:hover {
+  background-color: #3a5ce4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== COMPONENTES DE FORMULÁRIO ===== */
+.form-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.large-text-area {
+  min-height: 120px;
+}
+
+.medium-text-area {
+  min-height: 100px;
+}
+
+.small-text-field {
+  min-height: 60px;
+  max-height: 120px;
+}
+
+/* ===== TABELA - DESIGN ATUALIZADO ===== */
 .table-container {
   margin-top: 20px;
   overflow-x: auto;
@@ -223,8 +421,42 @@ td {
   transition: background-color 0.2s ease;
 }
 
+tr:not(:last-child) td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
 tr:hover td {
   background-color: #f8f9fa;
+}
+
+/* Linhas zebradas para melhor legibilidade */
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Célula de "Nenhum dado" */
+.no-data {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Borda arredondada na primeira e última célula */
+tr:first-child th:first-child {
+  border-top-left-radius: 10px;
+}
+
+tr:first-child th:last-child {
+  border-top-right-radius: 10px;
+}
+
+tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+
+tr:last-child td:last-child {
+  border-bottom-right-radius: 10px;
 }
 
 /* ===== PROCEDIMENTOS ===== */
@@ -243,6 +475,160 @@ tr:hover td {
   border-left: 4px solid #007bff;
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.procedimento-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.procedimento-item.principal {
+  border-left-color: #007bff;
+  background-color: #f0fff4;
+}
+
+.procedimento-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.procedimento-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.procedimento-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.procedimento-details.single-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.procedimento-details.single-line span {
+  white-space: nowrap;
+}
+
+.procedimento-details p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.procedimento-details strong {
+  color: #555;
+  font-weight: 600;
+}
+
+.procedimento-actions {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.btn-edit-procedimento, .btn-delete-procedimento {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 5px;
+}
+
+.btn-edit-procedimento {
+  color: #007bff;
+}
+
+.btn-delete-procedimento {
+  color: #dc3545;
+}
+
+.btn-edit-procedimento:hover, .btn-delete-procedimento:hover {
+  opacity: 0.8;
+}
+
+.badge-principal {
+  background-color: #28a745;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.no-procedimentos {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.no-procedimentos.error {
+  color: #dc3545;
+  background: #f8d7da;
+}
+
+.procedimento-item.principal {
+  border-left: 4px solid #4CAF50;
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+.badge-principal {
+  background-color: #4CAF50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+
+/* ===== MODAL ===== */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  max-width: 80%;
+  max-height: 80%;
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 35px;
+  color: white;
+  font-size: 40px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.close:hover {
+  color: #bbb;
 }
 
 /* ===== VALIDAÇÃO ===== */
@@ -257,23 +643,180 @@ tr:hover td {
   margin-top: 5px;
 }
 
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
+
+/* ===== BARRA DE PESQUISA ===== */
+.search-bar {
+  margin: 20px 0;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+/* ===== FORMULÁRIO DE PROCEDIMENTO ===== */
+.procedimento-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #dee2e6;
+}
+
+.procedimento-form h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #343a40;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 10px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-add-procedimento {
+  background-color: #28a745;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.btn-add-procedimento:hover {
+  background-color: #218838;
+}
+
+.btn-cancel {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-submit {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ===== SEÇÕES COLAPSÁVEIS ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 12px 15px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  margin: 15px 0 10px;
+  transition: background-color 0.2s;
+  user-select: none; /* impede seleção de texto ao clicar */
+}
+
+.section-header:hover {
+  background-color: #e0e0e0;
+}
+
+.toggle-arrow {
+  font-size: 1.2em;
+  margin-left: 10px;
+  color: #666;
+  padding: 0 10px;
+  transition: transform 0.2s;
+}
+
 /* ===== DARK MODE ===== */
-.dark-mode {
-  background-color: #121212;
+.dark-mode table {
+  background-color: #2d3748;
+}
+
+.dark-mode th {
+  background-color: #4a5568;
+  color: #f7fafc;
+}
+
+.dark-mode td {
+  border-bottom-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-mode tr:nth-child(even) {
+  background-color: #2d3748;
+}
+
+.dark-mode tr:hover td {
+  background-color: #4a5568;
+}
+
+.dark-mode .no-data {
+  color: #a0aec0;
+}
+
+.dark-mode .procedimento-item {
+  background-color: #2d2d2d;
+  border-left-color: #4a6cf7;
+}
+
+.dark-mode .procedimento-item.principal {
+  background-color: #1c3d1c;
+  border-left-color: #4CAF50;
+}
+
+.dark-mode .procedimento-header h4 {
   color: #e0e0e0;
 }
 
-.dark-mode .form-section {
-  background-color: #1e1e1e;
-  border-color: #333;
+.dark-mode .procedimento-details p {
+  color: #ccc;
 }
 
-.dark-mode input,
-.dark-mode select,
-.dark-mode textarea {
+.dark-mode .procedimento-details strong {
+  color: #aaa;
+}
+
+.dark-mode .no-procedimentos {
+  background-color: #2d2d2d;
+  color: #aaa;
+}
+
+.dark-mode .no-procedimentos.error {
+  background-color: #3a1e1e;
+  color: #ff6b6b;
+}
+
+.dark-mode .error-field {
+  border-color: #ff6666 !important;
+  box-shadow: 0 0 5px rgba(255, 102, 102, 0.5) !important;
+}
+
+.dark-mode .search-bar input {
   background-color: #333;
   color: #fff;
-  border-color: #444;
+  border-color: #555;
 }
 
 .dark-mode .btn {
@@ -282,12 +825,84 @@ tr:hover td {
   border-color: #555;
 }
 
+.dark-mode .btn:hover {
+  background-color: #000;
+}
+
+.dark-mode .btn-table {
+  background-color: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.dark-mode .section-header {
+  background-color: #2d2d2d;
+  color: #fff;
+}
+
+.dark-mode .section-header:hover {
+  background-color: #3d3d3d;
+}
+
+.dark-mode .toggle-arrow {
+  color: #aaa;
+}
+
 /* ===== RESPONSIVIDADE ===== */
+@media (max-width: 1024px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
   }
+
+  .small-fields-container {
+    grid-template-columns: 1fr;
+  }
   
+  .exame-sangue-textarea,
+  .historico-odontologico-textarea {
+    height: 70px;
+    min-height: 70px;
+  }
+  
+  .small-text-field,
+  .historico-cirurgia-textarea,
+  .small-textarea {
+    height: 50px;
+    min-height: 50px;
+  }
+
+  table {
+    font-size: 14px;
+    min-width: auto;
+  }
+
+  .procedimento-item {
+    padding: 1rem;
+  }
+  
+  .procedimento-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .procedimento-header span {
+    align-self: flex-end;
+  }
+
+  .theme-toggle {
+    position: static;
+    text-align: right;
+    margin-bottom: 15px;
+  }
+
+  /* Ajuste para botões em mobile */
   .btn-table {
     width: 36px;
     height: 36px;
@@ -296,5 +911,138 @@ tr:hover td {
   
   .btn-table .btn-text {
     display: none;
+  }
+  
+  .btn-table i {
+    position: static;
+    transform: none;
+  }
+  
+  .btn-table:hover i {
+    position: static;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .btn-table {
+    width: 100%;
+    border-radius: 6px;
+  }
+}
+
+/* ===== BARRA DE ROLAGEM ===== */
+.procedimentos-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.procedimentos-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.procedimentos-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.dark-mode .procedimentos-list::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+.dark-mode .procedimentos-list::-webkit-scrollbar-thumb {
+  background: #555;
+}
+/* Ajuste para o campo Alergia a anestesias */
+#quaisAnestesias {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+  width: 100%;
+}
+
+/* Container para os campos de exames */
+.exames-sangramento-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Estilo para cada campo pequeno */
+.small-text-field {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+  width: 100%;
+}
+
+/* Ajuste para o container dos campos pequenos */
+.small-fields-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Mantenha o campo Exame de Sangue maior */
+.exame-sangue-textarea {
+  height: 80px;
+  min-height: 80px;
+  max-height: 160px;
+  resize: vertical;
+  width: 100%;
+}
+/* Adicione esta regra no seu CSS */
+.respiracao-size-field {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+  width: 100%;
+}/* Adicione ou atualize estas regras no seu CSS */
+.respiracao-size-field {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+  width: 100%;
+}
+
+/* Container para os campos de histórico de saúde */
+.historico-saude-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Ajuste para os campos de texto no grid */
+.historico-saude-container .form-group {
+  grid-column: 1 / -1;
+}
+
+/* Mantenha os selects e inputs menores em linha quando possível */
+.historico-saude-container .form-group:has(select),
+.historico-saude-container .form-group:has(input[type="text"]),
+.historico-saude-container .form-group:has(input[type="number"]) {
+  grid-column: span 1;
+}
+
+@media (min-width: 768px) {
+  .historico-saude-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Campos de texto ocupam toda a largura */
+  .historico-saude-container .form-group:has(textarea) {
+    grid-column: 1 / -1;
   }
 }
