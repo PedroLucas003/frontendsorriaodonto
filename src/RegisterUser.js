@@ -1280,82 +1280,82 @@ const RegisterUser = () => {
         </div>
 
         <div className="form-section">
-  <h2>Exames e Sangramento</h2>
-  <div className="exames-sangramento-container">
-    <div className="form-group exame-sangue-container">
-      <label htmlFor="exameSangue">Exame de Sangue</label>
-      <textarea
-        id="exameSangue"
-        name="exameSangue"
-        className="exame-sangue-textarea"
-        value={formData.exameSangue}
-        onChange={handleChange}
-      />
-    </div>
+          <h2>Exames e Sangramento</h2>
+          <div className="exames-sangramento-container">
+            <div className="form-group exame-sangue-container">
+              <label htmlFor="exameSangue">Exame de Sangue</label>
+              <textarea
+                id="exameSangue"
+                name="exameSangue"
+                className="exame-sangue-textarea"
+                value={formData.exameSangue}
+                onChange={handleChange}
+              />
+            </div>
 
-    <div className="small-fields-container">
-      <div className="form-group">
-        <label htmlFor="coagulacao">Coagulação</label>
-        <textarea
-          id="coagulacao"
-          name="coagulacao"
-          className="small-text-field"
-          value={formData.coagulacao}
-          onChange={handleChange}
-        />
-      </div>
+            <div className="small-fields-container">
+              <div className="form-group">
+                <label htmlFor="coagulacao">Coagulação</label>
+                <textarea
+                  id="coagulacao"
+                  name="coagulacao"
+                  className="small-text-field"
+                  value={formData.coagulacao}
+                  onChange={handleChange}
+                />
+              </div>
 
-      <div className="form-group">
-        <label htmlFor="cicatrizacao">Cicatrização</label>
-        <textarea
-          id="cicatrizacao"
-          name="cicatrizacao"
-          className="small-text-field"
-          value={formData.cicatrizacao}
-          onChange={handleChange}
-        />
-      </div>
+              <div className="form-group">
+                <label htmlFor="cicatrizacao">Cicatrização</label>
+                <textarea
+                  id="cicatrizacao"
+                  name="cicatrizacao"
+                  className="small-text-field"
+                  value={formData.cicatrizacao}
+                  onChange={handleChange}
+                />
+              </div>
 
-      <div className="form-group">
-        <label htmlFor="sangramentoPosProcedimento">Sangramento Pós-Procedimento</label>
-        <textarea
-          id="sangramentoPosProcedimento"
-          name="sangramentoPosProcedimento"
-          className="small-text-field"
-          value={formData.sangramentoPosProcedimento}
-          onChange={handleChange}
-        />
-      </div>
-    </div>
-  </div>
-</div>
+              <div className="form-group">
+                <label htmlFor="sangramentoPosProcedimento">Sangramento Pós-Procedimento</label>
+                <textarea
+                  id="sangramentoPosProcedimento"
+                  name="sangramentoPosProcedimento"
+                  className="small-text-field"
+                  value={formData.sangramentoPosProcedimento}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="form-section">
-  <h2>Histórico Médico e Odontológico</h2>
-  <div className="historico-medico-container">
-    <div className="form-group historico-cirurgia-container">
-      <label htmlFor="historicoCirurgia">Histórico de Cirurgia</label>
-      <textarea
-        id="historicoCirurgia"
-        name="historicoCirurgia"
-        className="historico-cirurgia-textarea"
-        value={formData.historicoCirurgia}
-        onChange={handleChange}
-      />
-    </div>
+          <h2>Histórico Médico e Odontológico</h2>
+          <div className="historico-medico-container">
+            <div className="form-group historico-cirurgia-container">
+              <label htmlFor="historicoCirurgia">Histórico de Cirurgia</label>
+              <textarea
+                id="historicoCirurgia"
+                name="historicoCirurgia"
+                className="historico-cirurgia-textarea"
+                value={formData.historicoCirurgia}
+                onChange={handleChange}
+              />
+            </div>
 
-    <div className="form-group historico-odontologico-container">
-      <label htmlFor="historicoOdontologico">Histórico Odontológico</label>
-      <textarea
-        id="historicoOdontologico"
-        name="historicoOdontologico"
-        className="historico-odontologico-textarea"
-        value={formData.historicoOdontologico}
-        onChange={handleChange}
-      />
-    </div>
-  </div>
-</div>
+            <div className="form-group historico-odontologico-container">
+              <label htmlFor="historicoOdontologico">Histórico Odontológico</label>
+              <textarea
+                id="historicoOdontologico"
+                name="historicoOdontologico"
+                className="historico-odontologico-textarea"
+                value={formData.historicoOdontologico}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="form-section">
           <div

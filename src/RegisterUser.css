@@ -958,3 +958,45 @@ tr:last-child td:last-child {
 .dark-mode .procedimentos-list::-webkit-scrollbar-thumb {
   background: #555;
 }
+/* Ajuste para o campo Alergia a anestesias */
+#quaisAnestesias {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+  width: 100%;
+}
+
+/* Container para os campos de exames */
+.exames-sangramento-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Estilo para cada campo pequeno */
+.small-text-field {
+  height: 40px;
+  min-height: 40px;
+  max-height: 80px;
+  resize: vertical;
+  width: 100%;
+}
+
+/* Ajuste para o container dos campos pequenos */
+.small-fields-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Mantenha o campo Exame de Sangue maior */
+.exame-sangue-textarea {
+  height: 80px;
+  min-height: 80px;
+  max-height: 160px;
+  resize: vertical;
+  width: 100%;
+}
