@@ -27,6 +27,64 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
+/* ===== NOVOS ESTILOS PARA HISTÓRICO DE SAÚDE ===== */
+.historico-saude-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Container para campos de hábitos (fumo e álcool) */
+.habitos-container {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.habitos-field {
+  flex: 1;
+}
+
+/* Container para campos de respiração e peso */
+.respiracao-peso-container {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+.respiracao-peso-field {
+  flex: 1;
+}
+
+/* Estilos para manter consistência de tamanho */
+.respiracao-size-select,
+.respiracao-size-input {
+  height: 40px;
+  width: 100%;
+  padding: 8px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.respiracao-size-select:focus,
+.respiracao-size-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+  outline: none;
+}
+
+/* Ajuste para selects */
+.respiracao-size-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
 /* ===== ESTILOS PARA EXAMES E SANGRAMENTO ===== */
 .exames-sangramento-container {
   display: grid;
@@ -39,7 +97,7 @@ h2 {
 }
 
 .exame-sangue-textarea {
-  height: 80px; /* Reduzido pela metade */
+  height: 80px;
   min-height: 80px;
   max-height: 160px;
   width: 100%;
@@ -76,7 +134,7 @@ h2 {
 }
 
 .historico-odontologico-textarea {
-  height: 80px; /* Reduzido pela metade */
+  height: 80px;
   min-height: 80px;
   max-height: 160px;
   width: 100%;
@@ -98,7 +156,6 @@ h2 {
   resize: vertical;
 }
 
-/* Campos reduzidos pela metade */
 .half-size-textarea {
   height: 60px;
   min-height: 60px;
@@ -106,7 +163,6 @@ h2 {
   resize: vertical;
 }
 
-/* Tamanho igual ao campo respiração */
 .respiracao-size-textarea {
   height: 40px;
   min-height: 40px;
@@ -119,7 +175,7 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 15px;
-  align-items: start; /* Alterado de center para start para melhor alinhamento */
+  align-items: start;
 }
 
 /* ===== TEMA DARK ===== */
@@ -155,6 +211,14 @@ h2 {
 .dark-mode .historico-odontologico-textarea,
 .dark-mode .small-textarea,
 .dark-mode .medium-textarea {
+  background-color: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+/* Dark mode para os novos campos */
+.dark-mode .respiracao-size-select,
+.dark-mode .respiracao-size-input {
   background-color: #333;
   color: #fff;
   border-color: #555;
@@ -429,12 +493,10 @@ tr:hover td {
   background-color: #f8f9fa;
 }
 
-/* Linhas zebradas para melhor legibilidade */
 tr:nth-child(even) {
   background-color: #f9f9f9;
 }
 
-/* Célula de "Nenhum dado" */
 .no-data {
   text-align: center;
   padding: 20px;
@@ -442,7 +504,6 @@ tr:nth-child(even) {
   font-style: italic;
 }
 
-/* Borda arredondada na primeira e última célula */
 tr:first-child th:first-child {
   border-top-left-radius: 10px;
 }
@@ -734,7 +795,7 @@ tr:last-child td:last-child {
   border-radius: 6px;
   margin: 15px 0 10px;
   transition: background-color 0.2s;
-  user-select: none; /* impede seleção de texto ao clicar */
+  user-select: none;
 }
 
 .section-header:hover {
@@ -853,6 +914,13 @@ tr:last-child td:last-child {
   .form-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  /* Ajuste para os novos containers em telas médias */
+  .habitos-container,
+  .respiracao-peso-container {
+    flex-direction: column;
+    gap: 15px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -902,7 +970,6 @@ tr:last-child td:last-child {
     margin-bottom: 15px;
   }
 
-  /* Ajuste para botões em mobile */
   .btn-table {
     width: 36px;
     height: 36px;
@@ -958,6 +1025,7 @@ tr:last-child td:last-child {
 .dark-mode .procedimentos-list::-webkit-scrollbar-thumb {
   background: #555;
 }
+
 /* Ajuste para o campo Alergia a anestesias */
 #quaisAnestesias {
   height: 40px;
@@ -1000,14 +1068,14 @@ tr:last-child td:last-child {
   resize: vertical;
   width: 100%;
 }
-/* Adicione esta regra no seu CSS */
+
 .respiracao-size-field {
   height: 40px;
   min-height: 40px;
-  max-height: 40px; /* Remove a possibilidade de aumentar */
+  max-height: 40px;
   width: 100%;
-  resize: none; /* Desabilita o redimensionamento */
-  overflow-y: auto; /* Permite rolagem se o conteúdo for maior */
+  resize: none;
+  overflow-y: auto;
   padding: 8px;
   border: 2px solid #ccc;
   border-radius: 8px;
@@ -1015,14 +1083,12 @@ tr:last-child td:last-child {
   transition: all 0.3s ease;
 }
 
-/* Estilo para quando o campo está em foco */
 .respiracao-size-field:focus {
   border-color: #007bff;
   box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
   outline: none;
 }
 
-/* Classe alternativa para desabilitar o resize */
 .no-resize {
   resize: none;
 }
