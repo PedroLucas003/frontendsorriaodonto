@@ -1004,45 +1004,25 @@ tr:last-child td:last-child {
 .respiracao-size-field {
   height: 40px;
   min-height: 40px;
-  max-height: 80px;
-  resize: vertical;
+  max-height: 40px; /* Remove a possibilidade de aumentar */
   width: 100%;
-}/* Adicione ou atualize estas regras no seu CSS */
-.respiracao-size-field {
-  height: 40px;
-  min-height: 40px;
-  max-height: 80px;
-  resize: vertical;
-  width: 100%;
+  resize: none; /* Desabilita o redimensionamento */
+  overflow-y: auto; /* Permite rolagem se o conteúdo for maior */
+  padding: 8px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
 }
 
-/* Container para os campos de histórico de saúde */
-.historico-saude-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-  width: 100%;
+/* Estilo para quando o campo está em foco */
+.respiracao-size-field:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+  outline: none;
 }
 
-/* Ajuste para os campos de texto no grid */
-.historico-saude-container .form-group {
-  grid-column: 1 / -1;
-}
-
-/* Mantenha os selects e inputs menores em linha quando possível */
-.historico-saude-container .form-group:has(select),
-.historico-saude-container .form-group:has(input[type="text"]),
-.historico-saude-container .form-group:has(input[type="number"]) {
-  grid-column: span 1;
-}
-
-@media (min-width: 768px) {
-  .historico-saude-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  /* Campos de texto ocupam toda a largura */
-  .historico-saude-container .form-group:has(textarea) {
-    grid-column: 1 / -1;
-  }
+/* Classe alternativa para desabilitar o resize */
+.no-resize {
+  resize: none;
 }
