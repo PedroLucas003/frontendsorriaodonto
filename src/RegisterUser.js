@@ -1131,7 +1131,6 @@ const handleChange = (e) => {
                   value={formData[key]}
                   onChange={handleChange}
                   className={fieldErrors[key] ? 'error-field' : ''}
-                  disabled={modoVisualizacao && !key.includes("password")}
                 />
                 {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
               </div>
@@ -1155,7 +1154,6 @@ const handleChange = (e) => {
                 className={fieldErrors.dataNascimento ? 'error-field' : ''}
                 placeholder="DD/MM/AAAA"
                 maxLength={10}
-                disabled={modoVisualizacao}
               />
               {fieldErrors.dataNascimento && (
                 <span className="field-error">{fieldErrors.dataNascimento}</span>
