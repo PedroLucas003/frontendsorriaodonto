@@ -526,11 +526,8 @@ const RegisterUser = () => {
       return;
     }
 
-    // Atualização específica para o campo email (aceita qualquer valor sem transformação)
-    setFormData(prev => ({ ...prev, [name]: formattedValue }));
-
     // Valida todos os campos exceto email
-    if (name !== "email") {
+    if (name !== "") {
       validateField(name, formattedValue);
     }
 
