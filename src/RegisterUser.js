@@ -636,7 +636,8 @@ const RegisterUser = () => {
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
-      email: formData.email,
+      ...formData,
+    email: formData.email.trim() === "" ? null : formData.email.trim(),
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
       endereco: formData.endereco.trim(),
