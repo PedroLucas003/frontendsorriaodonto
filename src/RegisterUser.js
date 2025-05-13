@@ -76,7 +76,6 @@ const RegisterUser = () => {
   const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
-    email: "",
     cpf: "",
     telefone: "",
     endereco: "",
@@ -636,8 +635,6 @@ const RegisterUser = () => {
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
-      ...formData,
-    email: formData.email.trim() === "" ? null : formData.email.trim().toLowerCase(),
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
       endereco: formData.endereco.trim(),
@@ -719,7 +716,6 @@ const RegisterUser = () => {
   const resetForm = () => {
     setFormData({
       nomeCompleto: "",
-      email: "",
       cpf: "",
       telefone: "",
       endereco: "",
@@ -1061,18 +1057,15 @@ const RegisterUser = () => {
     const searchLower = searchTerm.toLowerCase().trim();  // Remove espaços e padroniza
     const cpfSearch = searchTerm.replace(/\D/g, '');      // Remove formatação do CPF
 
-    return (
-      !searchLower ||  // Se vazio, retorna todos
-      usuario.nomeCompleto?.toLowerCase().includes(searchLower) ||
-      usuario.cpf?.includes(cpfSearch) ||
-      usuario.email?.toLowerCase().includes(searchLower)
-      // usuario.telefone?.replace(/\D/g, '').includes(cpfSearch)  // (Opcional)
-    );
-  });
+return (
+    !searchTerm || // Se vazio, retorna todos
+    usuario.nomeCompleto?.toLowerCase().includes(searchLower) || // Busca por nome (case insensitive)
+    usuario.cpf?.replace(/\D/g, '').includes(cpfSearch) // Busca por CPF (sem formatação)
+  );
+});
 
   const labels = {
     nomeCompleto: "Nome completo",
-    email: "E-mail",
     cpf: "CPF",
     telefone: "Telefone",
     endereco: "Endereço",
@@ -1122,7 +1115,7 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-            {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
+            {['nomeCompleto', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
               <div key={key} className="form-group">
                 <label htmlFor={key}>{labels[key]}</label>
                 <input
