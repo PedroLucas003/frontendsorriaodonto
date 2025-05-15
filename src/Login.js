@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import api from "./api/api";
 import { useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
@@ -10,15 +10,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Cache do token para login instantâneo
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/register");
-    }
-  }, [navigate]);
-
-  // Função para formatar o CPF (otimizada)
+  // Função para formatar o CPF (mantida igual)
   const formatCPF = (value) => {
     const cleaned = value.replace(/\D/g, "");
     if (cleaned.length <= 3) return cleaned;
@@ -35,7 +27,7 @@ const Login = () => {
     try {
       const cleanedCPF = cpf.replace(/\D/g, "");
 
-      // Verificação local rápida antes da API
+      // Verificação local rápida (mantida igual)
       if (cleanedCPF.length !== 11) {
         setIsLoading(false);
         return setError("CPF inválido");
@@ -46,6 +38,8 @@ const Login = () => {
         password,
       });
 
+      // **ALTERAÇÃO PRINCIPAL**: Remove o redirecionamento automático
+      // e só armazena o token após login ativo
       localStorage.setItem("token", response.data.token);
       navigate("/register");
     } catch (error) {
