@@ -2,8 +2,8 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NODE_ENV === 'development'
-    ? "http://localhost:4000"  // Note que adicionei /api para seguir seu padrão de rotas
-    : "https://backendsorriaodonto.onrender.com",  // URL do seu backend no Render
+    ? "http://localhost:4000"
+    : "https://backendsorriaodonto.onrender.com",
 });
 
 // Interceptor para adicionar token automaticamente
@@ -29,11 +29,11 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        // Tenta renovar o token usando o endpoint /refresh-token
+        // Tenta renovar o token usando o endpoint /api/refresh-token (corrigido para incluir /api)
         const refreshResponse = await axios.post(
           `${process.env.NODE_ENV === 'development' 
-            ? "http://localhost:4000" 
-            : "https://backendsorriaodonto.onrender.com"}/refresh-token`,
+            ? "http://localhost:4000/api" 
+            : "https://backendsorriaodonto.onrender.com/api"}/refresh-token`,
           {},
           {
             headers: {
@@ -54,8 +54,8 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Se não conseguir renovar, faz logout
         localStorage.removeItem("token");
-        alert("Sua sessão expirou. Por favor, faça login novamente.");
-        window.location.href = "/";
+        // Redireciona para login com flag de sessão expirada
+        window.location.href = "/login?session_expired=1";
         return Promise.reject(refreshError);
       }
     }
