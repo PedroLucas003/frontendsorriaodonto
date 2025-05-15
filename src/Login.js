@@ -1,69 +1,80 @@
-import React, { useState, useCallback } from "react";
-import api from "./api/api";
-import { useNavigate } from "react-router-dom";
-import styles from "./Login.module.css";
+import React, { useState, useCallback, useRef } from 'react';
+import api from './api/api';
+import { useNavigate } from 'react-router-dom';
+import styles from './Login.module.css';
+
+// Cache de regex para evitar recriação
+const NON_DIGIT_REGEX = /\D/g;
+const CPF_LENGTH = 11;
 
 const Login = () => {
-  const [cpf, setCpf] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  // Refs para acesso direto sem rerender
+  const cpfRef = useRef('');
+  const passwordRef = useRef('');
+  
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 1. useCallback para formatar CPF (evita recriação desnecessária)
+  // Formatação memoizada com cache
   const formatCPF = useCallback((value) => {
-    const cleaned = value.replace(/\D/g, "");
+    const cleaned = value.replace(NON_DIGIT_REGEX, '');
+    cpfRef.current = cleaned; // Atualiza ref
+    
     if (cleaned.length <= 3) return cleaned;
     if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
     if (cleaned.length <= 9) return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
     return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9, 11)}`;
   }, []);
 
-  // 2. Debounce nativo no onChange do CPF
-  const handleCpfChange = (e) => {
-    const rawValue = e.target.value.replace(/\D/g, "");
-    if (rawValue.length <= 11) { // Limita a 11 caracteres
-      setCpf(rawValue);
-    }
-  };
-
-  // 3. Pré-validação antes da requisição
-  const validateBeforeSubmit = () => {
-    if (cpf.replace(/\D/g, "").length !== 11) {
-      setError("CPF inválido");
-      return false;
-    }
-    if (!password) {
-      setError("Senha obrigatória");
-      return false;
-    }
-    return true;
-  };
-
-  // 4. handleSubmit otimizado
+  // Handler otimizado com early return
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateBeforeSubmit()) return;
     
+    // Early validation
+    if (cpfRef.current.length !== CPF_LENGTH) {
+      setError('CPF inválido');
+      return;
+    }
+    
+    if (!passwordRef.current) {
+      setError('Senha obrigatória');
+      return;
+    }
+
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const response = await api.post("/api/login", {
-        cpf: cpf.replace(/\D/g, ""),
-        password,
+      const startTime = performance.now(); // Métrica de performance
+      
+      const response = await api.post('/api/login', {
+        cpf: cpfRef.current,
+        password: passwordRef.current,
       }, {
-        timeout: 5000 // 5s timeout específico para login
+        timeout: 3000 // Timeout reduzido
       });
 
-      localStorage.setItem("token", response.data.token);
-      navigate("/register");
+      localStorage.setItem('token', response.data.token);
+      
+      // Otimização: Pré-carrega a próxima rota
+      const navigationPromise = navigate('/register');
+      
+      // Métrica de tempo (para monitoramento)
+      console.log(`Login completed in ${performance.now() - startTime}ms`);
+      
+      await navigationPromise;
     } catch (error) {
       setIsLoading(false);
-      setError(
-        error.response?.data?.message || 
-        (error.code === "ECONNABORTED" ? "Tempo excedido" : "Erro ao fazer login")
-      );
+      
+      // Error mapping otimizado
+      const errorMap = {
+        ECONNABORTED: 'Tempo excedido',
+        'Network Error': 'Sem conexão',
+        default: error.response?.data?.message || 'Erro ao fazer login'
+      };
+      
+      setError(errorMap[error.code] || errorMap.default);
     }
   };
 
@@ -75,16 +86,17 @@ const Login = () => {
           <input
             type="text"
             placeholder="Digite seu CPF"
-            value={formatCPF(cpf)}
-            onChange={handleCpfChange} // Alterado aqui
+            onChange={(e) => {
+              const value = e.target.value.replace(NON_DIGIT_REGEX, '');
+              e.target.value = formatCPF(value); // Atualização direta
+            }}
             maxLength={14}
             required
           />
           <input
             type="password"
             placeholder="Digite sua senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => (passwordRef.current = e.target.value)}
             required
           />
           <button 
@@ -92,7 +104,7 @@ const Login = () => {
             className={styles.btnLogin}
             disabled={isLoading}
           >
-            {isLoading ? "Carregando..." : "Entrar"}
+            {isLoading ? 'Carregando...' : 'Entrar'}
           </button>
         </form>
         {error && <p className={styles.error}>{error}</p>}
@@ -101,4 +113,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default React.memo(Login); // Memoização do componente
