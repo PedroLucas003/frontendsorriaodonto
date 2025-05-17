@@ -145,86 +145,95 @@ const RegisterUser = () => {
     fetchUsuarios();
   }, []);
 
-  const fetchUsuarios = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await api.get("/api/users", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+const fetchUsuarios = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await api.get("/api/users", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-      // Verificação mais robusta da resposta
-      if (!response?.data) {
-        throw new Error("Resposta da API não contém dados");
-      }
+    // DEBUG: Verifique a estrutura completa da resposta
+    console.log("Resposta completa da API:", response);
 
-      // Converter para array garantidamente
-      const dadosUsuarios = Array.isArray(response.data)
-        ? response.data
+    // Verificação ajustada para compatibilidade
+    const responseData = response.data?.data || response.data; // Tenta acessar .data.data primeiro
+    
+    if (!responseData) {
+      throw new Error("Resposta da API não contém dados");
+    }
+
+    // Converter para array garantidamente
+    const dadosUsuarios = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(response.data?.users) 
+        ? response.data.users
         : [];
 
-      // Formatação segura dos usuários
-      const usuariosFormatados = dadosUsuarios.map(usuario => {
-        // Garante que procedimentos sejam arrays
-        const procedimentos = Array.isArray(usuario.procedimentos)
-          ? usuario.procedimentos
-          : [];
+    // DEBUG: Verifique os dados extraídos
+    console.log("Dados dos usuários extraídos:", dadosUsuarios);
 
-        const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
-          ? usuario.historicoProcedimentos
-          : [];
+    // Formatação segura dos usuários (mantida igual à sua versão)
+    const usuariosFormatados = dadosUsuarios.map(usuario => {
+      // Garante que procedimentos sejam arrays
+      const procedimentos = Array.isArray(usuario.procedimentos)
+        ? usuario.procedimentos
+        : [];
 
-        // Formata datas para exibição
-        const formatDate = (date) => {
-          try {
-            return date ? new Date(date).toLocaleDateString('pt-BR') : 'Não informado';
-          } catch {
-            return 'Data inválida';
-          }
-        };
+      const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
+        ? usuario.historicoProcedimentos
+        : [];
 
-        return {
-          ...usuario,
-          procedimentos,
-          historicoProcedimentos,
-          _id: usuario._id || Date.now().toString(),
-          nomeCompleto: usuario.nomeCompleto || "Nome não informado",
-          // Adiciona datas formatadas para exibição
-          dataNascimentoFormatada: formatDate(usuario.dataNascimento),
-          dataProcedimentoFormatada: formatDate(usuario.dataProcedimento),
-          dataNovoProcedimentoFormatada: formatDate(usuario.dataNovoProcedimento),
-          // Mantém as datas originais para edição
-          dataNascimento: usuario.dataNascimento,
-          dataProcedimento: usuario.dataProcedimento,
-          dataNovoProcedimento: usuario.dataNovoProcedimento
-        };
-      });
+      // Formata datas para exibição
+      const formatDate = (date) => {
+        try {
+          return date ? new Date(date).toLocaleDateString('pt-BR') : 'Não informado';
+        } catch {
+          return 'Data inválida';
+        }
+      };
 
-      // Ordena por data de criação (mais recentes primeiro)
-      usuariosFormatados.sort((a, b) => {
-        const dateA = new Date(a.createdAt || 0);
-        const dateB = new Date(b.createdAt || 0);
-        return dateB - dateA;
-      });
+      return {
+        ...usuario,
+        procedimentos,
+        historicoProcedimentos,
+        _id: usuario._id || Date.now().toString(),
+        nomeCompleto: usuario.nomeCompleto || "Nome não informado",
+        // Adiciona datas formatadas para exibição
+        dataNascimentoFormatada: formatDate(usuario.dataNascimento),
+        dataProcedimentoFormatada: formatDate(usuario.dataProcedimento),
+        dataNovoProcedimentoFormatada: formatDate(usuario.dataNovoProcedimento),
+        // Mantém as datas originais para edição
+        dataNascimento: usuario.dataNascimento,
+        dataProcedimento: usuario.dataProcedimento,
+        dataNovoProcedimento: usuario.dataNovoProcedimento
+      };
+    });
 
-      setUsuarios(usuariosFormatados);
-      setError("");
+    // Ordena por data de criação (mais recentes primeiro)
+    usuariosFormatados.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateB - dateA;
+    });
 
-    } catch (error) {
-      console.error("Erro ao buscar usuários:", error);
+    // DEBUG: Verifique os usuários formatados
+    console.log("Usuários formatados:", usuariosFormatados);
 
-      // Mensagem mais específica de erro
-      const errorMessage = error.response?.data?.message
-        ? `Erro ao carregar usuários: ${error.response.data.message}`
-        : "Erro ao conectar com o servidor. Tente novamente.";
+    setUsuarios(usuariosFormatados);
+    setError("");
 
-      setError(errorMessage);
-      setUsuarios([]);
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
 
-      // Opcional: Mostrar notificação mais visível
-      // alert(errorMessage); 
-      // ou usar um toast notification se disponível
-    }
-  };
+    // Mensagem mais específica de erro
+    const errorMessage = error.response?.data?.message
+      ? `Erro ao carregar usuários: ${error.response.data.message}`
+      : "Erro ao conectar com o servidor. Tente novamente.";
+
+    setError(errorMessage);
+    setUsuarios([]);
+  }
+};
 
   const formatCPF = (value) => {
     const cleanedValue = value.replace(/\D/g, "");
