@@ -145,45 +145,48 @@ const RegisterUser = () => {
     fetchUsuarios();
   }, []);
 
-const fetchUsuarios = async () => {
+  const fetchUsuarios = async () => {
   try {
     const token = localStorage.getItem("token");
-    const response = await api.get("/api/users", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
 
-    // DEBUG: Verifique a estrutura completa da resposta
-    console.log("Resposta completa da API:", response);
-
-    // Verificação ajustada para compatibilidade
-    const responseData = response.data?.data || response.data; // Tenta acessar .data.data primeiro
-    
-    if (!responseData) {
-      throw new Error("Resposta da API não contém dados");
+    // Verifica se o token existe
+    if (!token) {
+      throw new Error("Token de autenticação não encontrado");
     }
 
-    // Converter para array garantidamente
-    const dadosUsuarios = Array.isArray(responseData)
-      ? responseData
-      : Array.isArray(response.data?.users) 
-        ? response.data.users
-        : [];
+    // Alterado de "/api/users" para "/users" para compatibilidade com seu backend
+    const response = await api.get("/users", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
 
-    // DEBUG: Verifique os dados extraídos
-    console.log("Dados dos usuários extraídos:", dadosUsuarios);
+    // Verifica se a resposta é válida
+    if (response.status !== 200) {
+      throw new Error(`Erro na requisição: Status ${response.status}`);
+    }
 
-    // Formatação segura dos usuários (mantida igual à sua versão)
+    // Extrai os dados da resposta de forma segura
+    let dadosUsuarios = [];
+
+    if (Array.isArray(response.data)) {
+      dadosUsuarios = response.data;
+    } else if (Array.isArray(response.data?.data)) {
+      dadosUsuarios = response.data.data;
+    } else if (Array.isArray(response.data?.users)) {
+      dadosUsuarios = response.data.users;
+    } else {
+      throw new Error("Formato de dados inválido na resposta");
+    }
+
+    // Formatação dos usuários (mantendo sua lógica original)
     const usuariosFormatados = dadosUsuarios.map(usuario => {
-      // Garante que procedimentos sejam arrays
-      const procedimentos = Array.isArray(usuario.procedimentos)
-        ? usuario.procedimentos
-        : [];
-
+      const procedimentos = Array.isArray(usuario.procedimentos) ? usuario.procedimentos : [];
       const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
         ? usuario.historicoProcedimentos
         : [];
 
-      // Formata datas para exibição
       const formatDate = (date) => {
         try {
           return date ? new Date(date).toLocaleDateString('pt-BR') : 'Não informado';
@@ -198,40 +201,46 @@ const fetchUsuarios = async () => {
         historicoProcedimentos,
         _id: usuario._id || Date.now().toString(),
         nomeCompleto: usuario.nomeCompleto || "Nome não informado",
-        // Adiciona datas formatadas para exibição
         dataNascimentoFormatada: formatDate(usuario.dataNascimento),
         dataProcedimentoFormatada: formatDate(usuario.dataProcedimento),
         dataNovoProcedimentoFormatada: formatDate(usuario.dataNovoProcedimento),
-        // Mantém as datas originais para edição
         dataNascimento: usuario.dataNascimento,
         dataProcedimento: usuario.dataProcedimento,
         dataNovoProcedimento: usuario.dataNovoProcedimento
       };
     });
 
-    // Ordena por data de criação (mais recentes primeiro)
+    // Ordenação
     usuariosFormatados.sort((a, b) => {
       const dateA = new Date(a.createdAt || 0);
       const dateB = new Date(b.createdAt || 0);
       return dateB - dateA;
     });
 
-    // DEBUG: Verifique os usuários formatados
-    console.log("Usuários formatados:", usuariosFormatados);
-
     setUsuarios(usuariosFormatados);
     setError("");
 
   } catch (error) {
-    console.error("Erro ao buscar usuários:", error);
+    console.error("Erro detalhado ao buscar usuários:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
 
-    // Mensagem mais específica de erro
     const errorMessage = error.response?.data?.message
-      ? `Erro ao carregar usuários: ${error.response.data.message}`
-      : "Erro ao conectar com o servidor. Tente novamente.";
+      ? `Erro ${error.response.status}: ${error.response.data.message}`
+      : error.message.includes("Token")
+        ? "Sessão expirada. Faça login novamente."
+        : "Erro ao conectar com o servidor. Tente novamente.";
 
     setError(errorMessage);
     setUsuarios([]);
+
+    // Redireciona para login se for erro de token
+    if (error.message.includes("Token") || error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
   }
 };
 

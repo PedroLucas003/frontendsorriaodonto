@@ -2,8 +2,8 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NODE_ENV === 'development'
-    ? "http://localhost:4000"
-    : "https://backendsorriaodonto.onrender.com",
+    ? "http://localhost:4000"  // Mantém sem /api
+    : "https://backendsorriaodonto.onrender.com", // Mantém sem /api
 });
 
 // Interceptor para adicionar token automaticamente
@@ -24,16 +24,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Verifica se o erro é 401 (não autorizado) e não é uma tentativa de refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
       try {
-        // Tenta renovar o token usando o endpoint /api/refresh-token (corrigido para incluir /api)
+        // Remove o /api do endpoint de refresh-token para compatibilidade
         const refreshResponse = await axios.post(
           `${process.env.NODE_ENV === 'development' 
-            ? "http://localhost:4000/api" 
-            : "https://backendsorriaodonto.onrender.com/api"}/refresh-token`,
+            ? "http://localhost:4000" 
+            : "https://backendsorriaodonto.onrender.com"}/refresh-token`,
           {},
           {
             headers: {
@@ -43,24 +42,27 @@ api.interceptors.response.use(
         );
         
         const newToken = refreshResponse.data.token;
-        
-        // Atualiza o token no localStorage e no header
         localStorage.setItem("token", newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         
-        // Repete a requisição original com o novo token
         return api(originalRequest);
       } catch (refreshError) {
-        // Se não conseguir renovar, faz logout
         localStorage.removeItem("token");
-        // Redireciona para login com flag de sessão expirada
         window.location.href = "/login?session_expired=1";
         return Promise.reject(refreshError);
       }
     }
     
-    // Para outros erros, apenas rejeita
+    // Tratamento específico para erro 500
+    if (error.response?.status === 500) {
+      console.error("Erro 500 do servidor:", {
+        url: originalRequest.url,
+        response: error.response.data
+      });
+      error.message = "Erro interno do servidor. Tente novamente mais tarde.";
+    }
+    
     return Promise.reject(error);
   }
 );
