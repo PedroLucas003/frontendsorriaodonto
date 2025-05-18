@@ -1051,18 +1051,20 @@ const RegisterUser = () => {
     }
   };
 
-  const filteredUsuarios = usuarios.filter(usuario => {
-    const searchLower = searchTerm.toLowerCase().trim();  // Remove espaços e padroniza
-    const cpfSearch = searchTerm.replace(/\D/g, '');      // Remove formatação do CPF
-
-    return (
-      !searchLower ||  // Se vazio, retorna todos
-      usuario.nomeCompleto?.toLowerCase().includes(searchLower) ||
-      usuario.cpf?.includes(cpfSearch) ||
-      usuario.email?.toLowerCase().includes(searchLower)
-      // usuario.telefone?.replace(/\D/g, '').includes(cpfSearch)  // (Opcional)
-    );
-  });
+const filteredUsuarios = usuarios.filter(usuario => {
+  if (!searchTerm) return true;
+  
+  const searchLower = searchTerm.toLowerCase().trim();
+  const cpfSearch = searchTerm.replace(/\D/g, '');
+  
+  // Verifica se o nome contém o termo de busca (case insensitive)
+  const nomeMatch = usuario.nomeCompleto?.toLowerCase().includes(searchLower);
+  
+  // Verifica se o CPF contém os dígitos buscados (sem formatação)
+  const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfSearch);
+  
+  return nomeMatch || cpfMatch;
+});
 
   const labels = {
     nomeCompleto: "Nome completo",
@@ -1747,7 +1749,7 @@ const RegisterUser = () => {
           <div className="search-bar">
             <input
               type="text"
-              placeholder="Pesquisar por CPF..."
+              placeholder="Pesquisar por nome ou CPF..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
