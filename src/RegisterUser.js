@@ -39,17 +39,13 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
-    // Cria a data sem conversão de fuso horário
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Ajuste para o fuso horário local
-    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
-    // Extrai os componentes da data LOCAL
-    const day = String(adjustedDate.getDate()).padStart(2, '0');
-    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
-    const year = adjustedDate.getFullYear();
+    // Remova o ajuste de fuso horário
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
 
     return `${day}/${month}/${year}`;
   } catch (e) {
@@ -411,14 +407,6 @@ const RegisterUser = () => {
         }
         break;
 
-      case "email":
-        if (!value) {
-          errors.email = "E-mail é obrigatório";
-        } else {
-          delete errors.email;
-        }
-        break;
-
       case "cpf":
         if (!value) {
           errors.cpf = "CPF é obrigatório";
@@ -438,6 +426,7 @@ const RegisterUser = () => {
           delete errors.telefone;
         }
         break;
+
 
       case "dataNascimento":
       case "dataProcedimento":
@@ -515,10 +504,8 @@ const RegisterUser = () => {
       formattedValue = formatFone(value);
     }
     else if (name === "dataNascimento" || name === "dataProcedimento") {
-      // Aplica a máscara de data e validação em tempo real
       formattedValue = formatDateInput(value);
 
-      // Validação imediata quando o campo estiver completo
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}`);
@@ -537,12 +524,17 @@ const RegisterUser = () => {
       }
     }
     else if (name === "valor") {
-      // ... (código existente para o campo valor)
       return;
     }
 
+    // Atualização específica para o campo email (aceita qualquer valor sem transformação)
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
-    validateField(name, formattedValue);
+
+    // Valida todos os campos exceto email
+    if (name !== "email") {
+      validateField(name, formattedValue);
+    }
+
     setError("");
   };
 
@@ -579,7 +571,7 @@ const RegisterUser = () => {
     // Validar todos os campos obrigatórios
     let formIsValid = true;
     const requiredFields = [
-      'nomeCompleto', 'email', 'cpf', 'telefone', 'endereco',
+      'nomeCompleto', 'cpf', 'telefone', 'endereco',
       'dataNascimento', 'dataProcedimento', 'procedimento',
       'denteFace', 'valor', 'modalidadePagamento', 'profissional'
     ];
@@ -644,7 +636,7 @@ const RegisterUser = () => {
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
-      email: formData.email.toLowerCase().trim(),
+      email: formData.email,
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
       endereco: formData.endereco.trim(),
@@ -887,6 +879,7 @@ const RegisterUser = () => {
   const handleVoltar = () => {
     setEditandoId(null);
     setModoVisualizacao(false);
+    setShowProcedimentoSection(true);
     setShowProcedimentoSection(true);
     resetForm();
   };
@@ -1138,7 +1131,6 @@ const RegisterUser = () => {
                   value={formData[key]}
                   onChange={handleChange}
                   className={fieldErrors[key] ? 'error-field' : ''}
-                  disabled={modoVisualizacao && !key.includes("password")}
                 />
                 {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
               </div>
@@ -1162,7 +1154,6 @@ const RegisterUser = () => {
                 className={fieldErrors.dataNascimento ? 'error-field' : ''}
                 placeholder="DD/MM/AAAA"
                 maxLength={10}
-                disabled={modoVisualizacao}
               />
               {fieldErrors.dataNascimento && (
                 <span className="field-error">{fieldErrors.dataNascimento}</span>
@@ -1179,7 +1170,6 @@ const RegisterUser = () => {
                 onChange={handleChange}
                 className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
                 rows={3}
-                disabled={modoVisualizacao}
               />
               {fieldErrors.endereco && <span className="field-error">{fieldErrors.endereco}</span>}
             </div>
@@ -1374,18 +1364,16 @@ const RegisterUser = () => {
         <div className="form-section">
           <div
             className="section-header"
-            onClick={() => !modoVisualizacao && setShowProcedimentoSection(!showProcedimentoSection)}
-            style={{ cursor: modoVisualizacao ? 'default' : 'pointer' }}
+            onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
+            style={{ cursor: 'pointer' }}
           >
             <h2>Dados do Procedimento</h2>
-            {!modoVisualizacao && (
-              <span className="toggle-arrow">
-                {showProcedimentoSection ? '▼' : '►'}
-              </span>
-            )}
+            <span className="toggle-arrow">
+              {showProcedimentoSection ? '▼' : '►'}
+            </span>
           </div>
 
-          {(!modoVisualizacao || showProcedimentoSection) && (
+          {showProcedimentoSection && (
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="procedimento">{labels.procedimento}</label>
@@ -1430,7 +1418,6 @@ const RegisterUser = () => {
                   placeholder="DD/MM/AAAA"
                   maxLength={10}
                   className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                  disabled={modoVisualizacao}
                   onKeyDown={(e) => {
                     if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
                       e.preventDefault();
@@ -1697,8 +1684,15 @@ const RegisterUser = () => {
 
                       return (
                         <div key={procedimento._id} className="procedimento-item">
-                          <div className="procedimento-header">
-                            <h4>Procedimento #{index + 1}</h4>
+                          <div className="procedimento-details single-line">
+                            {procedimento.dataProcedimento && (
+                              <span><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</span>
+                            )}
+                            <span><strong>Procedimento:</strong> {procedimento.procedimento}</span>
+                            <span><strong>Dente/Face:</strong> {procedimento.denteFace}</span>
+                            <span><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</span>
+                            <span><strong>Pagamento:</strong> {procedimento.modalidadePagamento}</span>
+                            <span><strong>Profissional:</strong> {procedimento.profissional}</span>
                             {!proc.isPrincipal && (
                               <div className="procedimento-actions">
                                 <button
@@ -1727,17 +1721,6 @@ const RegisterUser = () => {
                                 </button>
                               </div>
                             )}
-                          </div>
-
-                          <div className="procedimento-details">
-                            <p><strong>Procedimento:</strong> {procedimento.procedimento}</p>
-                            <p><strong>Dente/Face:</strong> {procedimento.denteFace}</p>
-                            {procedimento.dataProcedimento && (
-                              <p><strong>Data:</strong> {formatDateForDisplay(procedimento.dataProcedimento)}</p>
-                            )}
-                            <p><strong>Valor:</strong> {formatValueForDisplay(procedimento.valor)}</p>
-                            <p><strong>Forma de Pagamento:</strong> {procedimento.modalidadePagamento}</p>
-                            <p><strong>Profissional:</strong> {procedimento.profissional}</p>
                           </div>
                         </div>
                       );
