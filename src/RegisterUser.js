@@ -1052,18 +1052,14 @@ const RegisterUser = () => {
   };
 
 const filteredUsuarios = usuarios.filter(usuario => {
-  if (!searchTerm) return true;
+  if (!searchTerm?.trim()) return true;
   
-  const searchLower = searchTerm.toLowerCase().trim();
-  const cpfSearch = searchTerm.replace(/\D/g, '');
-  
-  // Verifica se o nome contém o termo de busca (case insensitive)
-  const nomeMatch = usuario.nomeCompleto?.toLowerCase().includes(searchLower);
-  
-  // Verifica se o CPF contém os dígitos buscados (sem formatação)
-  const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfSearch);
-  
-  return nomeMatch || cpfMatch;
+  const normalize = str => str?.normalize("NFD")?.replace(/[\u0300-\u036f]/g, "")?.toLowerCase() || "";
+  const searchNormalized = normalize(searchTerm);
+  const cpfDigits = searchTerm.replace(/\D/g, '');
+
+  return normalize(usuario.nomeCompleto).includes(searchNormalized) || 
+         usuario.cpf?.replace(/\D/g, '')?.includes(cpfDigits);
 });
 
   const labels = {
