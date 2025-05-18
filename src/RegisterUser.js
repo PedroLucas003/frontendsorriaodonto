@@ -76,7 +76,6 @@ const RegisterUser = () => {
   const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
-    email: "",
     cpf: "",
     telefone: "",
     endereco: "",
@@ -527,10 +526,8 @@ const RegisterUser = () => {
       return;
     }
 
-    // Atualização específica para o campo email (aceita qualquer valor sem transformação)
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
 
-    // Valida todos os campos exceto email
     if (name !== "email") {
       validateField(name, formattedValue);
     }
@@ -636,7 +633,6 @@ const RegisterUser = () => {
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
-      email: formData.email,
       cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
       endereco: formData.endereco.trim(),
@@ -718,7 +714,6 @@ const RegisterUser = () => {
   const resetForm = () => {
     setFormData({
       nomeCompleto: "",
-      email: "",
       cpf: "",
       telefone: "",
       endereco: "",
@@ -1071,7 +1066,6 @@ const RegisterUser = () => {
 
   const labels = {
     nomeCompleto: "Nome completo",
-    email: "E-mail",
     cpf: "CPF",
     telefone: "Telefone",
     endereco: "Endereço",
@@ -1121,7 +1115,7 @@ const RegisterUser = () => {
         <div className="form-section">
           <h2>Dados Pessoais</h2>
           <div className="form-grid">
-            {['nomeCompleto', 'email', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
+            {['nomeCompleto', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
               <div key={key} className="form-group">
                 <label htmlFor={key}>{labels[key]}</label>
                 <input
