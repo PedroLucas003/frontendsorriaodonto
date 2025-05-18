@@ -145,48 +145,42 @@ const RegisterUser = () => {
     fetchUsuarios();
   }, []);
 
-  const fetchUsuarios = async () => {
+const fetchUsuarios = async () => {
   try {
     const token = localStorage.getItem("token");
-
-    // Verifica se o token existe
-    if (!token) {
-      throw new Error("Token de autenticação não encontrado");
-    }
-
-    // Alterado de "/api/users" para "/users" para compatibilidade com seu backend
-    const response = await api.get("/users", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
+    const response = await api.get("/api/users", {
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    // Verifica se a resposta é válida
-    if (response.status !== 200) {
-      throw new Error(`Erro na requisição: Status ${response.status}`);
+    console.log("Resposta completa da API:", response); // Log para depuração
+
+    // Verificação mais robusta da resposta
+    if (!response?.data) {
+      throw new Error("Resposta da API não contém dados");
     }
 
-    // Extrai os dados da resposta de forma segura
-    let dadosUsuarios = [];
+    // Acessa os dados considerando a nova estrutura (response.data.data) ou a antiga (response.data)
+    const dadosRecebidos = response.data.data || response.data;
 
-    if (Array.isArray(response.data)) {
-      dadosUsuarios = response.data;
-    } else if (Array.isArray(response.data?.data)) {
-      dadosUsuarios = response.data.data;
-    } else if (Array.isArray(response.data?.users)) {
-      dadosUsuarios = response.data.users;
-    } else {
-      throw new Error("Formato de dados inválido na resposta");
-    }
+    // Converter para array garantidamente
+    const dadosUsuarios = Array.isArray(dadosRecebidos)
+      ? dadosRecebidos
+      : [];
 
-    // Formatação dos usuários (mantendo sua lógica original)
+    console.log("Dados dos usuários após tratamento:", dadosUsuarios); // Log para depuração
+
+    // Formatação segura dos usuários
     const usuariosFormatados = dadosUsuarios.map(usuario => {
-      const procedimentos = Array.isArray(usuario.procedimentos) ? usuario.procedimentos : [];
+      // Garante que procedimentos sejam arrays
+      const procedimentos = Array.isArray(usuario.procedimentos)
+        ? usuario.procedimentos
+        : [];
+
       const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
         ? usuario.historicoProcedimentos
         : [];
 
+      // Formata datas para exibição
       const formatDate = (date) => {
         try {
           return date ? new Date(date).toLocaleDateString('pt-BR') : 'Não informado';
@@ -210,7 +204,7 @@ const RegisterUser = () => {
       };
     });
 
-    // Ordenação
+    // Ordena por data de criação (mais recentes primeiro)
     usuariosFormatados.sort((a, b) => {
       const dateA = new Date(a.createdAt || 0);
       const dateB = new Date(b.createdAt || 0);
@@ -223,24 +217,16 @@ const RegisterUser = () => {
   } catch (error) {
     console.error("Erro detalhado ao buscar usuários:", {
       message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
+      response: error.response,
+      stack: error.stack
     });
 
     const errorMessage = error.response?.data?.message
-      ? `Erro ${error.response.status}: ${error.response.data.message}`
-      : error.message.includes("Token")
-        ? "Sessão expirada. Faça login novamente."
-        : "Erro ao conectar com o servidor. Tente novamente.";
+      ? `Erro ao carregar usuários: ${error.response.data.message}`
+      : "Erro ao conectar com o servidor. Tente novamente.";
 
     setError(errorMessage);
     setUsuarios([]);
-
-    // Redireciona para login se for erro de token
-    if (error.message.includes("Token") || error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
   }
 };
 
