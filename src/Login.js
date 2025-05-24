@@ -49,11 +49,9 @@ const Login = () => {
       const startTime = performance.now(); // Métrica de performance
       
       const response = await api.post('/api/login', {
-        cpf: cpfRef.current,
-        password: passwordRef.current,
-      }, {
-        timeout: 3000 // Timeout reduzido
-      });
+  cpf: cpfRef.current,
+  password: passwordRef.current
+});
 
       localStorage.setItem('token', response.data.token);
       
@@ -65,17 +63,23 @@ const Login = () => {
       
       await navigationPromise;
     } catch (error) {
-      setIsLoading(false);
-      
-      // Error mapping otimizado
-      const errorMap = {
-        ECONNABORTED: 'Tempo excedido',
-        'Network Error': 'Sem conexão',
-        default: error.response?.data?.message || 'Erro ao fazer login'
-      };
-      
-      setError(errorMap[error.code] || errorMap.default);
-    }
+  setIsLoading(false);
+  
+  const errorMap = {
+    ECONNABORTED: 'A requisição demorou muito, mas você pode tentar novamente',
+    'Network Error': 'Sem conexão com o servidor',
+    default: error.response?.data?.message || 'Erro ao fazer login'
+  };
+  
+  setError(errorMap[error.code] || errorMap.default);
+  
+  // Log detalhado para debugging
+  console.error('Erro completo no login:', {
+    code: error.code,
+    message: error.message,
+    response: error.response?.data
+  });
+}
   };
 
   return (
