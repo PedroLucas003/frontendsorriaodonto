@@ -219,13 +219,13 @@ const RegisterUser = () => {
       setError(errorMessage);
       setUsuarios([]);
 
+      // Opcional: Mostrar notificação mais visível
+      // alert(errorMessage); 
+      // ou usar um toast notification se disponível
     }
   };
-  
 
   const formatCPF = (value) => {
-    if (!value) return ""; // Retorna string vazia se não houver valor
-
     const cleanedValue = value.replace(/\D/g, "");
     if (cleanedValue.length <= 3) return cleanedValue;
     if (cleanedValue.length <= 6) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3)}`;
@@ -407,8 +407,10 @@ const RegisterUser = () => {
         break;
 
       case "cpf":
-        if (value && value.replace(/\D/g, '').length !== 11) {
-          errors.cpf = "CPF deve ter 11 dígitos quando fornecido";
+        if (!value) {
+          errors.cpf = "CPF é obrigatório";
+        } else if (value.replace(/\D/g, '').length !== 11) {
+          errors.cpf = "CPF deve ter 11 dígitos";
         } else {
           delete errors.cpf;
         }
@@ -556,166 +558,157 @@ const RegisterUser = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Validação inicial do formulário
-  if (!validateForm()) {
-    return;
-  }
-
-  // Validar todos os campos obrigatórios (exceto CPF)
-  let formIsValid = true;
-  const requiredFields = [
-    'nomeCompleto', 'telefone', 'endereco',
-    'dataNascimento'
-  ];
-
-  requiredFields.forEach(field => {
-    if (!formData[field]) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [field]: `${labels[field]} é obrigatório`
-      }));
-      formIsValid = false;
-    }
-  });
-
-  if (!formIsValid) {
-    return;
-  }
-
-  // Validar CPF apenas se foi preenchido
-  if (formData.cpf && formData.cpf.replace(/\D/g, '').length !== 11) {
-    setFieldErrors(prev => ({
-      ...prev,
-      cpf: "CPF deve ter 11 dígitos quando fornecido"
-    }));
-    return;
-  }
-
-  // Converter datas para formato ISO
-  const convertDateToISO = (dateString, fieldName) => {
-    if (!dateString || dateString.length !== 10) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: `Data ${fieldName} inválida ou incompleta`
-      }));
-      return null;
+    // Validação inicial do formulário
+    if (!validateForm()) {
+      return;
     }
 
-    try {
-      const [day, month, year] = dateString.split('/');
-      // Usar meio-dia para evitar problemas de timezone
-      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+    // Validar todos os campos obrigatórios
+    let formIsValid = true;
+    const requiredFields = [
+      'nomeCompleto', 'cpf', 'telefone', 'endereco',
+      'dataNascimento'
+    ];
 
-      if (isNaN(dateObj.getTime())) {
+    requiredFields.forEach(field => {
+      if (!formData[field]) {
         setFieldErrors(prev => ({
           ...prev,
-          [fieldName]: `Data ${fieldName} inválida`
+          [field]: `${labels[field]} é obrigatório`
+        }));
+        formIsValid = false;
+      }
+    });
+
+    if (!formIsValid) {
+      return;
+    }
+
+    // Converter datas para formato ISO
+    const convertDateToISO = (dateString, fieldName) => {
+      if (!dateString || dateString.length !== 10) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Data ${fieldName} inválida ou incompleta`
         }));
         return null;
       }
 
-      return dateObj.toISOString();
+      try {
+        const [day, month, year] = dateString.split('/');
+        // Usar meio-dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Data ${fieldName} inválida`
+          }));
+          return null;
+        }
+
+        return dateObj.toISOString();
+      } catch (error) {
+        console.error(`Erro ao converter ${fieldName}:`, error);
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Erro ao processar data ${fieldName}`
+        }));
+        return null;
+      }
+    };
+
+    // Converter datas
+    const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
+    const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
+
+    // Se alguma conversão falhou, retornar
+    if (!dataNascimentoISO || !dataProcedimentoISO) {
+      return;
+    }
+
+    // Preparar dados para envio
+    const dadosParaEnvio = {
+      nomeCompleto: formData.nomeCompleto.trim(),
+      cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+      telefone: formatFone(formData.telefone.replace(/\D/g, '')),
+      endereco: formData.endereco.trim(),
+      dataNascimento: dataNascimentoISO,
+      dataProcedimento: dataProcedimentoISO,
+      ...(!editandoId && { dataNovoProcedimento: dataProcedimentoISO }),
+      detalhesDoencas: formData.detalhesDoencas.trim(),
+      quaisRemedios: formData.quaisRemedios.trim(),
+      quaisMedicamentos: formData.quaisMedicamentos.trim(),
+      quaisAnestesias: formData.quaisAnestesias.trim(),
+      habitos: {
+        frequenciaFumo: formData.frequenciaFumo,
+        frequenciaAlcool: formData.frequenciaAlcool
+      },
+      exames: {
+        exameSangue: formData.exameSangue.trim(),
+        coagulacao: formData.coagulacao.trim(),
+        cicatrizacao: formData.cicatrizacao.trim()
+      },
+      historicoCirurgia: formData.historicoCirurgia.trim(),
+      historicoOdontologico: formData.historicoOdontologico.trim(),
+      sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+      respiracao: formData.respiracao.trim(),
+      peso: Number(formData.peso) || 0,
+       procedimento: formData.procedimento?.trim() || null,
+  denteFace: formData.denteFace?.trim() || null,
+  valor: formData.valor ? convertValueToFloat(formData.valor) : null,
+  modalidadePagamento: formData.modalidadePagamento || null,
+  profissional: formData.profissional?.trim() || null,
+    };
+
+    // Adicionar senha apenas para novo cadastro
+    if (!editandoId) {
+      if (!formData.password || formData.password.length < 6) {
+        setFieldErrors(prev => ({
+          ...prev,
+          password: "A senha deve ter pelo menos 6 caracteres"
+        }));
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setFieldErrors(prev => ({
+          ...prev,
+          confirmPassword: "As senhas não coincidem"
+        }));
+        return;
+      }
+      dadosParaEnvio.password = formData.password;
+      dadosParaEnvio.confirmPassword = formData.confirmPassword;
+    }
+
+    try {
+      const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
+      const method = editandoId ? "put" : "post";
+
+      const response = await api[method](endpoint, dadosParaEnvio);
+
+      if (response.data?.errors) {
+        setFieldErrors(response.data.errors);
+        setError(response.data.message || "Erro de validação");
+        return;
+      }
+
+      alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
+      resetForm();
+      fetchUsuarios();
     } catch (error) {
-      console.error(`Erro ao converter ${fieldName}:`, error);
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: `Erro ao processar data ${fieldName}`
-      }));
-      return null;
+      console.error("Erro ao enviar formulário:", error);
+
+      if (error.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+        setError(error.response.data.message || "Corrija os erros no formulário");
+      } else {
+        setError(error.message || "Erro ao conectar com o servidor");
+      }
     }
   };
-
-  // Converter datas
-  const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
-  const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
-
-  // Se alguma conversão falhou, retornar
-  if (!dataNascimentoISO || !dataProcedimentoISO) {
-    return;
-  }
-
-  // Preparar dados para envio
-  const dadosParaEnvio = {
-    nomeCompleto: formData.nomeCompleto.trim(),
-    cpf: formData.cpf ? formData.cpf.replace(/\D/g, '') : null, // Envia apenas números ou null
-    telefone: formatFone(formData.telefone.replace(/\D/g, '')),
-    endereco: formData.endereco.trim(),
-    dataNascimento: dataNascimentoISO,
-    dataProcedimento: dataProcedimentoISO,
-    ...(!editandoId && { dataNovoProcedimento: dataProcedimentoISO }),
-    detalhesDoencas: formData.detalhesDoencas.trim(),
-    quaisRemedios: formData.quaisRemedios.trim(),
-    quaisMedicamentos: formData.quaisMedicamentos.trim(),
-    quaisAnestesias: formData.quaisAnestesias.trim(),
-    habitos: {
-      frequenciaFumo: formData.frequenciaFumo,
-      frequenciaAlcool: formData.frequenciaAlcool
-    },
-    exames: {
-      exameSangue: formData.exameSangue.trim(),
-      coagulacao: formData.coagulacao.trim(),
-      cicatrizacao: formData.cicatrizacao.trim()
-    },
-    historicoCirurgia: formData.historicoCirurgia.trim(),
-    historicoOdontologico: formData.historicoOdontologico.trim(),
-    sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
-    respiracao: formData.respiracao.trim(),
-    peso: Number(formData.peso) || 0,
-    procedimento: formData.procedimento?.trim() || null,
-    denteFace: formData.denteFace?.trim() || null,
-    valor: formData.valor ? convertValueToFloat(formData.valor) : null,
-    modalidadePagamento: formData.modalidadePagamento || null,
-    profissional: formData.profissional?.trim() || null,
-  };
-
-  // Adicionar senha apenas para novo cadastro
-  if (!editandoId) {
-    if (!formData.password || formData.password.length < 6) {
-      setFieldErrors(prev => ({
-        ...prev,
-        password: "A senha deve ter pelo menos 6 caracteres"
-      }));
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setFieldErrors(prev => ({
-        ...prev,
-        confirmPassword: "As senhas não coincidem"
-      }));
-      return;
-    }
-    dadosParaEnvio.password = formData.password;
-    dadosParaEnvio.confirmPassword = formData.confirmPassword;
-  }
-
-  try {
-    const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
-    const method = editandoId ? "put" : "post";
-
-    const response = await api[method](endpoint, dadosParaEnvio);
-
-    if (response.data?.errors) {
-      setFieldErrors(response.data.errors);
-      setError(response.data.message || "Erro de validação");
-      return;
-    }
-
-    alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
-    resetForm();
-    fetchUsuarios();
-  } catch (error) {
-    console.error("Erro ao enviar formulário:", error);
-
-    if (error.response?.data?.errors) {
-      setFieldErrors(error.response.data.errors);
-      setError(error.response.data.message || "Corrija os erros no formulário");
-    } else {
-      setError(error.message || "Erro ao conectar com o servidor");
-    }
-  }
-};
 
   const resetForm = () => {
     setFormData({
@@ -859,7 +852,7 @@ const RegisterUser = () => {
 
     setFormData({
       ...usuario,
-      cpf: usuario.cpf || "",
+      cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
       dataProcedimento: dataProcedimentoFormatada,
@@ -913,7 +906,7 @@ const RegisterUser = () => {
     setDarkMode(!darkMode);
   };
 
-  const handleAddProcedimento = async (e) => {
+ const handleAddProcedimento = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -921,7 +914,7 @@ const RegisterUser = () => {
       const token = localStorage.getItem("token");
 
       let dateObj = null; // Declaramos a variável fora do bloco condicional
-
+      
       // Validação apenas da data (formato) - agora opcional
       if (procedimentoData.dataNovoProcedimento) {
         const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
@@ -1049,29 +1042,34 @@ const RegisterUser = () => {
     }
   };
 
-  const filteredUsuarios = usuarios.filter(usuario => {
-    if (!searchTerm?.trim()) return true;
+const filteredUsuarios = usuarios.filter(usuario => {
+  if (!searchTerm?.trim()) return true;
+  
+  // Normalização mais robusta para busca
+  const normalizeForSearch = (str) => {
+    if (!str) return '';
+    return str
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  };
 
-    const normalizeForSearch = (str) => {
-      if (!str) return '';
-      return str
-        .toString()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim();
-    };
-
-    const searchNormalized = normalizeForSearch(searchTerm);
-    const cpfDigits = searchTerm.replace(/\D/g, '');
-
-    const nomeMatch = normalizeForSearch(usuario.nomeCompleto).includes(searchNormalized);
-
-    // Verifica se há CPF e se corresponde à busca
-    const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfDigits);
-
-    return nomeMatch || cpfMatch;
-  });
+  const searchNormalized = normalizeForSearch(searchTerm);
+  const cpfDigits = searchTerm.replace(/\D/g, '');
+  
+  // Verifica se o nome contém o termo de busca (parcial match)
+  const nomeMatch = normalizeForSearch(usuario.nomeCompleto).includes(searchNormalized);
+  
+  // Verifica se o CPF contém os dígitos (busca parcial)
+  const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfDigits);
+  
+  // Verifica também se o termo de busca está no início do nome
+  const startsWithMatch = normalizeForSearch(usuario.nomeCompleto).startsWith(searchNormalized);
+  
+  return nomeMatch || cpfMatch || startsWithMatch;
+});
 
   const labels = {
     nomeCompleto: "Nome completo",
