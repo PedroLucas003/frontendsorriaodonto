@@ -225,13 +225,15 @@ const RegisterUser = () => {
     }
   };
 
-  const formatCPF = (value) => {
-    const cleanedValue = value.replace(/\D/g, "");
-    if (cleanedValue.length <= 3) return cleanedValue;
-    if (cleanedValue.length <= 6) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3)}`;
-    if (cleanedValue.length <= 9) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6)}`;
-    return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6, 9)}-${cleanedValue.slice(9, 11)}`;
-  };
+const formatCPF = (value) => {
+  if (!value) return ""; // Retorna string vazia se não houver valor
+  
+  const cleanedValue = value.replace(/\D/g, "");
+  if (cleanedValue.length <= 3) return cleanedValue;
+  if (cleanedValue.length <= 6) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3)}`;
+  if (cleanedValue.length <= 9) return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6)}`;
+  return `${cleanedValue.slice(0, 3)}.${cleanedValue.slice(3, 6)}.${cleanedValue.slice(6, 9)}-${cleanedValue.slice(9, 11)}`;
+};
 
   const formatFone = (value) => {
     const cleanedValue = value.replace(/\D/g, "");
@@ -407,14 +409,12 @@ const RegisterUser = () => {
         break;
 
       case "cpf":
-        if (!value) {
-          errors.cpf = "CPF é obrigatório";
-        } else if (value.replace(/\D/g, '').length !== 11) {
-          errors.cpf = "CPF deve ter 11 dígitos";
-        } else {
-          delete errors.cpf;
-        }
-        break;
+  if (value && value.replace(/\D/g, '').length !== 11) {
+    errors.cpf = "CPF deve ter 11 dígitos quando fornecido";
+  } else {
+    delete errors.cpf;
+  }
+  break;
 
       case "telefone":
         if (!value) {
@@ -632,7 +632,7 @@ const RegisterUser = () => {
     // Preparar dados para envio
     const dadosParaEnvio = {
       nomeCompleto: formData.nomeCompleto.trim(),
-      cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+      cpf: formData.cpf ? formatCPF(formData.cpf.replace(/\D/g, '')) : null,
       telefone: formatFone(formData.telefone.replace(/\D/g, '')),
       endereco: formData.endereco.trim(),
       dataNascimento: dataNascimentoISO,
@@ -1045,7 +1045,6 @@ const RegisterUser = () => {
 const filteredUsuarios = usuarios.filter(usuario => {
   if (!searchTerm?.trim()) return true;
   
-  // Normalização mais robusta para busca
   const normalizeForSearch = (str) => {
     if (!str) return '';
     return str
@@ -1059,16 +1058,12 @@ const filteredUsuarios = usuarios.filter(usuario => {
   const searchNormalized = normalizeForSearch(searchTerm);
   const cpfDigits = searchTerm.replace(/\D/g, '');
   
-  // Verifica se o nome contém o termo de busca (parcial match)
   const nomeMatch = normalizeForSearch(usuario.nomeCompleto).includes(searchNormalized);
   
-  // Verifica se o CPF contém os dígitos (busca parcial)
+  // Verifica se há CPF e se corresponde à busca
   const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfDigits);
   
-  // Verifica também se o termo de busca está no início do nome
-  const startsWithMatch = normalizeForSearch(usuario.nomeCompleto).startsWith(searchNormalized);
-  
-  return nomeMatch || cpfMatch || startsWithMatch;
+  return nomeMatch || cpfMatch;
 });
 
   const labels = {
