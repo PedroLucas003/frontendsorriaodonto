@@ -1045,31 +1045,30 @@ const RegisterUser = () => {
 const filteredUsuarios = usuarios.filter(usuario => {
   if (!searchTerm?.trim()) return true;
   
-  // Função melhorada de normalização
+  // Normalização mais robusta para busca
   const normalizeForSearch = (str) => {
     if (!str) return '';
     return str
       .toString()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
   };
 
   const searchNormalized = normalizeForSearch(searchTerm);
-  const cpfDigits = searchTerm.replace(/\D/g, ''); // Extrai apenas dígitos do CPF
+  const cpfDigits = searchTerm.replace(/\D/g, '');
   
-  // Verifica se qualquer campo contém o termo de busca
-  const fieldsToSearch = [
-    usuario.nomeCompleto,
-    usuario.cpf?.replace(/\D/g, ''), // CPF sem formatação
-    usuario.telefone?.replace(/\D/g, '') // Telefone sem formatação
-  ].filter(Boolean); // Remove valores vazios
-
-  return fieldsToSearch.some(field => 
-    normalizeForSearch(field).includes(searchNormalized) || 
-    field.includes(cpfDigits)
-  );
+  // Verifica se o nome contém o termo de busca (parcial match)
+  const nomeMatch = normalizeForSearch(usuario.nomeCompleto).includes(searchNormalized);
+  
+  // Verifica se o CPF contém os dígitos (busca parcial)
+  const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfDigits);
+  
+  // Verifica também se o termo de busca está no início do nome
+  const startsWithMatch = normalizeForSearch(usuario.nomeCompleto).startsWith(searchNormalized);
+  
+  return nomeMatch || cpfMatch || startsWithMatch;
 });
 
   const labels = {
