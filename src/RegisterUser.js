@@ -74,38 +74,37 @@ const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showProcedimentoSection, setShowProcedimentoSection] = useState(true);
   const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
-  const [formData, setFormData] = useState({
-    nomeCompleto: "",
-    cpf: "",
-    telefone: "",
-    endereco: "",
-    dataNascimento: "",
-    dataProcedimento: "",
-    dataNovoProcedimento: "",
-    password: "",
-    confirmPassword: "",
-    detalhesDoencas: "",
-    quaisRemedios: "",
-    quaisMedicamentos: "",
-    quaisAnestesias: "",
-    frequenciaFumo: "Nunca",
-    frequenciaAlcool: "Nunca",
-    historicoCirurgia: "",
-    exameSangue: "",
-    coagulacao: "",
-    cicatrizacao: "",
-    historicoOdontologico: "",
-    sangramentoPosProcedimento: "",
-    respiracao: "",
-    peso: "",
-    procedimento: "",
-    denteFace: "",
-    valor: "",
-    valorNumerico: 0,
-    modalidadePagamento: "",
-    profissional: "",
-    procedimentos: []
-  });
+const [formData, setFormData] = useState({
+  nomeCompleto: "",
+  cpf: "",
+  telefone: "",
+  endereco: "",
+  dataNascimento: "",
+  dataNovoProcedimento: "", // Mantido
+  password: "",
+  confirmPassword: "",
+  detalhesDoencas: "",
+  quaisRemedios: "",
+  quaisMedicamentos: "",
+  quaisAnestesias: "",
+  frequenciaFumo: "Nunca",
+  frequenciaAlcool: "Nunca",
+  historicoCirurgia: "",
+  exameSangue: "",
+  coagulacao: "",
+  cicatrizacao: "",
+  historicoOdontologico: "",
+  sangramentoPosProcedimento: "",
+  respiracao: "",
+  peso: "",
+  procedimento: "",
+  denteFace: "",
+  valor: "",
+  valorNumerico: 0,
+  modalidadePagamento: "",
+  profissional: "",
+  procedimentos: []
+});
 
   const [usuarios, setUsuarios] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
@@ -588,81 +587,79 @@ const RegisterUser = () => {
     }
 
     // Converter datas para formato ISO
-    const convertDateToISO = (dateString, fieldName) => {
-      if (!dateString || dateString.length !== 10) {
+  const convertDateToISO = (dateString, fieldName) => {
+    if (!dateString || dateString.length !== 10) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldName]: `Data ${fieldName} inválida ou incompleta`
+      }));
+      return null;
+    }
+
+    try {
+      const [day, month, year] = dateString.split('/');
+      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+
+      if (isNaN(dateObj.getTime())) {
         setFieldErrors(prev => ({
           ...prev,
-          [fieldName]: `Data ${fieldName} inválida ou incompleta`
+          [fieldName]: `Data ${fieldName} inválida`
         }));
         return null;
       }
 
-      try {
-        const [day, month, year] = dateString.split('/');
-        // Usar meio-dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({
-            ...prev,
-            [fieldName]: `Data ${fieldName} inválida`
-          }));
-          return null;
-        }
-
-        return dateObj.toISOString();
-      } catch (error) {
-        console.error(`Erro ao converter ${fieldName}:`, error);
-        setFieldErrors(prev => ({
-          ...prev,
-          [fieldName]: `Erro ao processar data ${fieldName}`
-        }));
-        return null;
-      }
-    };
+      return dateObj.toISOString();
+    } catch (error) {
+      console.error(`Erro ao converter ${fieldName}:`, error);
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldName]: `Erro ao processar data ${fieldName}`
+      }));
+      return null;
+    }
+  };
 
     // Converter datas
     const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
-    const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
+const dataNovoProcedimentoISO = convertDateToISO(formData.dataNovoProcedimento, "dataNovoProcedimento");
 
-    // Se alguma conversão falhou, retornar
-    if (!dataNascimentoISO || !dataProcedimentoISO) {
-      return;
-    }
+// Se alguma conversão falhou, retornar
+if (!dataNascimentoISO || !dataNovoProcedimentoISO) {
+  return;
+}
 
-    // Preparar dados para envio
-    const dadosParaEnvio = {
-      nomeCompleto: formData.nomeCompleto.trim(),
-      cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
-      telefone: formatFone(formData.telefone.replace(/\D/g, '')),
-      endereco: formData.endereco.trim(),
-      dataNascimento: dataNascimentoISO,
-      dataProcedimento: dataProcedimentoISO,
-      ...(!editandoId && { dataNovoProcedimento: dataProcedimentoISO }),
-      detalhesDoencas: formData.detalhesDoencas.trim(),
-      quaisRemedios: formData.quaisRemedios.trim(),
-      quaisMedicamentos: formData.quaisMedicamentos.trim(),
-      quaisAnestesias: formData.quaisAnestesias.trim(),
-      habitos: {
-        frequenciaFumo: formData.frequenciaFumo,
-        frequenciaAlcool: formData.frequenciaAlcool
-      },
-      exames: {
-        exameSangue: formData.exameSangue.trim(),
-        coagulacao: formData.coagulacao.trim(),
-        cicatrizacao: formData.cicatrizacao.trim()
-      },
-      historicoCirurgia: formData.historicoCirurgia.trim(),
-      historicoOdontologico: formData.historicoOdontologico.trim(),
-      sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
-      respiracao: formData.respiracao.trim(),
-      peso: Number(formData.peso) || 0,
-      procedimento: formData.procedimento.trim(),
-      denteFace: formData.denteFace.trim(),
-      valor: convertValueToFloat(formData.valor),
-      modalidadePagamento: formData.modalidadePagamento,
-      profissional: formData.profissional.trim()
-    };
+// Preparar dados para envio
+const dadosParaEnvio = {
+  nomeCompleto: formData.nomeCompleto.trim(),
+  cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+  telefone: formatFone(formData.telefone.replace(/\D/g, '')),
+  endereco: formData.endereco.trim(),
+  dataNascimento: dataNascimentoISO,
+  dataNovoProcedimento: dataNovoProcedimentoISO, // Usando apenas dataNovoProcedimento
+  detalhesDoencas: formData.detalhesDoencas.trim(),
+  quaisRemedios: formData.quaisRemedios.trim(),
+  quaisMedicamentos: formData.quaisMedicamentos.trim(),
+  quaisAnestesias: formData.quaisAnestesias.trim(),
+  habitos: {
+    frequenciaFumo: formData.frequenciaFumo,
+    frequenciaAlcool: formData.frequenciaAlcool
+  },
+  exames: {
+    exameSangue: formData.exameSangue.trim(),
+    coagulacao: formData.coagulacao.trim(),
+    cicatrizacao: formData.cicatrizacao.trim()
+  },
+  historicoCirurgia: formData.historicoCirurgia.trim(),
+  historicoOdontologico: formData.historicoOdontologico.trim(),
+  sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+  respiracao: formData.respiracao.trim(),
+  peso: Number(formData.peso) || 0,
+  procedimento: formData.procedimento.trim(),
+  denteFace: formData.denteFace.trim(),
+  valor: convertValueToFloat(formData.valor),
+  modalidadePagamento: formData.modalidadePagamento,
+  profissional: formData.profissional.trim()
+};
 
     // Adicionar senha apenas para novo cadastro
     if (!editandoId) {
@@ -786,7 +783,6 @@ const RegisterUser = () => {
 
     // Formatação das datas usando a nova função
     let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
-    let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
     let dataNovoProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataNovoProcedimento);
 
     // Formatação do valor monetário
@@ -856,7 +852,6 @@ const RegisterUser = () => {
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
-      dataProcedimento: dataProcedimentoFormatada,
       dataNovoProcedimento: dataNovoProcedimentoFormatada,
       valor: usuario.valor || 0,
       valorFormatado: valorFormatado,
@@ -1054,12 +1049,30 @@ const RegisterUser = () => {
 const filteredUsuarios = usuarios.filter(usuario => {
   if (!searchTerm?.trim()) return true;
   
-  const normalize = str => str?.normalize("NFD")?.replace(/[\u0300-\u036f]/g, "")?.toLowerCase() || "";
-  const searchNormalized = normalize(searchTerm);
-  const cpfDigits = searchTerm.replace(/\D/g, '');
+  // Normalização mais robusta para busca
+  const normalizeForSearch = (str) => {
+    if (!str) return '';
+    return str
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  };
 
-  return normalize(usuario.nomeCompleto).includes(searchNormalized) || 
-         usuario.cpf?.replace(/\D/g, '')?.includes(cpfDigits);
+  const searchNormalized = normalizeForSearch(searchTerm);
+  const cpfDigits = searchTerm.replace(/\D/g, '');
+  
+  // Verifica se o nome contém o termo de busca (parcial match)
+  const nomeMatch = normalizeForSearch(usuario.nomeCompleto).includes(searchNormalized);
+  
+  // Verifica se o CPF contém os dígitos (busca parcial)
+  const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfDigits);
+  
+  // Verifica também se o termo de busca está no início do nome
+  const startsWithMatch = normalizeForSearch(usuario.nomeCompleto).startsWith(searchNormalized);
+  
+  return nomeMatch || cpfMatch || startsWithMatch;
 });
 
   const labels = {
@@ -1354,149 +1367,149 @@ const filteredUsuarios = usuarios.filter(usuario => {
         </div>
 
         <div className="form-section">
-          <div
-            className="section-header"
-            onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
-            style={{ cursor: 'pointer' }}
-          >
-            <h2>Dados do Procedimento</h2>
-            <span className="toggle-arrow">
-              {showProcedimentoSection ? '▼' : '►'}
-            </span>
-          </div>
+  <div
+    className="section-header"
+    onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
+    style={{ cursor: 'pointer' }}
+  >
+    <h2>Dados do Procedimento</h2>
+    <span className="toggle-arrow">
+      {showProcedimentoSection ? '▼' : '►'}
+    </span>
+  </div>
 
-          {showProcedimentoSection && (
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="procedimento">{labels.procedimento}</label>
-                <input
-                  type="text"
-                  id="procedimento"
-                  name="procedimento"
-                  value={formData.procedimento}
-                  onChange={handleChange}
-                  placeholder="Digite o procedimento realizado"
-                  className={fieldErrors.procedimento ? 'error-field' : ''}
-                />
-                {fieldErrors.procedimento && (
-                  <span className="field-error">{fieldErrors.procedimento}</span>
-                )}
-              </div>
+  {showProcedimentoSection && (
+    <div className="form-grid">
+      <div className="form-group">
+        <label htmlFor="procedimento">{labels.procedimento}</label>
+        <input
+          type="text"
+          id="procedimento"
+          name="procedimento"
+          value={formData.procedimento}
+          onChange={handleChange}
+          placeholder="Digite o procedimento realizado"
+          className={fieldErrors.procedimento ? 'error-field' : ''}
+        />
+        {fieldErrors.procedimento && (
+          <span className="field-error">{fieldErrors.procedimento}</span>
+        )}
+      </div>
 
-              <div className="form-group">
-                <label htmlFor="denteFace">{labels.denteFace}</label>
-                <input
-                  type="text"
-                  id="denteFace"
-                  name="denteFace"
-                  value={formData.denteFace}
-                  onChange={handleChange}
-                  placeholder="Ex: 11, 22, Face Lingual, etc."
-                  className={fieldErrors.denteFace ? 'error-field' : ''}
-                />
-                {fieldErrors.denteFace && (
-                  <span className="field-error">{fieldErrors.denteFace}</span>
-                )}
-              </div>
+      <div className="form-group">
+        <label htmlFor="denteFace">{labels.denteFace}</label>
+        <input
+          type="text"
+          id="denteFace"
+          name="denteFace"
+          value={formData.denteFace}
+          onChange={handleChange}
+          placeholder="Ex: 11, 22, Face Lingual, etc."
+          className={fieldErrors.denteFace ? 'error-field' : ''}
+        />
+        {fieldErrors.denteFace && (
+          <span className="field-error">{fieldErrors.denteFace}</span>
+        )}
+      </div>
 
-              <div className="form-group">
-                <label htmlFor="dataProcedimento">Data do Procedimento</label>
-                <input
-                  type="text"
-                  id="dataProcedimento"
-                  name="dataProcedimento"
-                  value={formData.dataProcedimento}
-                  onChange={handleChange}
-                  placeholder="DD/MM/AAAA"
-                  maxLength={10}
-                  className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                  onKeyDown={(e) => {
-                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-                {fieldErrors.dataProcedimento && (
-                  <span className="field-error">{fieldErrors.dataProcedimento}</span>
-                )}
-              </div>
+      <div className="form-group">
+        <label htmlFor="dataNovoProcedimento">Data do Procedimento</label>
+        <input
+          type="text"
+          id="dataNovoProcedimento"
+          name="dataNovoProcedimento"
+          value={formData.dataNovoProcedimento}
+          onChange={handleChange}
+          placeholder="DD/MM/AAAA"
+          maxLength={10}
+          className={fieldErrors.dataNovoProcedimento ? 'error-field' : ''}
+          onKeyDown={(e) => {
+            if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+              e.preventDefault();
+            }
+          }}
+        />
+        {fieldErrors.dataNovoProcedimento && (
+          <span className="field-error">{fieldErrors.dataNovoProcedimento}</span>
+        )}
+      </div>
 
-              <div className="form-group">
-                <label htmlFor="valor">{labels.valor}</label>
-                <input
-                  type="text"
-                  id="valor"
-                  name="valor"
-                  value={formData.valorFormatado || ''}
-                  onChange={(e) => {
-                    const rawValue = e.target.value.replace(/\D/g, '');
-                    const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
-                    const formattedValue = numericValue.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    });
+      <div className="form-group">
+        <label htmlFor="valor">{labels.valor}</label>
+        <input
+          type="text"
+          id="valor"
+          name="valor"
+          value={formData.valorFormatado || ''}
+          onChange={(e) => {
+            const rawValue = e.target.value.replace(/\D/g, '');
+            const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+            const formattedValue = numericValue.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
 
-                    setFormData(prev => ({
-                      ...prev,
-                      valor: numericValue,
-                      valorFormatado: formattedValue
-                    }));
-                  }}
-                  onBlur={() => {
-                    if (!formData.valorFormatado) {
-                      setFormData(prev => ({
-                        ...prev,
-                        valor: 0,
-                        valorFormatado: 'R$ 0,00'
-                      }));
-                    }
-                  }}
-                  placeholder="R$ 0,00"
-                  className={fieldErrors.valor ? 'error-field' : ''}
-                />
-                {fieldErrors.valor && (
-                  <span className="field-error">{fieldErrors.valor}</span>
-                )}
-              </div>
+            setFormData(prev => ({
+              ...prev,
+              valor: numericValue,
+              valorFormatado: formattedValue
+            }));
+          }}
+          onBlur={() => {
+            if (!formData.valorFormatado) {
+              setFormData(prev => ({
+                ...prev,
+                valor: 0,
+                valorFormatado: 'R$ 0,00'
+              }));
+            }
+          }}
+          placeholder="R$ 0,00"
+          className={fieldErrors.valor ? 'error-field' : ''}
+        />
+        {fieldErrors.valor && (
+          <span className="field-error">{fieldErrors.valor}</span>
+        )}
+      </div>
 
-              <div className="form-group">
-                <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
-                <select
-                  id="modalidadePagamento"
-                  name="modalidadePagamento"
-                  value={formData.modalidadePagamento}
-                  onChange={handleChange}
-                  className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
-                >
-                  <option value="">Selecione...</option>
-                  {modalidadesPagamento.map((opcao) => (
-                    <option key={opcao} value={opcao}>{opcao}</option>
-                  ))}
-                </select>
-                {fieldErrors.modalidadePagamento && (
-                  <span className="field-error">{fieldErrors.modalidadePagamento}</span>
-                )}
-              </div>
+      <div className="form-group">
+        <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
+        <select
+          id="modalidadePagamento"
+          name="modalidadePagamento"
+          value={formData.modalidadePagamento}
+          onChange={handleChange}
+          className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
+        >
+          <option value="">Selecione...</option>
+          {modalidadesPagamento.map((opcao) => (
+            <option key={opcao} value={opcao}>{opcao}</option>
+          ))}
+        </select>
+        {fieldErrors.modalidadePagamento && (
+          <span className="field-error">{fieldErrors.modalidadePagamento}</span>
+        )}
+      </div>
 
-              <div className="form-group">
-                <label htmlFor="profissional">{labels.profissional}</label>
-                <input
-                  type="text"
-                  id="profissional"
-                  name="profissional"
-                  value={formData.profissional}
-                  onChange={handleChange}
-                  className={fieldErrors.profissional ? 'error-field' : ''}
-                />
-                {fieldErrors.profissional && (
-                  <span className="field-error">{fieldErrors.profissional}</span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+      <div className="form-group">
+        <label htmlFor="profissional">{labels.profissional}</label>
+        <input
+          type="text"
+          id="profissional"
+          name="profissional"
+          value={formData.profissional}
+          onChange={handleChange}
+          className={fieldErrors.profissional ? 'error-field' : ''}
+        />
+        {fieldErrors.profissional && (
+          <span className="field-error">{fieldErrors.profissional}</span>
+        )}
+      </div>
+    </div>
+  )}
+</div>
 
         {editandoId && (
           <div className="form-section">
