@@ -569,8 +569,7 @@ const RegisterUser = () => {
     let formIsValid = true;
     const requiredFields = [
       'nomeCompleto', 'cpf', 'telefone', 'endereco',
-      'dataNascimento', 'dataProcedimento', 'procedimento',
-      'denteFace', 'valor', 'modalidadePagamento', 'profissional'
+      'dataNascimento'
     ];
 
     requiredFields.forEach(field => {
@@ -657,11 +656,11 @@ const RegisterUser = () => {
       sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
       respiracao: formData.respiracao.trim(),
       peso: Number(formData.peso) || 0,
-      procedimento: formData.procedimento.trim(),
-      denteFace: formData.denteFace.trim(),
-      valor: convertValueToFloat(formData.valor),
-      modalidadePagamento: formData.modalidadePagamento,
-      profissional: formData.profissional.trim()
+       procedimento: formData.procedimento?.trim() || null,
+  denteFace: formData.denteFace?.trim() || null,
+  valor: formData.valor ? convertValueToFloat(formData.valor) : null,
+  modalidadePagamento: formData.modalidadePagamento || null,
+  profissional: formData.profissional?.trim() || null,
     };
 
     // Adicionar senha apenas para novo cadastro
@@ -907,62 +906,54 @@ const RegisterUser = () => {
     setDarkMode(!darkMode);
   };
 
-  const handleAddProcedimento = async (e) => {
+ const handleAddProcedimento = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
       const token = localStorage.getItem("token");
 
-      // Validação dos campos obrigatórios
-      const errors = {};
-      if (!procedimentoData.procedimento?.trim()) errors.procedimento = "Procedimento é obrigatório";
-      if (!procedimentoData.denteFace?.trim()) errors.denteFace = "Dente/Face é obrigatório";
-      if (!procedimentoData.valor) errors.valor = "Valor é obrigatório";
-      if (!procedimentoData.modalidadePagamento) errors.modalidadePagamento = "Modalidade de pagamento é obrigatória";
-      if (!procedimentoData.profissional?.trim()) errors.profissional = "Profissional é obrigatório";
-      if (!procedimentoData.dataNovoProcedimento) errors.dataNovoProcedimento = "Data do procedimento é obrigatória";
-
-      if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors);
-        return;
-      }
-
-      // Validação e conversão da data
-      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-      if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
-        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
-        return;
-      }
-
-      const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
-        return;
-      }
-
-      // Conversão e validação do valor
-      let valorNumerico;
-      try {
-        valorNumerico = convertValueToFloat(procedimentoData.valor);
-        if (isNaN(valorNumerico)) {
-          throw new Error("Valor inválido");
+      let dateObj = null; // Declaramos a variável fora do bloco condicional
+      
+      // Validação apenas da data (formato) - agora opcional
+      if (procedimentoData.dataNovoProcedimento) {
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
+          setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
+          return;
         }
-      } catch (error) {
-        setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-        return;
+
+        const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
+        dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
+          return;
+        }
       }
 
-      // Preparação dos dados para envio
+      // Conversão do valor (se existir)
+      let valorNumerico = 0;
+      if (procedimentoData.valor) {
+        try {
+          valorNumerico = convertValueToFloat(procedimentoData.valor);
+          if (isNaN(valorNumerico)) {
+            throw new Error("Valor inválido");
+          }
+        } catch (error) {
+          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+          return;
+        }
+      }
+
+      // Preparação dos dados para envio (todos os campos são opcionais)
       const dadosParaEnvio = {
-        procedimento: procedimentoData.procedimento.trim(),
-        denteFace: procedimentoData.denteFace.trim(),
-        valor: valorNumerico,
-        modalidadePagamento: procedimentoData.modalidadePagamento,
-        profissional: procedimentoData.profissional.trim(),
-        dataNovoProcedimento: dateObj.toISOString()
+        procedimento: procedimentoData.procedimento?.trim() || null,
+        denteFace: procedimentoData.denteFace?.trim() || null,
+        valor: valorNumerico || null,
+        modalidadePagamento: procedimentoData.modalidadePagamento || null,
+        profissional: procedimentoData.profissional?.trim() || null,
+        dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
       };
 
       let response;
@@ -991,8 +982,8 @@ const RegisterUser = () => {
         ...dadosParaEnvio,
         isPrincipal: false,
         valorFormatado: formatValueForDisplay(valorNumerico),
-        dataProcedimento: dateObj.toISOString(),
-        dataNovoProcedimento: dateObj.toISOString()
+        dataProcedimento: dateObj ? dateObj.toISOString() : null,
+        dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
       };
 
       // Atualização do estado local
