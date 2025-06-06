@@ -39,10 +39,16 @@ function formatDateForDisplay(dateString) {
   if (!dateString) return 'Data não informada';
 
   try {
+    // Se já estiver no formato DD/MM/AAAA, retorna diretamente
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      return dateString;
+    }
+
+    // Cria a data no fuso horário local para exibição
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Data inválida';
 
-    // Remova o ajuste de fuso horário
+    // Usa métodos locais para exibição
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -288,60 +294,60 @@ const RegisterUser = () => {
   };
 
   const handleProcedimentoChange = (e) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
 
-    // Tratamento para valor monetário
-    if (name === "valor") {
-      // Remove tudo exceto números e vírgula
-      const rawValue = value.replace(/[^\d,]/g, '');
+  // Tratamento para valor monetário
+  if (name === "valor") {
+    // Remove tudo exceto números e vírgula
+    const rawValue = value.replace(/[^\d,]/g, '');
 
-      // Converte para número (substitui vírgula por ponto para parseFloat)
-      const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+    // Converte para número (substitui vírgula por ponto para parseFloat)
+    const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
 
-      // Formata para exibição
-      const valorFormatado = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+    // Formata para exibição
+    const valorFormatado = numericValue.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
 
-      setProcedimentoData(prev => ({
-        ...prev,
-        valor: numericValue,
-        valorFormatado
-      }));
-      return;
-    }
+    setProcedimentoData(prev => ({
+      ...prev,
+      valor: numericValue,
+      valorFormatado
+    }));
+    return;
+  }
 
-    // Tratamento para data do procedimento
-    if (name === "dataNovoProcedimento") {
-      // Aplica a máscara de data
-      const formattedDate = formatDateInput(value);
+  // Tratamento para data do procedimento
+  if (name === "dataNovoProcedimento") {
+    // Aplica a máscara de data
+    const formattedDate = formatDateInput(value);
 
-      // Validação quando o campo estiver completo
-      if (formattedDate.length === 10) {
-        const [day, month, year] = formattedDate.split('/');
+    // Validação quando o campo estiver completo
+    if (formattedDate.length === 10) {
+      const [day, month, year] = formattedDate.split('/');
 
-        // Cria a data no meio do dia para evitar problemas de timezone
-        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+      // Cria a data no meio do dia para evitar problemas de timezone
+      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
 
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-        } else {
-          const errors = { ...fieldErrors };
-          delete errors[name];
-          setFieldErrors(errors);
-        }
+      if (isNaN(dateObj.getTime())) {
+        setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+      } else {
+        const errors = { ...fieldErrors };
+        delete errors[name];
+        setFieldErrors(errors);
       }
-
-      setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
-      return;
     }
 
-    // Para todos os outros campos
-    setProcedimentoData(prev => ({ ...prev, [name]: value }));
-  };
+    setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
+    return;
+  }
+
+  // Para todos os outros campos
+  setProcedimentoData(prev => ({ ...prev, [name]: value }));
+};
 
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
@@ -656,11 +662,11 @@ const RegisterUser = () => {
       sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
       respiracao: formData.respiracao.trim(),
       peso: Number(formData.peso) || 0,
-       procedimento: formData.procedimento?.trim() || null,
-  denteFace: formData.denteFace?.trim() || null,
-  valor: formData.valor ? convertValueToFloat(formData.valor) : null,
-  modalidadePagamento: formData.modalidadePagamento || null,
-  profissional: formData.profissional?.trim() || null,
+      procedimento: formData.procedimento?.trim() || null,
+      denteFace: formData.denteFace?.trim() || null,
+      valor: formData.valor ? convertValueToFloat(formData.valor) : null,
+      modalidadePagamento: formData.modalidadePagamento || null,
+      profissional: formData.profissional?.trim() || null,
     };
 
     // Adicionar senha apenas para novo cadastro
@@ -906,170 +912,172 @@ const RegisterUser = () => {
     setDarkMode(!darkMode);
   };
 
- const handleAddProcedimento = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddProcedimento = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
 
-    try {
-      const token = localStorage.getItem("token");
+  try {
+    const token = localStorage.getItem("token");
 
-      let dateObj = null; // Declaramos a variável fora do bloco condicional
-      
-      // Validação apenas da data (formato) - agora opcional
-      if (procedimentoData.dataNovoProcedimento) {
-        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-        if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
-          setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
-          return;
-        }
-
-        const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-        dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
-          return;
-        }
+    // Validação da data
+    let dateObj = null;
+    if (procedimentoData.dataNovoProcedimento) {
+      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+      if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
+        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
+        return;
       }
 
-      // Conversão do valor (se existir)
-      let valorNumerico = 0;
-      if (procedimentoData.valor) {
-        try {
-          valorNumerico = convertValueToFloat(procedimentoData.valor);
-          if (isNaN(valorNumerico)) {
-            throw new Error("Valor inválido");
-          }
-        } catch (error) {
-          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-          return;
-        }
-      }
+      const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
+      dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
 
-      // Preparação dos dados para envio (todos os campos são opcionais)
-      const dadosParaEnvio = {
-        procedimento: procedimentoData.procedimento?.trim() || null,
-        denteFace: procedimentoData.denteFace?.trim() || null,
-        valor: valorNumerico || null,
-        modalidadePagamento: procedimentoData.modalidadePagamento || null,
-        profissional: procedimentoData.profissional?.trim() || null,
-        dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
-      };
-
-      let response;
-      if (editandoProcedimentoId) {
-        // Atualizar procedimento existente
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        // Adicionar novo procedimento
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
-      // Cria objeto do procedimento para atualização local
-      const procedimentoAtualizado = {
-        ...(editandoProcedimentoId ?
-          { _id: editandoProcedimentoId } :
-          { _id: response.data.procedimento._id || Date.now().toString() }
-        ),
-        ...dadosParaEnvio,
-        isPrincipal: false,
-        valorFormatado: formatValueForDisplay(valorNumerico),
-        dataProcedimento: dateObj ? dateObj.toISOString() : null,
-        dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
-      };
-
-      // Atualização do estado local
-      setFormData(prev => {
-        if (editandoProcedimentoId) {
-          // Atualiza o procedimento existente
-          return {
-            ...prev,
-            procedimentos: prev.procedimentos.map(p =>
-              p._id === editandoProcedimentoId ? procedimentoAtualizado : p
-            )
-          };
-        } else {
-          // Adiciona novo procedimento
-          return {
-            ...prev,
-            procedimentos: [
-              ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
-              ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
-              procedimentoAtualizado // Novo procedimento no final
-            ]
-          };
-        }
-      });
-
-      // Reset do formulário e estado
-      setProcedimentoData({
-        procedimento: "",
-        denteFace: "",
-        valor: 0,
-        valorFormatado: "",
-        modalidadePagamento: "",
-        profissional: "",
-        dataNovoProcedimento: ""
-      });
-
-      setEditandoProcedimentoId(null);
-      setShowProcedimentoForm(false);
-      setError("");
-      setFieldErrors({});
-
-      // Feedback visual para o usuário
-      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
-
-    } catch (error) {
-      console.error("Erro ao adicionar/editar procedimento:", error);
-      const errorMessage = error.response?.data?.message ||
-        error.message ||
-        "Erro ao adicionar/editar procedimento. Tente novamente.";
-
-      setError(errorMessage);
-
-      if (error.response?.data?.errors) {
-        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+      if (isNaN(dateObj.getTime())) {
+        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
+        return;
       }
     }
-  };
 
-const filteredUsuarios = usuarios.filter(usuario => {
-  if (!searchTerm?.trim()) return true;
-  
-  // Normalização mais robusta para busca
-  const normalizeForSearch = (str) => {
-    if (!str) return '';
-    return str
-      .toString()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
-  };
+    // Conversão do valor
+    let valorNumerico = 0;
+    if (procedimentoData.valor) {
+      try {
+        valorNumerico = convertValueToFloat(procedimentoData.valor);
+        if (isNaN(valorNumerico)) {
+          throw new Error("Valor inválido");
+        }
+      } catch (error) {
+        setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+        return;
+      }
+    }
 
-  const searchNormalized = normalizeForSearch(searchTerm);
-  const cpfDigits = searchTerm.replace(/\D/g, '');
-  
-  // Verifica se o nome contém o termo de busca (parcial match)
-  const nomeMatch = normalizeForSearch(usuario.nomeCompleto).includes(searchNormalized);
-  
-  // Verifica se o CPF contém os dígitos (busca parcial)
-  const cpfMatch = usuario.cpf?.replace(/\D/g, '').includes(cpfDigits);
-  
-  // Verifica também se o termo de busca está no início do nome
-  const startsWithMatch = normalizeForSearch(usuario.nomeCompleto).startsWith(searchNormalized);
-  
-  return nomeMatch || cpfMatch || startsWithMatch;
-});
+    // Preparação dos dados para envio
+    const dadosParaEnvio = {
+      procedimento: procedimentoData.procedimento?.trim() || null,
+      denteFace: procedimentoData.denteFace?.trim() || null,
+      valor: valorNumerico || null,
+      modalidadePagamento: procedimentoData.modalidadePagamento || null,
+      profissional: procedimentoData.profissional?.trim() || null,
+      dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
+    };
+
+    // Depuração - pode remover depois
+    console.log('Dados sendo enviados:', dadosParaEnvio);
+
+    let response;
+    if (editandoProcedimentoId) {
+      // Atualizar procedimento existente
+      response = await api.put(
+        `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+        dadosParaEnvio,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      // Adicionar novo procedimento
+      response = await api.put(
+        `/api/users/${editandoId}/procedimento`,
+        dadosParaEnvio,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    // Cria objeto do procedimento para atualização local
+    const procedimentoAtualizado = {
+      ...(editandoProcedimentoId ?
+        { _id: editandoProcedimentoId } :
+        { _id: response.data.procedimento._id || Date.now().toString() }
+      ),
+      ...dadosParaEnvio,
+      isPrincipal: false,
+      valorFormatado: formatValueForDisplay(valorNumerico),
+      dataProcedimento: dateObj ? dateObj.toISOString() : null,
+      dataNovoProcedimento: dateObj ? dateObj.toISOString() : null,
+      createdAt: new Date().toISOString()
+    };
+
+    // Atualização do estado local
+    setFormData(prev => {
+      if (editandoProcedimentoId) {
+        // Atualiza o procedimento existente
+        return {
+          ...prev,
+          procedimentos: prev.procedimentos.map(p =>
+            p._id === editandoProcedimentoId ? procedimentoAtualizado : p
+          )
+        };
+      } else {
+        // Adiciona novo procedimento
+        return {
+          ...prev,
+          procedimentos: [
+            ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
+            ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
+            procedimentoAtualizado // Novo procedimento no final
+          ]
+        };
+      }
+    });
+
+    // Reset do formulário e estado
+    setProcedimentoData({
+      procedimento: "",
+      denteFace: "",
+      valor: 0,
+      valorFormatado: "",
+      modalidadePagamento: "",
+      profissional: "",
+      dataNovoProcedimento: ""
+    });
+
+    setEditandoProcedimentoId(null);
+    setShowProcedimentoForm(false);
+    setError("");
+    setFieldErrors({});
+
+    alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+
+  } catch (error) {
+    console.error("Erro ao adicionar/editar procedimento:", error);
+    const errorMessage = error.response?.data?.message ||
+      error.message ||
+      "Erro ao adicionar/editar procedimento. Tente novamente.";
+
+    setError(errorMessage);
+
+    if (error.response?.data?.errors) {
+      setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+    }
+  }
+};
+
+  const filteredUsuarios = usuarios.filter(usuario => {
+    if (!searchTerm.trim()) return true;
+
+    // Normaliza o termo de busca (remove acentos e coloca em minúsculas)
+    const normalize = (str) => {
+      return str
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    };
+
+    const searchLower = normalize(searchTerm);
+
+    // Verifica em vários campos do usuário
+    const fieldsToCheck = [
+      usuario.nomeCompleto,
+      usuario.cpf?.replace(/\D/g, ''), // Remove formatação do CPF
+      usuario.telefone?.replace(/\D/g, ''), // Remove formatação do telefone
+      usuario.procedimento,
+      usuario.profissional
+    ];
+
+    // Retorna true se o termo de busca for encontrado em qualquer campo
+    return fieldsToCheck.some(field =>
+      field && normalize(field).includes(searchLower)
+    );
+  });
 
   const labels = {
     nomeCompleto: "Nome completo",
