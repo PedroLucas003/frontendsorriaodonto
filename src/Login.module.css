@@ -1,109 +1,193 @@
 .loginContainer {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
+    padding: 20px;
+
+    /* --- CAMINHO CORRIGIDO PARA A IMAGEM DE FUNDO --- */
+    background-image: url('../public/backgroundlogin.jpeg'); /* AJUSTADO AQUI! */
+    /* Você também pode tentar '../../public/backgroundlogin.jpeg'
+       se 'src' e 'public' estiverem no mesmo nível e 'Login.module.css' estiver dentro de 'src/components' por exemplo.
+       Pela sua estrutura de pastas, 'src' e 'public' são irmãos, então '../public' é o correto. */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
-.loginBox {
-    background: rgba(20, 20, 20, 0.9); /* Fundo mais escuro */
+.loginForm {
+    /* Estilos para o efeito glassmorphism */
+    background: rgba(255, 255, 255, 0.15); /* Branco translúcido */
     border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); /* Sombra mais intensa */
-    backdrop-filter: blur(6.8px);
-    -webkit-backdrop-filter: blur(6.8px);
-    border: 1px solid rgba(0, 0, 0, 0.7);
-    padding: 30px;
-    width: 420px;
-    text-align: center;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    backdrop-filter: blur(10px); /* Efeito de desfoque de vidro */
+    -webkit-backdrop-filter: blur(10px); /* Compatibilidade WebKit */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Borda translúcida */
+
+    padding: 40px;
+    width: 100%;
+    max-width: 450px;
+    transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: absolute;
+    /* Se .loginContainer já centraliza, essas 3 linhas podem ser redundantes, mas as mantive para segurança */
+    position: absolute; /* Para centralizar a box em relação à viewport, se o flex do container não for suficiente */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
 
-h1 {
-    color: #fff;
-    margin-bottom: 20px;
+.loginForm:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); /* Sombra um pouco mais forte no hover */
 }
 
-input {
-    width: 90%;
-    max-width: 350px;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+.loginForm h2 {
+    color: #fff;
+    margin-bottom: 25px;
+    font-size: 24px;
+    font-weight: 600;
+    text-align: center;
+    width: 100%;
+}
+
+.loginForm input {
+    width: 100%;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: 1px solid #444;
+    border-radius: 8px;
+    font-size: 15px;
+    background-color: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    /* box-sizing: border-box; já global */
+    color: #333;
+}
+
+.loginForm input:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.5);
+    background-color: #fff;
+}
+
+.loginBtn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
+    background: #000;
+    color: #fff;
+    border-radius: 8px;
+    border: none;
+    width: 100%;
+    max-width: 200px;
+    height: 48px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 20px auto;
+    padding: 0;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.buttonText {
+    display: inline-block;
+    transition: all 0.3s ease;
+    position: absolute;
+}
+
+/* Não há .pdfIcon no login, então não precisamos de estilos de hover para ele aqui */
+
+.loginBtn:hover:not(:disabled) {
+    background: #000;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.loginBtn:hover:not(:disabled) .buttonText {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.error, .sucesso {
+    margin: 1.5rem auto 0;
+    padding: 12px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    font-size: 14px;
+    transition: all 0.3s ease;
     text-align: center;
 }
 
 .error {
-    color: red;
-    margin-top: 10px;
+    background-color: rgba(255, 235, 238, 0.9);
+    color: #d32f2f;
+    border: 1px solid #ef9a9a;
 }
 
-/* Botão estilizado */
-.btnLogin {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    background: #ffffff;
-    color: black;
-    border-radius: 15px;
-    border: none;
-    width: 140px;
-    height: 40px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: background-color 0.8s, color 0.8s;
-    margin: 10px auto; /* Centraliza o botão */
+.sucesso {
+    background-color: rgba(232, 245, 233, 0.9);
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
 }
 
-.btnLogin:hover {
-    background: #000000;
-    color: #ffffff;
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
 }
 
-/* Texto dentro do botão */
-.btnText {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.8s;
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
-/* Ícone escondido por padrão */
-.btnLogin i {
-    position: absolute;
-    top: 200%; /* Começa fora do botão */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.8s;
-    font-size: 20px; /* Tamanho do ícone */
-}
-
-/* Quando passar o mouse, o ícone sobe */
-.btnLogin:hover i {
-    top: 50%;
-}
-
-/* O texto desce ao passar o mouse */
-.btnLogin:hover .btnText {
-    top: -200%;
+.loginBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 @media (max-width: 500px) {
-    .loginBox {
-        width: 90%;
+    .loginForm {
+        padding: 30px 20px;
+        border-radius: 10px;
+    }
+    
+    .loginForm h2 {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+    
+    .loginForm input {
+        padding: 12px 16px;
+    }
+    
+    .loginBtn {
+        height: 46px;
+        font-size: 15px;
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .loginForm {
+      width: 90%;
+      padding: 15px;
+    }
+    
+    .loginForm input {
+      font-size: 14px;
     }
 }

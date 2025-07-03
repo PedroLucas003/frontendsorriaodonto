@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import api from './api/api';
 import { useNavigate } from 'react-router-dom';
-import styles from './Login.module.css';
+import styles from './Login.module.css'; // Importa o CSS ESPECÍFICO para Login
 
 // Cache de regex para evitar recriação
 const NON_DIGIT_REGEX = /\D/g;
@@ -46,75 +46,77 @@ const Login = () => {
     setError('');
 
     try {
-      const startTime = performance.now(); // Métrica de performance
+      const startTime = performance.now();
       
       const response = await api.post('/api/login', {
-  cpf: cpfRef.current,
-  password: passwordRef.current
-});
+        cpf: cpfRef.current,
+        password: passwordRef.current
+      });
 
       localStorage.setItem('token', response.data.token);
       
-      // Otimização: Pré-carrega a próxima rota
-      const navigationPromise = navigate('/register');
+      const navigationPromise = navigate('/register'); // Verifique esta rota
       
-      // Métrica de tempo (para monitoramento)
       console.log(`Login completed in ${performance.now() - startTime}ms`);
       
       await navigationPromise;
     } catch (error) {
-  setIsLoading(false);
-  
-  const errorMap = {
-    ECONNABORTED: 'A requisição demorou muito, mas você pode tentar novamente',
-    'Network Error': 'Sem conexão com o servidor',
-    default: error.response?.data?.message || 'Erro ao fazer login'
-  };
-  
-  setError(errorMap[error.code] || errorMap.default);
-  
-  // Log detalhado para debugging
-  console.error('Erro completo no login:', {
-    code: error.code,
-    message: error.message,
-    response: error.response?.data
-  });
-}
+      setIsLoading(false);
+      
+      const errorMap = {
+        ECONNABORTED: 'A requisição demorou muito, mas você pode tentar novamente',
+        'Network Error': 'Sem conexão com o servidor',
+        default: error.response?.data?.message || 'Erro ao fazer login'
+      };
+      
+      setError(errorMap[error.code] || errorMap.default);
+      
+      console.error('Erro completo no login:', {
+        code: error.code,
+        message: error.message,
+        response: error.response?.data
+      });
+    }
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <div className={styles.loginBox}>
-        <h1>Login</h1>
+    <div className={styles.loginContainer}> {/* Classe específica para o container de Login */}
+      <div className={styles.loginForm}> {/* Classe específica para o formulário de Login */}
+        <h2 className={styles.loginFormH2}>Login</h2> {/* Usando h2 no CSS e referenciando aqui */}
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="Digite seu CPF"
             onChange={(e) => {
               const value = e.target.value.replace(NON_DIGIT_REGEX, '');
-              e.target.value = formatCPF(value); // Atualização direta
+              e.target.value = formatCPF(value);
             }}
             maxLength={14}
             required
+            className={styles.loginFormInput} /* Classe específica para inputs do Login */
           />
           <input
             type="password"
             placeholder="Digite sua senha"
             onChange={(e) => (passwordRef.current = e.target.value)}
             required
+            className={styles.loginFormInput} /* Classe específica para inputs do Login */
           />
           <button 
             type="submit" 
-            className={styles.btnLogin}
+            className={styles.loginBtn} /* Classe específica para o botão de Login */
             disabled={isLoading}
           >
-            {isLoading ? 'Carregando...' : 'Entrar'}
+            <span className={styles.buttonText}>{isLoading ? 'Carregando...' : 'Entrar'}</span>
+            {/* O ícone FaFilePdf NÃO vai aqui, pois é do Prontuário */}
           </button>
         </form>
         {error && <p className={styles.error}>{error}</p>}
+        {/* Você pode adicionar a mensagem de sucesso se necessário para o login */}
+        {/* {!error && !isLoading && !cpfRef.current && <p className={styles.sucesso}>Login efetuado com sucesso!</p>} */}
       </div>
     </div>
   );
 };
 
-export default React.memo(Login); // Memoização do componente
+export default React.memo(Login);

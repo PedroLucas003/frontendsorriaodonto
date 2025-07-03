@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import api from "./api/api";
-import styles from "./Prontuario.module.css";
+import styles from "./Prontuario.module.css"; // Importa o CSS ESPECÍFICO para Prontuário
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FaFilePdf } from "react-icons/fa";
@@ -59,7 +59,6 @@ function Prontuario() {
   const gerarPDF = (dados) => {
     const doc = new jsPDF();
 
-    // Cabeçalho
     doc.setFontSize(18);
     doc.text("Clínica Sorria Odonto", 105, 15, { align: "center" });
     doc.setFontSize(10);
@@ -67,7 +66,6 @@ function Prontuario() {
     doc.setFontSize(14);
     doc.text("Prontuário do Paciente", 105, 30, { align: "center" });
 
-    // Seções do prontuário
     const secoes = {
       "Dados Pessoais": [
         { campo: "Nome Completo", valor: dados.nomeCompleto },
@@ -103,17 +101,14 @@ function Prontuario() {
 
     let y = 40;
 
-    // Adiciona as seções principais
     for (const secao in secoes) {
       doc.setFontSize(12);
       doc.text(secao, 14, y);
       
-      const linhas = secoes[secao].map(item => [item.campo, item.valor || "-"]);
-      
       autoTable(doc, {
         startY: y + 5,
         head: [["Campo", "Valor"]],
-        body: linhas,
+        body: secoes[secao].map(item => [item.campo, item.valor || "-"]),
         theme: "grid",
         headStyles: { fillColor: [41, 128, 185] },
         styles: { fontSize: 10 },
@@ -123,7 +118,6 @@ function Prontuario() {
       y = doc.lastAutoTable.finalY + 10;
     }
 
-    // Adiciona seção de Procedimentos
     doc.addPage();
     y = 20;
     doc.setFontSize(14);
@@ -157,7 +151,6 @@ function Prontuario() {
 
         y = doc.lastAutoTable.finalY + 10;
         
-        // Adiciona nova página se necessário
         if (y > 250 && index < dados.procedimentos.length - 1) {
           doc.addPage();
           y = 20;
@@ -167,32 +160,33 @@ function Prontuario() {
       doc.text("Nenhum procedimento registrado", 14, y);
     }
 
-    // Gera o PDF
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     window.open(url);
   };
 
   return (
-    <div className={styles.container}>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <h2>Buscar Prontuário</h2>
+    <div className={styles.container}> {/* Classe do Prontuario.module.css */}
+      <form onSubmit={handleSubmit} className={styles.form}> {/* Classe do Prontuario.module.css */}
+        <h2 className={styles.formH2}>Buscar Prontuário</h2> {/* `form h2` do CSS */}
         <input
           type="text"
           placeholder="CPF"
           value={cpf}
           onChange={(e) => setCpf(formatarCPF(e.target.value))}
           maxLength={14}
+          className={styles.formInput} /* `form input` do CSS */
         />
         <input
           type="password"
           placeholder="Senha"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
+          className={styles.formInput} /* `form input` do CSS */
         />
-        <button type="submit" className={styles.btnDownload}>
+        <button type="submit" className={styles.btnDownload}> {/* `btnDownload` do CSS */}
           <span className={styles.buttonText}>Buscar</span>
-          <FaFilePdf className={styles.pdfIcon} />
+          <FaFilePdf className={styles.pdfIcon} /> {/* Mantenha o ícone para o prontuário */}
         </button>
         {error && <p className={styles.error}>{error}</p>}
         {enviado && !error && <p className={styles.sucesso}>Prontuário gerado com sucesso!</p>}

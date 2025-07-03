@@ -6,8 +6,16 @@ function MainPage() {
   const navigate = useNavigate();
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 1170);
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
       if (isScrolled !== scrolled) {
@@ -16,7 +24,10 @@ function MainPage() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [scrolled]);
 
   const toggleMobileMenu = () => {
@@ -46,33 +57,42 @@ function MainPage() {
             </div>
           </div>
 
-          <button className={styles.mobileBtn} onClick={toggleMobileMenu}>
-            <i className={`fa-solid ${mobileMenuActive ? 'fa-x' : 'fa-bars'}`}></i>
-          </button>
+          {isMobile && (
+            <button
+              className={styles.mobileBtn}
+              onClick={toggleMobileMenu}
+              aria-expanded={mobileMenuActive}
+              aria-label="Menu de navegação"
+            >
+              <i className={`fa-solid ${mobileMenuActive ? 'fa-x' : 'fa-bars'}`}></i>
+            </button>
+          )}
         </nav>
 
-        <div className={`${styles.mobileMenu} ${mobileMenuActive ? styles.active : ''}`}>
-          <div className={styles.mobileButtons}>
-            <button
-              onClick={() => {
-                navigate('/prontuario');
-                setMobileMenuActive(false);
-              }}
-              className={`${styles.navButton} ${styles.primaryButton}`}
-            >
-              Prontuário
-            </button>
-            <button
-              onClick={() => {
-                navigate('/login');
-                setMobileMenuActive(false);
-              }}
-              className={`${styles.navButton} ${styles.secondaryButton}`}
-            >
-              Login
-            </button>
+        {isMobile && (
+          <div className={`${styles.mobileMenu} ${mobileMenuActive ? styles.active : ''}`}>
+            <div className={styles.mobileButtons}>
+              <button
+                onClick={() => {
+                  navigate('/prontuario');
+                  setMobileMenuActive(false);
+                }}
+                className={`${styles.navButton} ${styles.primaryButton}`}
+              >
+                Prontuário
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/login');
+                  setMobileMenuActive(false);
+                }}
+                className={`${styles.navButton} ${styles.secondaryButton}`}
+              >
+                Login
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <main className={styles.content}>
@@ -90,89 +110,153 @@ function MainPage() {
 
             <div className={styles.ctaButtons}>
               <a href="#services" className={`${styles.btnDefault} ${styles.primaryButton}`}>
-                Nossos serviços
+                Nossos especialistas
               </a>
 
-              <a href="tel:+55555555555" className={styles.phoneButton}>
+              <a href="https://wa.me/5581998757234" className={styles.phoneButton}>
                 <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
                   <i className="fa-solid fa-phone"></i>
                 </button>
-                (51) 92342-3243
+                (81) 99875-7234
               </a>
             </div>
 
             <div className={styles.socialMediaButtons}>
-              <a href="https://wa.me/SEUNUMERO" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://wa.me/5581998757234"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+              >
                 <i className="fa-brands fa-whatsapp"></i>
               </a>
-              <a href="https://instagram.com/suaconta" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://www.instagram.com/sorriaodontofn?igsh=MWFuaGxqd25mNHM3Zw=="
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
                 <i className="fa-brands fa-instagram"></i>
-              </a>
-              <a href="https://facebook.com/suapagina" target="_blank" rel="noopener noreferrer">
-                <i className="fa-brands fa-facebook"></i>
               </a>
             </div>
           </div>
 
           <div className={styles.banner}>
-            <img src="https://placehold.co/600x800/518dfc/white?text=Sorria+Odonto" alt="Dentista atendendo paciente" />
+            <img
+              src="/Gêmeos.png"
+              alt="Dentista atendendo paciente"
+              className={styles.responsiveImage}
+            />
           </div>
         </section>
 
         <section id="services" className={styles.servicesSection}>
-          <h2 className={styles.sectionTitle}>Serviços</h2>
-          <h3 className={styles.sectionSubtitle}>Nossos tratamentos especializados</h3>
+          <h2 className={styles.sectionTitle}>Nossos Especialistas</h2>
+          <h3 className={styles.sectionSubtitle}>Conheça nossa equipe de profissionais</h3>
 
           <div className={styles.servicesGrid}>
+            {/* Dra. Dérica Barbosa */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-tooth"></i>
               </div>
-              <img src="https://placehold.co/300x200/f5f5f5/518dfc?text=Clareamento" className={styles.serviceImage} alt="Clareamento Dental" />
-              <h3 className={styles.serviceTitle}>Clareamento Dental</h3>
+              <img src="/derica.jpeg" className={styles.serviceImage} alt="Dra. Dérica Barbosa" />
+              <h3 className={styles.serviceTitle}>Dra. Dérica Barbosa</h3>
               <span className={styles.serviceDescription}>
-                Tratamento para deixar seus dentes mais brancos e brilhantes
+                CRO-PE 13478<br />
+                Ortodontia, Cirurgia de Siso, Clínica geral
               </span>
-              <div className={styles.servicePrice}>
-                <h4>Consultar valores</h4>
-                <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
-                  <i className="fa-solid fa-calendar-check"></i>
-                </button>
-              </div>
             </div>
 
+            {/* Dra. Lenise Nascimento */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-teeth"></i>
               </div>
-              <img src="https://placehold.co/300x200/f5f5f5/518dfc?text=Ortodontia" className={styles.serviceImage} alt="Ortodontia" />
-              <h3 className={styles.serviceTitle}>Ortodontia</h3>
+              <img src="/dfoto.jpeg" className={styles.serviceImage} alt="Dra. Lenise Nascimento" />
+              <h3 className={styles.serviceTitle}>Dra. Lenise Nascimento</h3>
               <span className={styles.serviceDescription}>
-                Aparelhos fixos e móveis para corrigir o alinhamento dos dentes
+                CRO-PE 11455<br />
+                Prótese, Cirurgia de siso, Clínica geral
               </span>
-              <div className={styles.servicePrice}>
-                <h4>Consultar valores</h4>
-                <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
-                  <i className="fa-solid fa-calendar-check"></i>
-                </button>
-              </div>
             </div>
 
+            {/* Dr. Tiago Silva */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-toothbrush"></i>
+                <i className="fa-solid fa-tooth"></i>
               </div>
-              <img src="https://placehold.co/300x200/f5f5f5/518dfc?text=Limpeza" className={styles.serviceImage} alt="Limpeza Profissional" />
-              <h3 className={styles.serviceTitle}>Limpeza Profissional</h3>
+              <img src="/tfoto.jpeg" className={styles.serviceImage} alt="Dr. Tiago Silva" />
+              <h3 className={styles.serviceTitle}>Dr. Tiago Silva</h3>
               <span className={styles.serviceDescription}>
-                Remoção de tártaro e placa bacteriana para manter sua saúde bucal
+                CRO-PE 19868<br />
+                Clínico geral
               </span>
-              <div className={styles.servicePrice}>
-                <h4>Consultar valores</h4>
-                <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
-                  <i className="fa-solid fa-calendar-check"></i>
-                </button>
+            </div>
+
+            {/* Dra. Letícia Araújo */}
+            <div className={styles.serviceCard}>
+              <div className={styles.serviceIcon}>
+                <i className="fa-solid fa-face-smile"></i>
               </div>
+              <img src="/leticia.jpeg" className={styles.serviceImage} alt="Dra. Letícia Araújo" />
+              <h3 className={styles.serviceTitle}>Dra. Letícia Araújo</h3>
+              <span className={styles.serviceDescription}>
+                CRO-PE 17791<br />
+                Atendimento infantil, Clínica geral
+              </span>
+            </div>
+
+            {/* Dra. Rafaela Silva */}
+            <div className={styles.serviceCard}>
+              <div className={styles.serviceIcon}>
+                <i className="fa-solid fa-teeth-open"></i>
+              </div>
+              <img src="/rfoto.jpeg" className={styles.serviceImage} alt="Dra. Rafaela Silva" />
+              <h3 className={styles.serviceTitle}>Dra. Rafaela Silva</h3>
+              <span className={styles.serviceDescription}>
+                CRO-PE 14461<br />
+                Prótese, Clínica geral
+              </span>
+            </div>
+
+            {/* Dr. Marcelo Ferreira */}
+            <div className={styles.serviceCard}>
+              <div className={styles.serviceIcon}>
+                <i className="fa-solid fa-teeth"></i>
+              </div>
+              <img src="/marcelo.jpeg" className={styles.serviceImage} alt="Dr. Marcelo Ferreira" />
+              <h3 className={styles.serviceTitle}>Dr. Marcelo Ferreira</h3>
+              <span className={styles.serviceDescription}>
+                CRO-PE 16077<br />
+                Ortodontia e Clínica Geral
+              </span>
+            </div>
+
+            {/* Dra. Rayane Ketima */}
+            <div className={styles.serviceCard}>
+              <div className={styles.serviceIcon}>
+                <i className="fa-solid fa-teeth-open"></i>
+              </div>
+              <img src="/rayane.jpeg" className={styles.serviceImage} alt="Dra. Rayane Ketima" />
+              <h3 className={styles.serviceTitle}>Dra. Rayane Ketima</h3>
+              <span className={styles.serviceDescription}>
+                CRO-PE 14887<br />
+                Cirurgia e Clínica Geral
+              </span>
+            </div>
+
+            {/* Dra. Samille Patrizzia */}
+            <div className={styles.serviceCard}>
+              <div className={styles.serviceIcon}>
+                <i className="fa-solid fa-teeth-open"></i>
+              </div>
+              <img src="/samille.jpeg" className={styles.serviceImage} alt="Dra. Samille Patrizzia" />
+              <h3 className={styles.serviceTitle}>Dra. Samille Patrizzia</h3>
+              <span className={styles.serviceDescription}>
+                CRO-PE 11460<br />
+                Endodontia (Canal de Molar)
+              </span>
             </div>
           </div>
         </section>
@@ -184,10 +268,10 @@ function MainPage() {
 
             <div className={styles.feedbacks}>
               <div className={styles.feedback}>
-                <img src="https://placehold.co/100x100/f5f5f5/518dfc?text=AV" className={styles.feedbackAvatar} alt="Avatar" />
+                <img src="/derica.jpeg" className={styles.feedbackAvatar} alt="Derica" />
                 <div className={styles.feedbackContent}>
                   <p>
-                    Ana Silva
+                    Derica
                     <span>
                       <i className="fa-solid fa-star"></i>
                       <i className="fa-solid fa-star"></i>
@@ -203,10 +287,10 @@ function MainPage() {
               </div>
 
               <div className={styles.feedback}>
-                <img src="https://placehold.co/100x100/f5f5f5/518dfc?text=AV" className={styles.feedbackAvatar} alt="Avatar" />
+                <img src="/marcelo.jpeg" className={styles.feedbackAvatar} alt="Marcelo" />
                 <div className={styles.feedbackContent}>
                   <p>
-                    Carlos Oliveira
+                    Marcelo
                     <span>
                       <i className="fa-solid fa-star"></i>
                       <i className="fa-solid fa-star"></i>
@@ -220,6 +304,25 @@ function MainPage() {
                   </p>
                 </div>
               </div>
+
+              <div className={styles.feedback}>
+                <img src="/rayane.jpeg" className={styles.feedbackAvatar} alt="Rayane" />
+                <div className={styles.feedbackContent}>
+                  <p>
+                    Rayane
+                    <span>
+                      <i className="fa-solid fa-star"></i>
+                      <i className="fa-solid fa-star"></i>
+                      <i className="fa-solid fa-star"></i>
+                      <i className="fa-solid fa-star"></i>
+                      <i className="fa-solid fa-star"></i>
+                    </span>
+                  </p>
+                  <p>
+                    "Adorei o resultado das minhas facetas! O dentista foi super profissional e cuidadoso."
+                  </p>
+                </div>
+              </div>
             </div>
 
             <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
@@ -228,26 +331,6 @@ function MainPage() {
           </div>
         </section>
       </main>
-
-      <footer className={styles.footer}>
-        <div className={styles.footerItems}>
-          <span className={styles.copyright}>
-            &copy; {new Date().getFullYear()} Sorria Odonto
-          </span>
-
-          <div className={styles.socialMediaButtons}>
-            <a href="https://wa.me/SEUNUMERO" target="_blank" rel="noopener noreferrer">
-              <i className="fa-brands fa-whatsapp"></i>
-            </a>
-            <a href="https://instagram.com/suaconta" target="_blank" rel="noopener noreferrer">
-              <i className="fa-brands fa-instagram"></i>
-            </a>
-            <a href="https://facebook.com/suapagina" target="_blank" rel="noopener noreferrer">
-              <i className="fa-brands fa-facebook"></i>
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

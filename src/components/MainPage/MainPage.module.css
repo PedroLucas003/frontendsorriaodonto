@@ -1,3 +1,9 @@
+/* MainPage.module.css */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 .container {
   font-family: 'Poppins', sans-serif;
   background-color: #f5f5f5;
@@ -9,7 +15,7 @@
   padding: 15px 8%;
   position: fixed;
   top: 0;
-  background-color: transparent;
+  background-color: #f5f5f5;
   z-index: 1000;
   transition: all 0.3s ease;
 }
@@ -27,28 +33,24 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  position: relative;
 }
 
 .navLogo {
   font-size: 1.5rem;
   color: #518dfc;
   font-weight: bold;
-  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .navButtonsContainer {
   display: flex;
-  justify-content: center;
-  width: 100%;
-  position: absolute;
-  left: 0;
+  flex-grow: 1;
+  justify-content: flex-end;
 }
 
 .navButtons {
   display: flex;
   gap: 12px;
-  position: relative;
 }
 
 .navButton {
@@ -85,30 +87,56 @@
   font-size: 1.5rem;
   cursor: pointer;
   color: #518dfc;
+  z-index: 1002;
+  flex-shrink: 0;
 }
 
 .mobileMenu {
   display: none;
-  width: 100%;
-  background-color: rgba(245, 245, 245, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease;
+  z-index: 999;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+}
+
+.mobileMenu::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .mobileMenu.active {
+  max-height: 300px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
+  padding: 20px;
+}
+
+.mobileMenu.active::before {
+  opacity: 1;
 }
 
 .mobileButtons {
-  display: none;
+  display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
   width: 100%;
   max-width: 300px;
-  margin-top: 1rem;
 }
 
 .mobileButtons .navButton {
@@ -117,6 +145,7 @@
 
 .content {
   padding-top: 80px;
+  background-color: #f5f5f5;
 }
 
 .homeSection {
@@ -124,14 +153,16 @@
   min-height: calc(100vh - 91px);
   position: relative;
   padding: 0 8%;
+  background-color: inherit;
+  align-items: center;
 }
 
 .cta {
-  width: 35%;
+  width: 40%;
   display: flex;
   flex-direction: column;
   gap: 28px;
-  margin-top: 5%;
+  z-index: 3;
 }
 
 .title {
@@ -181,17 +212,23 @@
 }
 
 .banner {
-  display: flex;
-  align-items: start;
-  justify-content: end;
-  width: 70%;
+  position: absolute;
+  right: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50%;
+  max-width: 600px;
   z-index: 2;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .banner img {
-  height: 100%;
-  max-height: 80vh;
   width: auto;
+  height: 80vh;
+  max-height: 800px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .shape {
@@ -236,6 +273,7 @@
   justify-content: center;
   min-height: 100vh;
   padding: 60px 8%;
+  background-color: inherit;
 }
 
 .sectionTitle {
@@ -253,8 +291,8 @@
 
 .servicesGrid {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
   margin-top: 32px;
 }
@@ -265,12 +303,16 @@
   align-items: center;
   border-radius: 20px;
   gap: 18px;
-  width: 25%;
   padding: 20px;
   background-color: white;
   box-shadow: 0px 0px 12px 4px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.serviceCard:hover {
+  transform: translateY(-5px);
 }
 
 .serviceIcon {
@@ -293,6 +335,7 @@
   height: 200px;
   object-fit: cover;
   border-radius: 12px;
+  object-position: center top;
 }
 
 .serviceTitle {
@@ -331,6 +374,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 8%;
+  background-color: inherit;
 }
 
 .testimonialsContent {
@@ -364,6 +408,7 @@
   height: 100px;
   border-radius: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 
 .feedbackContent p:first-child {
@@ -374,23 +419,6 @@
 
 .feedbackContent p:first-child span {
   color: #518dfc;
-}
-
-.footer {
-  background-color: #e6f0ff;
-  padding: 40px 8% 20px;
-}
-
-.footerItems {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 24px;
-}
-
-.copyright {
-  color: #1d1d1d;
-  font-weight: 500;
 }
 
 .btnDefault {
@@ -422,36 +450,45 @@
   .mobileBtn {
     display: block;
   }
+}
 
-  .mobileButtons {
-    display: flex;
-  }
-
+@media screen and (max-width: 992px) {
   .homeSection {
-    min-height: 100%;
-    padding-top: 0px;
     flex-direction: column;
-  }
-
-  .banner,
-  .banner img,
-  .shape {
-    display: none;
+    padding-top: 40px;
+    padding-bottom: 60px;
+    text-align: center;
   }
 
   .cta {
     width: 100%;
-    text-align: center;
     align-items: center;
-    margin-top: 2rem;
   }
 
-  .servicesGrid {
-    flex-wrap: wrap;
+  .banner {
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    margin-top: 40px;
   }
 
-  .serviceCard {
-    width: calc(50% - 12px);
+  .banner img {
+    height: auto;
+    max-height: 500px;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .shape {
+    width: 100%;
+    height: 50%;
+    top: auto;
+    bottom: 0;
+    border-radius: 30% 70% 0% 0%;
   }
 }
 
@@ -473,18 +510,13 @@
     display: none;
   }
 
-  .serviceCard {
-    width: 100%;
-  }
-
   .feedback {
     flex-direction: column;
     text-align: center;
   }
 
-  .footerItems {
-    flex-direction: column;
-    gap: 20px;
+  .banner img {
+    max-width: 400px;
   }
 }
 
@@ -514,11 +546,12 @@
     font-size: 1.5rem;
   }
 
-  .serviceCard {
+  .feedbacks {
     width: 100%;
   }
 
-  .feedbacks {
-    width: 100%;
+  .banner img {
+    max-width: 100%;
+    padding: 0 20px;
   }
 }
