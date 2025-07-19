@@ -38,7 +38,10 @@ function MainPage() {
     <div className={styles.container}>
       <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
         <nav className={styles.navbar}>
-          <i className={`fa fa-tooth ${styles.navLogo}`}> Sorria Odonto</i>
+          <div className={styles.logoContainer}>
+            <img src="/logo.png" alt="Logo Sorria Odonto" className={styles.logoImage} />
+            <span className={styles.logoText}>Sorria Odonto</span>
+          </div>
 
           <div className={styles.navButtonsContainer}>
             <div className={styles.navButtons}>
@@ -155,7 +158,6 @@ function MainPage() {
           <h3 className={styles.sectionSubtitle}>Conheça nossa equipe de profissionais</h3>
 
           <div className={styles.servicesGrid}>
-            {/* Dra. Dérica Barbosa */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-tooth"></i>
@@ -168,7 +170,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dra. Lenise Nascimento */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-teeth"></i>
@@ -181,7 +182,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dr. Tiago Silva */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-tooth"></i>
@@ -194,7 +194,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dra. Letícia Araújo */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-face-smile"></i>
@@ -207,7 +206,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dra. Rafaela Silva */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-teeth-open"></i>
@@ -220,7 +218,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dr. Marcelo Ferreira */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-teeth"></i>
@@ -233,7 +230,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dra. Rayane Ketima */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-teeth-open"></i>
@@ -246,7 +242,6 @@ function MainPage() {
               </span>
             </div>
 
-            {/* Dra. Samille Patrizzia */}
             <div className={styles.serviceCard}>
               <div className={styles.serviceIcon}>
                 <i className="fa-solid fa-teeth-open"></i>
@@ -261,76 +256,75 @@ function MainPage() {
           </div>
         </section>
 
-        <section id="testimonials" className={styles.testimonialsSection}>
-          <div className={styles.testimonialsContent}>
-            <h2 className={styles.sectionTitle}>Depoimentos</h2>
-            <h3 className={styles.sectionSubtitle}>O que nossos pacientes dizem</h3>
+        <section id="location" className={styles.locationSection}>
+          <h2 className={styles.sectionTitle}>Nossa Localização</h2>
+          <h3 className={styles.sectionSubtitle}>Venha nos visitar</h3>
 
-            <div className={styles.feedbacks}>
-              <div className={styles.feedback}>
-                <img src="/derica.jpeg" className={styles.feedbackAvatar} alt="Derica" />
-                <div className={styles.feedbackContent}>
-                  <p>
-                    Derica
-                    <span>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                    </span>
-                  </p>
-                  <p>
-                    "Excelente atendimento! Fiz um clareamento e estou muito satisfeita com o resultado."
-                  </p>
-                </div>
-              </div>
-
-              <div className={styles.feedback}>
-                <img src="/marcelo.jpeg" className={styles.feedbackAvatar} alt="Marcelo" />
-                <div className={styles.feedbackContent}>
-                  <p>
-                    Marcelo
-                    <span>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                    </span>
-                  </p>
-                  <p>
-                    "O ortodontista foi muito atencioso. Meu tratamento está evoluindo muito bem."
-                  </p>
-                </div>
-              </div>
-
-              <div className={styles.feedback}>
-                <img src="/rayane.jpeg" className={styles.feedbackAvatar} alt="Rayane" />
-                <div className={styles.feedbackContent}>
-                  <p>
-                    Rayane
-                    <span>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                      <i className="fa-solid fa-star"></i>
-                    </span>
-                  </p>
-                  <p>
-                    "Adorei o resultado das minhas facetas! O dentista foi super profissional e cuidadoso."
-                  </p>
-                </div>
-              </div>
+          <div className={styles.locationContent}>
+            <div className={styles.locationInfo}>
+              <i className="fa-solid fa-location-dot"></i>
+              <p>Rua da Aurora, 66, Centro Feira Nova, Pernambuco, Brazil</p>
             </div>
 
-            <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
-              Ver mais avaliações
-            </button>
+            <div className={styles.mapContainer}>
+              <iframe
+                title="Localização da Clínica Odontológica Sorria Odonto"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3951.4818532590134!2d-35.389067988542614!3d-7.949054492042189!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7aba5546a95cb79%3A0x1ceedea9b0820f29!2sR.%20da%20Aurora%2C%2066%2C%20Feira%20Nova%20-%20PE%2C%2055715-000!5e0!3m2!1spt-BR!2sbr!4v1752873896726!5m2!1spt-BR!2sbr"
+                width="100%"
+                height="450"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
           </div>
         </section>
       </main>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerContent}>
+          <div className={styles.footerLogo}>
+            <div className={styles.footerLogoContainer}>
+              <img src="/logo.png" alt="Logo Sorria Odonto" className={styles.footerLogoImage} />
+              <span className={styles.footerLogoText}>Sorria Odonto</span>
+            </div>
+            <p>Cuidando do seu sorriso com excelência</p>
+          </div>
+
+          <div className={styles.footerInfo}>
+            <div className={styles.footerSection}>
+              <h4>Desde 2020</h4>
+              <p>7x Prêmio destaque de melhor clínica</p>
+              <p>Prêmio destaque REGIONAL</p>
+              <p>EPAO 1334</p>
+            </div>
+
+            <div className={styles.footerSection}>
+              <h4>Nossos Dentistas</h4>
+              <p>Dr. Eronildo</p>
+              <p>Dr. Eronilson</p>
+            </div>
+
+            <div className={styles.footerSection}>
+              <h4>Contato</h4>
+              <p><i className="fa-solid fa-phone"></i> (81) 99875-7234</p>
+              <div className={styles.footerSocial}>
+                <a href="https://wa.me/5581998757234" target="_blank" rel="noopener noreferrer">
+                  <i className="fa-brands fa-whatsapp"></i>
+                </a>
+                <a href="https://www.instagram.com/sorriaodontofn?igsh=MWFuaGxqd25mNHM3Zw==" target="_blank" rel="noopener noreferrer">
+                  <i className="fa-brands fa-instagram"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.footerCopyright}>
+          <p>&copy; {new Date().getFullYear()} Sorria Odonto. Todos os direitos reservados.</p>
+        </div>
+      </footer>
     </div>
   );
 }

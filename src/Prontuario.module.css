@@ -1,10 +1,7 @@
 /* Prontuario.module.css */
 
-/* O box-sizing global é definido em seu CSS global (ex: index.css) */
-
 .container {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f4;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -12,15 +9,24 @@
     min-height: 100vh;
     margin: 0;
     padding: 20px;
+    
+    /* Adicione o mesmo background do login */
+    background-image: url('../public/backgroundlogin.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .form {
-    background: rgba(20, 20, 20, 0.9);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(6.8px);
-    -webkit-backdrop-filter: blur(6.8px);
-    border: 1px solid rgba(0, 0, 0, 0.7);
+    /* Estilos idênticos ao loginForm */
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+
     padding: 40px;
     width: 100%;
     max-width: 450px;
@@ -28,12 +34,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .form:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
+/* O restante do seu CSS pode permanecer igual */
 .form h2 {
     color: #fff;
     margin-bottom: 25px;
@@ -52,7 +63,6 @@
     font-size: 15px;
     background-color: rgba(255, 255, 255, 0.9);
     transition: all 0.3s ease;
-    /* box-sizing: border-box; já global */
     color: #333;
 }
 
