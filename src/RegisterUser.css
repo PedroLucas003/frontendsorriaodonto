@@ -90,7 +90,7 @@ textarea {
   min-height: 100px;
 }
 
-/* ===== BOTÕES ===== */
+/* ===== BOTÕES ATUALIZADOS ===== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -102,43 +102,103 @@ textarea {
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
-  background-color: #4a6cf7;
   color: white;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.btn:hover {
+/* Botão Dark Mode - Estilo especial */
+.theme-btn {
+  background-color: #4a6cf7;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+}
+
+.theme-btn:hover {
   background-color: #3a5ce4;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.btn i {
-  margin-right: 0.5rem;
+.theme-btn i {
+  font-size: 1.1rem;
 }
 
-.btn-secondary {
-  background-color: #6c757d;
+/* Botão Editar - Amarelo */
+.btn-edit {
+  background-color: #ffc107;
+  color: #212529;
 }
 
-.btn-secondary:hover {
-  background-color: #5a6268;
+.btn-edit:hover {
+  background-color: #e0a800;
+  color: #212529;
 }
 
-.btn-danger {
+/* Botão Excluir - Vermelho */
+.btn-delete {
   background-color: #dc3545;
 }
 
-.btn-danger:hover {
+.btn-delete:hover {
   background-color: #c82333;
 }
 
-.btn-success {
+/* Botão Visualizar - Azul */
+.btn-view {
+  background-color: #17a2b8;
+}
+
+.btn-view:hover {
+  background-color: #138496;
+}
+
+/* Botão Adicionar - Verde */
+.btn-add-procedimento {
   background-color: #28a745;
 }
 
-.btn-success:hover {
+.btn-add-procedimento:hover {
   background-color: #218838;
+}
+
+/* Botão Cancelar - Cinza */
+.btn-cancel {
+  background-color: #6c757d;
+}
+
+.btn-cancel:hover {
+  background-color: #5a6268;
+}
+
+/* Botão Principal - Azul Primário */
+.btn-primary {
+  background-color: #4a6cf7;
+}
+
+.btn-primary:hover {
+  background-color: #3a5ce4;
+}
+
+/* Efeito para todos os botões */
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ícones nos botões */
+.btn i {
+  margin-right: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.btn:hover i {
+  transform: scale(1.1);
 }
 
 /* ===== TABELA ===== */
