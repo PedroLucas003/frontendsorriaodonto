@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from "./api/api";
+import api from "./api/api"; // Certifique-se de que 'api' está configurado corretamente com a baseURL do seu backend
 import styles from "./Prontuario.module.css"; // Importa o CSS ESPECÍFICO para Prontuário
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -11,13 +11,25 @@ function Prontuario() {
   const [error, setError] = useState("");
   const [enviado, setEnviado] = useState(false);
 
+  // Função para formatar o CPF no input (Ex: 123.456.789-00)
   const formatarCPF = (valor) => {
-    return valor
-      .replace(/\D/g, "")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
-      .substring(0, 14);
+    // Remove tudo que não for dígito
+    const apenasDigitos = valor.replace(/\D/g, "");
+
+    // Aplica a formatação dinamicamente
+    let cpfFormatado = apenasDigitos;
+    if (apenasDigitos.length > 3) {
+      cpfFormatado = apenasDigitos.substring(0, 3) + "." + apenasDigitos.substring(3);
+    }
+    if (apenasDigitos.length > 6) {
+      cpfFormatado = cpfFormatado.substring(0, 7) + "." + apenasDigitos.substring(6);
+    }
+    if (apenasDigitos.length > 9) {
+      cpfFormatado = cpfFormatado.substring(0, 11) + "-" + apenasDigitos.substring(9);
+    }
+    
+    // Limita ao tamanho máximo do CPF formatado (14 caracteres)
+    return cpfFormatado.substring(0, 14);
   };
 
   const handleSubmit = async (e) => {
@@ -28,11 +40,20 @@ function Prontuario() {
       return;
     }
 
-    try {
-      const cleanedCPF = cpf.replace(/\D/g, "");
+    // Validação extra: verifica se o CPF tem 14 caracteres (formato completo)
+    // ou 11 dígitos se remover a formatação, para evitar submissões parciais
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) {
+        setError("CPF inválido. Por favor, digite 11 dígitos.");
+        return;
+    }
 
+
+    try {
+      // O CPF já está formatado com pontos e traços devido ao onChange
+      // Não precisamos de cleanedCPF aqui, enviamos 'cpf' direto.
       const response = await api.post("/api/prontuario", {
-        cpf: cleanedCPF,
+        cpf: cpf, // Envia o CPF formatado (ex: "122.061.544-71")
         password: senha,
       });
 
@@ -42,10 +63,13 @@ function Prontuario() {
       gerarPDF(response.data.data);
     } catch (err) {
       setEnviado(false);
-      setError(err.response?.data?.message || "Erro ao buscar prontuário.");
+      // Melhora a exibição de erros do backend
+      setError(err.response?.data?.message || "Erro ao buscar prontuário. Verifique CPF e senha.");
+      console.error("Erro na busca do prontuário:", err.response?.data || err);
     }
   };
 
+  // Mantido igual - apenas para formatar valores monetários no PDF
   const formatarValor = (valor) => {
     if (valor === undefined || valor === null) return "-";
     const num =
@@ -76,51 +100,51 @@ function Prontuario() {
       "Dados Pessoais": [
         {
           campo: "Nome Completo",
-          valor: dados.dadosPessoais?.nomeCompleto,
+          valor: dados.dadosPessoais?.nomeCompleto || "-",
         },
-        { campo: "CPF", valor: formatarCPF(dados.dadosPessoais?.cpf) },
-        { campo: "Telefone", valor: dados.dadosPessoais?.telefone },
-        { campo: "Endereço", valor: dados.dadosPessoais?.endereco },
+        { campo: "CPF", valor: dados.dadosPessoais?.cpf || "-" }, // CPF já virá formatado do backend
+        { campo: "Telefone", valor: dados.dadosPessoais?.telefone || "-" },
+        { campo: "Endereço", valor: dados.dadosPessoais?.endereco || "-" },
         {
           campo: "Data de Nascimento",
-          valor: dados.dadosPessoais?.dataNascimento, // Já vem formatada do backend
+          valor: dados.dadosPessoais?.dataNascimento || "-", // Já vem formatada do backend (string)
         },
       ],
       "Histórico de Saúde": [
-        { campo: "Detalhes de Doenças", valor: dados.saude?.detalhesDoencas },
-        { campo: "Medicamentos em Uso", valor: dados.saude?.quaisRemedios },
+        { campo: "Detalhes de Doenças", valor: dados.saude?.detalhesDoencas || "-" },
+        { campo: "Medicamentos em Uso", valor: dados.saude?.quaisRemedios || "-" },
         {
           campo: "Alergia a Medicamentos",
-          valor: dados.saude?.quaisMedicamentos,
+          valor: dados.saude?.quaisMedicamentos || "-",
         },
-        { campo: "Alergia a Anestesias", valor: dados.saude?.quaisAnestesias },
-        { campo: "Histórico Cirúrgico", valor: dados.saude?.historicoCirurgia },
-        { campo: "Respiração", valor: dados.saude?.respiracao },
-        { campo: "Peso (kg)", valor: dados.saude?.peso },
+        { campo: "Alergia a Anestesias", valor: dados.saude?.quaisAnestesias || "-" },
+        { campo: "Histórico Cirúrgico", valor: dados.saude?.historicoCirurgia || "-" },
+        { campo: "Respiração", valor: dados.saude?.respiracao || "-" },
+        { campo: "Peso (kg)", valor: dados.saude?.peso !== undefined && dados.saude?.peso !== null ? dados.saude.peso.toString() + " kg" : "-" },
       ],
       "Hábitos": [
         {
           campo: "Frequência de Fumo",
-          valor: dados.saude?.habitos?.frequenciaFumo,
+          valor: dados.saude?.habitos?.frequenciaFumo || "-",
         },
         {
           campo: "Frequência de Álcool",
-          valor: dados.saude?.habitos?.frequenciaAlcool,
+          valor: dados.saude?.habitos?.frequenciaAlcool || "-",
         },
       ],
       "Exames": [
-        { campo: "Exame de Sangue", valor: dados.exames?.exameSangue },
-        { campo: "Coagulação", valor: dados.exames?.coagulacao },
-        { campo: "Cicatrização", valor: dados.exames?.cicatrizacao },
+        { campo: "Exame de Sangue", valor: dados.exames?.exameSangue || "-" },
+        { campo: "Coagulação", valor: dados.exames?.coagulacao || "-" },
+        { campo: "Cicatrização", valor: dados.exames?.cicatrizacao || "-" },
         {
           campo: "Sangramento Pós-Procedimento",
-          valor: dados.exames?.sangramentoPosProcedimento,
+          valor: dados.exames?.sangramentoPosProcedimento || "-",
         },
       ],
       "Histórico Odontológico": [
         {
           campo: "Histórico Odontológico",
-          valor: dados.odontologico?.historicoOdontologico,
+          valor: dados.odontologico?.historicoOdontologico || "-",
         },
       ],
     };
@@ -151,11 +175,11 @@ function Prontuario() {
     }
 
     // Histórico de Procedimentos (em uma nova página se necessário)
-    if (y > 200) { // Se a última seção de dados pessoais já estiver alta, adicione nova página
+    if (y > 200) {
         doc.addPage();
         y = 20;
     } else {
-        y += 10; // Adiciona um pequeno espaçamento se estiver na mesma página
+        y += 10;
     }
     
     doc.setFontSize(14);
@@ -199,6 +223,7 @@ function Prontuario() {
       doc.text("Nenhum procedimento registrado", 14, y);
     }
 
+    // Abre o PDF em uma nova aba
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     window.open(url);
@@ -210,10 +235,10 @@ function Prontuario() {
         <h2 className={styles.formH2}>Buscar Prontuário</h2>
         <input
           type="text"
-          placeholder="CPF"
+          placeholder="CPF (ex: 000.000.000-00)"
           value={cpf}
           onChange={(e) => setCpf(formatarCPF(e.target.value))}
-          maxLength={14}
+          maxLength={14} // Limita o input ao tamanho do CPF formatado
           className={styles.formInput}
         />
         <input
