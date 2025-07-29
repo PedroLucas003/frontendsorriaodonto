@@ -1,4 +1,4 @@
-/* Prontuario.module.css */
+/* Prontuario.module.css - Design Reformulado */
 
 .container {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -9,133 +9,129 @@
     min-height: 100vh;
     margin: 0;
     padding: 20px;
-    
-    /* Adicione o mesmo background do login */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efeito de background desfocado com overlay */
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-image: url('../public/backgroundlogin.jpeg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    filter: blur(6px);
+    opacity: 0.8;
+    z-index: -1;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.15);
+    z-index: -1;
 }
 
 .form {
-    /* Estilos idênticos ao loginForm */
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     padding: 40px;
     width: 100%;
-    max-width: 450px;
+    max-width: 500px;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.form:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
-/* O restante do seu CSS pode permanecer igual */
 .form h2 {
-    color: #fff;
-    margin-bottom: 25px;
+    color: #222;
+    margin-bottom: 30px;
     font-size: 24px;
     font-weight: 600;
     text-align: center;
     width: 100%;
 }
 
-.form input {
+.formGroup {
     width: 100%;
-    padding: 14px 20px;
-    margin: 8px 0;
-    border: 1px solid #444;
-    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.formLabel {
+    display: block;
+    margin-bottom: 8px;
+    color: #444;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.formInput {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
     font-size: 15px;
-    background-color: rgba(255, 255, 255, 0.9);
-    transition: all 0.3s ease;
+    background-color: #fff;
+    transition: all 0.2s ease;
     color: #333;
 }
 
-.form input:focus {
+.formInput:focus {
     outline: none;
-    border-color: #2980b9;
-    box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.5);
-    background-color: #fff;
+    border-color: #555;
+    box-shadow: 0 0 0 2px rgba(85, 85, 85, 0.1);
 }
 
 .btnDownload {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    background: #000;
-    color: #fff;
-    border-radius: 8px;
-    border: none;
     width: 100%;
-    max-width: 200px;
-    height: 48px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 20px auto;
-    padding: 0;
+    padding: 14px;
+    margin-top: 10px;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
     font-weight: 500;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
 }
 
-.buttonText {
-    display: inline-block;
-    transition: all 0.3s ease;
-    position: absolute;
+.btnDownload:hover {
+    background-color: #34495e;
+    transform: translateY(-1px);
 }
 
 .pdfIcon {
-    display: inline-block;
-    opacity: 0;
-    transition: all 0.3s ease;
     font-size: 18px;
-    transform: translateY(20px);
-    color: #fff;
-    position: absolute;
+    transition: transform 0.2s ease;
 }
 
-.btnDownload:hover:not(:disabled) {
-    background: #000;
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-}
-
-.btnDownload:hover:not(:disabled) .buttonText {
-    opacity: 0;
-    transform: translateY(-20px);
-}
-
-.btnDownload:hover:not(:disabled) .pdfIcon {
-    opacity: 1;
-    transform: translateY(0);
+.btnDownload:hover .pdfIcon {
+    transform: translateX(2px);
 }
 
 .error, .sucesso {
-    margin: 1.5rem auto 0;
+    margin-top: 20px;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 6px;
     width: 100%;
-    max-width: 400px;
     font-size: 14px;
-    transition: all 0.3s ease;
     text-align: center;
 }
 
@@ -153,9 +149,9 @@
 
 .loading {
     display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,.3);
     border-radius: 50%;
     border-top-color: #fff;
     animation: spin 1s ease-in-out infinite;
@@ -170,35 +166,29 @@
     cursor: not-allowed;
 }
 
-@media (max-width: 500px) {
+/* Responsividade */
+@media (max-width: 600px) {
     .form {
         padding: 30px 20px;
-        border-radius: 10px;
+        width: 95%;
     }
     
     .form h2 {
         font-size: 22px;
-        margin-bottom: 20px;
     }
     
-    .form input {
-        padding: 12px 16px;
-    }
-    
-    .btnDownload {
-        height: 46px;
-        font-size: 15px;
-        max-width: 180px;
+    .formInput {
+        padding: 12px 14px;
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 400px) {
     .form {
-      width: 90%;
-      padding: 15px;
+        padding: 25px 15px;
     }
     
-    .form input {
-      font-size: 14px;
+    .btnDownload {
+        padding: 12px;
+        font-size: 15px;
     }
 }
