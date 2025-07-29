@@ -178,14 +178,13 @@ textarea {
 
 /* Botão Principal - Azul Primário */
 .btn-primary {
-  background-color: #2ecc71;
-  color: white;
+  background-color: #2ecc71; /* Verde */
+  color: #000000; /* Texto preto */
 }
 
 .btn-primary:hover {
-  background-color: #27ae60;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background-color: #27ae60; /* Verde mais escuro */
+  color: #000000; /* Mantém texto preto no hover */
 }
 
 /* Efeito para todos os botões */
