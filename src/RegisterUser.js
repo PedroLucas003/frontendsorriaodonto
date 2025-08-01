@@ -294,60 +294,60 @@ const RegisterUser = () => {
   };
 
   const handleProcedimentoChange = (e) => {
-  const { name, value } = e.target;
+    const { name, value } = e.target;
 
-  // Tratamento para valor monetário
-  if (name === "valor") {
-    // Remove tudo exceto números e vírgula
-    const rawValue = value.replace(/[^\d,]/g, '');
+    // Tratamento para valor monetário
+    if (name === "valor") {
+      // Remove tudo exceto números e vírgula
+      const rawValue = value.replace(/[^\d,]/g, '');
 
-    // Converte para número (substitui vírgula por ponto para parseFloat)
-    const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+      // Converte para número (substitui vírgula por ponto para parseFloat)
+      const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
 
-    // Formata para exibição
-    const valorFormatado = numericValue.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+      // Formata para exibição
+      const valorFormatado = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
 
-    setProcedimentoData(prev => ({
-      ...prev,
-      valor: numericValue,
-      valorFormatado
-    }));
-    return;
-  }
-
-  // Tratamento para data do procedimento
-  if (name === "dataNovoProcedimento") {
-    // Aplica a máscara de data
-    const formattedDate = formatDateInput(value);
-
-    // Validação quando o campo estiver completo
-    if (formattedDate.length === 10) {
-      const [day, month, year] = formattedDate.split('/');
-
-      // Cria a data no meio do dia para evitar problemas de timezone
-      const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
-      } else {
-        const errors = { ...fieldErrors };
-        delete errors[name];
-        setFieldErrors(errors);
-      }
+      setProcedimentoData(prev => ({
+        ...prev,
+        valor: numericValue,
+        valorFormatado
+      }));
+      return;
     }
 
-    setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
-    return;
-  }
+    // Tratamento para data do procedimento
+    if (name === "dataNovoProcedimento") {
+      // Aplica a máscara de data
+      const formattedDate = formatDateInput(value);
 
-  // Para todos os outros campos
-  setProcedimentoData(prev => ({ ...prev, [name]: value }));
-};
+      // Validação quando o campo estiver completo
+      if (formattedDate.length === 10) {
+        const [day, month, year] = formattedDate.split('/');
+
+        // Cria a data no meio do dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else {
+          const errors = { ...fieldErrors };
+          delete errors[name];
+          setFieldErrors(errors);
+        }
+      }
+
+      setProcedimentoData(prev => ({ ...prev, [name]: formattedDate }));
+      return;
+    }
+
+    // Para todos os outros campos
+    setProcedimentoData(prev => ({ ...prev, [name]: value }));
+  };
 
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
@@ -961,9 +961,6 @@ const RegisterUser = () => {
       dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
     };
 
-    // Depuração - pode remover depois
-    console.log('Dados sendo enviados:', dadosParaEnvio);
-
     let response;
     if (editandoProcedimentoId) {
       // Atualizar procedimento existente
@@ -983,10 +980,7 @@ const RegisterUser = () => {
 
     // Cria objeto do procedimento para atualização local
     const procedimentoAtualizado = {
-      ...(editandoProcedimentoId ?
-        { _id: editandoProcedimentoId } :
-        { _id: response.data.procedimento._id || Date.now().toString() }
-      ),
+      _id: editandoProcedimentoId || response.data.procedimento._id || Date.now().toString(),
       ...dadosParaEnvio,
       isPrincipal: false,
       valorFormatado: formatValueForDisplay(valorNumerico),
@@ -1006,14 +1000,15 @@ const RegisterUser = () => {
           )
         };
       } else {
-        // Adiciona novo procedimento
+        // Adiciona novo procedimento (mantém o principal primeiro se existir)
+        const principal = prev.procedimentos.find(p => p.isPrincipal);
+        const outros = prev.procedimentos.filter(p => !p.isPrincipal);
+        
         return {
           ...prev,
-          procedimentos: [
-            ...prev.procedimentos.filter(p => p.isPrincipal), // Mantém o principal primeiro
-            ...prev.procedimentos.filter(p => !p.isPrincipal), // Procedimentos existentes
-            procedimentoAtualizado // Novo procedimento no final
-          ]
+          procedimentos: principal 
+            ? [principal, ...outros, procedimentoAtualizado]
+            : [...outros, procedimentoAtualizado]
         };
       }
     });
