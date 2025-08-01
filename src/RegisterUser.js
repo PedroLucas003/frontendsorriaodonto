@@ -912,137 +912,118 @@ const RegisterUser = () => {
     setDarkMode(!darkMode);
   };
 
-  const handleAddProcedimento = async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+ const handleAddProcedimento = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  try {
-    const token = localStorage.getItem("token");
-
-    // Validação da data
-    let dateObj = null;
-    if (procedimentoData.dataNovoProcedimento) {
-      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-      if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
-        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
-        return;
-      }
-
-      const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
-      dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-
-      if (isNaN(dateObj.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
-        return;
-      }
-    }
-
-    // Conversão do valor
-    let valorNumerico = 0;
-    if (procedimentoData.valor) {
-      try {
-        valorNumerico = convertValueToFloat(procedimentoData.valor);
-        if (isNaN(valorNumerico)) {
-          throw new Error("Valor inválido");
-        }
-      } catch (error) {
-        setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-        return;
-      }
-    }
-
-    // Preparação dos dados para envio
-    const dadosParaEnvio = {
-      procedimento: procedimentoData.procedimento?.trim() || null,
-      denteFace: procedimentoData.denteFace?.trim() || null,
-      valor: valorNumerico || null,
-      modalidadePagamento: procedimentoData.modalidadePagamento || null,
-      profissional: procedimentoData.profissional?.trim() || null,
-      dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
-    };
-
-    let response;
-    if (editandoProcedimentoId) {
-      // Atualizar procedimento existente
-      response = await api.put(
-        `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-        dadosParaEnvio,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } else {
-      // Adicionar novo procedimento
-      response = await api.put(
-        `/api/users/${editandoId}/procedimento`,
-        dadosParaEnvio,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    }
-
-    // Cria objeto do procedimento para atualização local
-    const procedimentoAtualizado = {
-      _id: editandoProcedimentoId || response.data.procedimento._id || Date.now().toString(),
-      ...dadosParaEnvio,
-      isPrincipal: false,
-      valorFormatado: formatValueForDisplay(valorNumerico),
-      dataProcedimento: dateObj ? dateObj.toISOString() : null,
-      dataNovoProcedimento: dateObj ? dateObj.toISOString() : null,
-      createdAt: new Date().toISOString()
-    };
-
-    // Atualização do estado local
-    setFormData(prev => {
-      if (editandoProcedimentoId) {
-        // Atualiza o procedimento existente
-        return {
-          ...prev,
-          procedimentos: prev.procedimentos.map(p =>
-            p._id === editandoProcedimentoId ? procedimentoAtualizado : p
-          )
-        };
-      } else {
-        // Adiciona novo procedimento (mantém o principal primeiro se existir)
-        const principal = prev.procedimentos.find(p => p.isPrincipal);
-        const outros = prev.procedimentos.filter(p => !p.isPrincipal);
+    try {
+        const token = localStorage.getItem("token");
         
-        return {
-          ...prev,
-          procedimentos: principal 
-            ? [principal, ...outros, procedimentoAtualizado]
-            : [...outros, procedimentoAtualizado]
+        // Validação da data
+        let dateObj = null;
+        if (procedimentoData.dataNovoProcedimento) {
+            const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!dateRegex.test(procedimentoData.dataNovoProcedimento)) {
+                setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Formato inválido (DD/MM/AAAA)" });
+                return;
+            }
+
+            const [day, month, year] = procedimentoData.dataNovoProcedimento.split('/');
+            dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+
+            if (isNaN(dateObj.getTime())) {
+                setFieldErrors({ ...fieldErrors, dataNovoProcedimento: "Data inválida" });
+                return;
+            }
+        }
+
+        // Conversão do valor
+        let valorNumerico = 0;
+        if (procedimentoData.valor) {
+            try {
+                valorNumerico = convertValueToFloat(procedimentoData.valor);
+                if (isNaN(valorNumerico)) {
+                    throw new Error("Valor inválido");
+                }
+            } catch (error) {
+                setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+                return;
+            }
+        }
+
+        // Preparação dos dados para envio
+        const dadosParaEnvio = {
+            procedimento: procedimentoData.procedimento?.trim() || null,
+            denteFace: procedimentoData.denteFace?.trim() || null,
+            valor: valorNumerico || null,
+            modalidadePagamento: procedimentoData.modalidadePagamento || null,
+            profissional: procedimentoData.profissional?.trim() || null,
+            dataNovoProcedimento: dateObj ? dateObj.toISOString() : null
         };
-      }
-    });
 
-    // Reset do formulário e estado
-    setProcedimentoData({
-      procedimento: "",
-      denteFace: "",
-      valor: 0,
-      valorFormatado: "",
-      modalidadePagamento: "",
-      profissional: "",
-      dataNovoProcedimento: ""
-    });
+        let response;
+        if (editandoProcedimentoId) {
+            // Atualizar procedimento existente
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            // CORRIGIDO: Atualização do estado local para edição
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: prev.procedimentos.map(p =>
+                    p._id === editandoProcedimentoId ? { ...p, ...dadosParaEnvio } : p
+                )
+            }));
+            
+        } else {
+            // Adicionar novo procedimento
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            // CORRIGIDO: Adiciona o novo procedimento à lista
+            const novoProcedimento = {
+                ...response.data.procedimento, // Use a resposta da API, que terá o _id correto
+                isPrincipal: false,
+                valorFormatado: formatValueForDisplay(valorNumerico)
+            };
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: [...prev.procedimentos, novoProcedimento]
+            }));
+        }
 
-    setEditandoProcedimentoId(null);
-    setShowProcedimentoForm(false);
-    setError("");
-    setFieldErrors({});
+        // Reset do formulário e estado
+        setProcedimentoData({
+            procedimento: "",
+            denteFace: "",
+            valor: "",
+            valorFormatado: "",
+            modalidadePagamento: "",
+            profissional: "",
+            dataNovoProcedimento: ""
+        });
+        setEditandoProcedimentoId(null);
+        setShowProcedimentoForm(false);
+        setError("");
+        setFieldErrors({});
 
-    alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
-
-  } catch (error) {
-    console.error("Erro ao adicionar/editar procedimento:", error);
-    const errorMessage = error.response?.data?.message ||
-      error.message ||
-      "Erro ao adicionar/editar procedimento. Tente novamente.";
-
-    setError(errorMessage);
-
-    if (error.response?.data?.errors) {
-      setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+        alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+    } catch (error) {
+        console.error("Erro ao adicionar/editar procedimento:", error);
+        const errorMessage = error.response?.data?.message ||
+            error.message ||
+            "Erro ao adicionar/editar procedimento. Tente novamente.";
+        setError(errorMessage);
+        if (error.response?.data?.errors) {
+            setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+        }
     }
-  }
 };
 
   const filteredUsuarios = usuarios.filter(usuario => {
