@@ -104,6 +104,7 @@ textarea {
   border: none;
   color: white;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin: 0.25rem;
 }
 
 /* Botão Dark Mode - Estilo especial */
@@ -129,6 +130,15 @@ textarea {
   font-size: 1.1rem;
 }
 
+/* Botão Principal - Azul do site */
+.btn-primary {
+  background-color: #4a6cf7;
+}
+
+.btn-primary:hover {
+  background-color: #3a5ce4;
+}
+
 /* Botão Editar - Amarelo */
 .btn-edit {
   background-color: #ffc107;
@@ -149,7 +159,7 @@ textarea {
   background-color: #c82333;
 }
 
-/* Botão Visualizar - Azul */
+/* Botão Visualizar - Azul mais claro */
 .btn-view {
   background-color: #17a2b8;
 }
@@ -176,15 +186,32 @@ textarea {
   background-color: #5a6268;
 }
 
-/* Botão Principal - Azul Primário */
-.btn-primary {
-  background-color: #2ecc71; /* Verde */
-  color: #000000; /* Texto preto */
+/* Botão Voltar */
+.btn-voltar {
+  background-color: #4a6cf7;
+  color: white;
+  margin-bottom: 1rem;
 }
 
-.btn-primary:hover {
-  background-color: #27ae60; /* Verde mais escuro */
-  color: #000000; /* Mantém texto preto no hover */
+.btn-voltar:hover {
+  background-color: #3a5ce4;
+}
+
+/* Botões na tabela */
+.btn-tabela {
+  padding: 0.5rem;
+  min-width: 40px;
+  margin: 0 0.25rem;
+}
+
+/* Botões de procedimento */
+.btn-edit-procedimento {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.btn-delete-procedimento {
+  background-color: #dc3545;
 }
 
 /* Efeito para todos os botões */
@@ -201,6 +228,26 @@ textarea {
 
 .btn:hover i {
   transform: scale(1.1);
+}
+
+/* Ações na tabela */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Estilos para os botões de ação nos procedimentos */
+.procedimento-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.procedimento-actions .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
 }
 
 /* ===== TABELA ===== */
@@ -282,12 +329,6 @@ tr:nth-child(even) {
 .procedimento-details strong {
   color: #555;
   font-weight: 500;
-}
-
-.procedimento-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
 }
 
 /* ===== MODAL ===== */
