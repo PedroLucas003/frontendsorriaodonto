@@ -1669,7 +1669,7 @@ const RegisterUser = () => {
           </div>
         )}
 
-        <button type="submit" className="btn">
+        <button type="submit" className="btn btn-primary">
           <span className="btnText">{editandoId ? "Atualizar" : "Cadastrar"}</span>
           <i className="bi bi-cloud-upload"></i>
         </button>
