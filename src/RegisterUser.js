@@ -1594,7 +1594,7 @@ const RegisterUser = () => {
                       setShowProcedimentoForm(false);
                       setEditandoProcedimentoId(null);
                     }}
-                    className="btn btn-cancel"
+                    className="btn btn-cancel" // Botão Cancelar com a cor cinza (estilo já existente)
                   >
                     Cancelar
                   </button>
@@ -1602,7 +1602,7 @@ const RegisterUser = () => {
                   <button
                     type="button"
                     onClick={handleAddProcedimento}
-                    className={`btn ${editandoProcedimentoId ? 'btn-save-alteracoes' : 'btn-submit'}`}
+                    className="btn btn-primary" // Use a classe principal para a cor azul
                   >
                     {editandoProcedimentoId ? 'Salvar Alterações' : 'Adicionar Procedimento'}
                   </button>
