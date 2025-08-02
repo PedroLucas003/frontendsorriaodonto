@@ -8,76 +8,85 @@ const NON_DIGIT_REGEX = /\D/g;
 const CPF_LENGTH = 11;
 
 const Login = () => {
-  // Refs para acesso direto sem rerender
-  const cpfRef = useRef('');
-  const passwordRef = useRef('');
-  
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+    // Refs para acesso direto sem rerender
+    const cpfRef = useRef('');
+    const passwordRef = useRef('');
 
-  // Formatação memoizada com cache
-  const formatCPF = useCallback((value) => {
-    const cleaned = value.replace(NON_DIGIT_REGEX, '');
-    cpfRef.current = cleaned; // Atualiza ref
-    
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
-    if (cleaned.length <= 9) return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
-    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9, 11)}`;
-  }, []);
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
+    // Formatação memoizada com cache
+    const formatCPF = useCallback((value) => {
+        const cleaned = value.replace(NON_DIGIT_REGEX, '');
+        cpfRef.current = cleaned; // Atualiza ref
+        
+        if (cleaned.length <= 3) return cleaned;
+        if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+        if (cleaned.length <= 9) return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
+        return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9, 11)}`;
+    }, []);
 
   // Handler otimizado com early return
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Early validation
-    if (cpfRef.current.length !== CPF_LENGTH) {
-      setError('CPF inválido');
-      return;
+
+    // 1. Pega o CPF limpo (apenas dígitos) que já está em cpfRef.current
+    const cleanedCpf = cpfRef.current;
+
+    // 2. Formata o CPF limpo para o formato que o seu backend espera (000.000.000-00)
+    // Isso é necessário porque o seu schema do Mongoose valida o formato.
+    const formattedCpf = formatCPF(cleanedCpf);
+
+    // 3. Validação do CPF. A constante CPF_LENGTH do seu código é 11, o que é o
+    // número de dígitos esperados.
+    if (cleanedCpf.length !== CPF_LENGTH) {
+        setError('CPF inválido');
+        return;
     }
     
     if (!passwordRef.current) {
-      setError('Senha obrigatória');
-      return;
+        setError('Senha obrigatória');
+        return;
     }
 
     setIsLoading(true);
     setError('');
 
     try {
-      const startTime = performance.now();
-      
-      const response = await api.post('/api/login', {
-        cpf: cpfRef.current,
-        password: passwordRef.current
-      });
+        const startTime = performance.now();
 
-      localStorage.setItem('token', response.data.token);
-      
-      const navigationPromise = navigate('/register'); // Verifique esta rota
-      
-      console.log(`Login completed in ${performance.now() - startTime}ms`);
-      
-      await navigationPromise;
+        // 4. Envia o CPF formatado para o back-end, que o buscará no banco.
+        const response = await api.post('/api/login', {
+            cpf: formattedCpf,
+            password: passwordRef.current
+        });
+
+        localStorage.setItem('token', response.data.token);
+        const navigationPromise = navigate('/register');
+
+        console.log(`Login completed in ${performance.now() - startTime}ms`);
+
+        await navigationPromise;
+
     } catch (error) {
-      setIsLoading(false);
-      
-      const errorMap = {
-        ECONNABORTED: 'A requisição demorou muito, mas você pode tentar novamente',
-        'Network Error': 'Sem conexão com o servidor',
-        default: error.response?.data?.message || 'Erro ao fazer login'
-      };
-      
-      setError(errorMap[error.code] || errorMap.default);
-      
-      console.error('Erro completo no login:', {
-        code: error.code,
-        message: error.message,
-        response: error.response?.data
-      });
+        setIsLoading(false);
+
+        const errorMap = {
+            ECONNABORTED: 'A requisição demorou muito, mas você pode tentar novamente',
+            'Network Error': 'Sem conexão com o servidor',
+            default: error.response?.data?.message || 'Erro ao fazer login'
+        };
+
+        setError(errorMap[error.code] || errorMap.default);
+
+        console.error('Erro completo no login:', {
+            code: error.code,
+            message: error.message,
+            response: error.response?.data
+        });
     }
-  };
+};
 
   return (
     <div className={styles.loginContainer}> {/* Classe específica para o container de Login */}
