@@ -913,94 +913,109 @@ const RegisterUser = () => {
   const handleAddProcedimento = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
     try {
-      const token = localStorage.getItem("token");
-      let dateObj = null;
-      if (procedimentoData.dataProcedimento) {
+        const token = localStorage.getItem("token");
+
+        // Validação e conversão da data do procedimento
+        const dataProcedimentoInput = procedimentoData.dataProcedimento;
+
+        if (!dataProcedimentoInput) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Data do procedimento é obrigatória" });
+            return;
+        }
+
+        // Regex para validar o formato DD/MM/AAAA
         const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-        if (!dateRegex.test(procedimentoData.dataProcedimento)) {
-          setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato inválido (DD/MM/AAAA)" });
-          return;
+        if (!dateRegex.test(dataProcedimentoInput)) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA)" });
+            return;
         }
-        const [day, month, year] = procedimentoData.dataProcedimento.split('/');
-        dateObj = new Date(`${year}-${month}-${day}T12:00:00Z`); // Usa UTC para evitar problemas de fuso horário
-        if (isNaN(dateObj.getTime())) {
-          setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
-          return;
-        }
-      }
-      let valorNumerico = 0;
-      if (procedimentoData.valorFormatado) {
-        try {
-          valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-          if (isNaN(valorNumerico)) {
-            throw new Error("Valor inválido");
-          }
-        } catch (error) {
-          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-          return;
-        }
-      }
 
-      const dadosParaEnvio = {
-        procedimento: procedimentoData.procedimento?.trim() || null,
-        denteFace: procedimentoData.denteFace?.trim() || null,
-        valor: valorNumerico || null,
-        modalidadePagamento: procedimentoData.modalidadePagamento || null,
-        profissional: procedimentoData.profissional?.trim() || null,
-        dataProcedimento: dateObj ? dateObj.toISOString() : null
-      };
+        // Converte o valor monetário
+        let valorNumerico = 0;
+        if (procedimentoData.valor) {
+            try {
+                // A função convertValueToFloat lida com strings como "R$ 100,00" ou apenas "100"
+                valorNumerico = convertValueToFloat(procedimentoData.valor);
+                if (isNaN(valorNumerico)) {
+                    throw new Error("Valor inválido");
+                }
+            } catch (error) {
+                setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+                return;
+            }
+        }
 
-      let response;
-      if (editandoProcedimentoId) {
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        // Atualiza a lista local com os dados enviados
-        const procedimentoAtualizado = { ...dadosParaEnvio, _id: editandoProcedimentoId, valorFormatado: formatValueForDisplay(valorNumerico) };
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: prev.procedimentos.map(p =>
-            p._id === editandoProcedimentoId ? procedimentoAtualizado : p
-          )
-        }));
-      } else {
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const novoProcedimento = {
-          ...dadosParaEnvio,
-          _id: response.data.procedimento._id, // Obtém o ID do novo item da resposta da API
-          valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: dadosParaEnvio.dataProcedimento
+        const dadosParaEnvio = {
+            procedimento: procedimentoData.procedimento?.trim() || null,
+            denteFace: procedimentoData.denteFace?.trim() || null,
+            valor: valorNumerico || null,
+            modalidadePagamento: procedimentoData.modalidadePagamento || null,
+            profissional: procedimentoData.profissional?.trim() || null,
+            dataProcedimento: dataProcedimentoInput // Envia a string no formato DD/MM/AAAA
         };
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: [...prev.procedimentos, novoProcedimento]
-        }));
-      }
-      setProcedimentoData({
-        procedimento: "", denteFace: "", valor: "", valorFormatado: "",
-        modalidadePagamento: "", profissional: "", dataProcedimento: ""
-      });
-      setEditandoProcedimentoId(null);
-      setShowProcedimentoForm(false);
-      setError("");
-      setFieldErrors({});
-      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+
+        let response;
+        if (editandoProcedimentoId) {
+            // Requisição PUT para ATUALIZAR um procedimento
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Atualiza a lista local com os dados enviados
+            const procedimentoAtualizado = {
+                ...dadosParaEnvio,
+                _id: editandoProcedimentoId,
+                valorFormatado: formatValueForDisplay(valorNumerico)
+            };
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: prev.procedimentos.map(p =>
+                    p._id === editandoProcedimentoId ? procedimentoAtualizado : p
+                )
+            }));
+        } else {
+            // Requisição PUT para ADICIONAR um NOVO procedimento
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const novoProcedimento = {
+                ...dadosParaEnvio,
+                _id: response.data.procedimento._id, // Obtém o ID do novo item da resposta da API
+                valorFormatado: formatValueForDisplay(valorNumerico),
+                dataProcedimento: dadosParaEnvio.dataProcedimento
+            };
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: [...prev.procedimentos, novoProcedimento]
+            }));
+        }
+        
+        // Limpa o formulário e os estados após o sucesso
+        setProcedimentoData({
+            procedimento: "", denteFace: "", valor: "", valorFormatado: "",
+            modalidadePagamento: "", profissional: "", dataProcedimento: ""
+        });
+        setEditandoProcedimentoId(null);
+        setShowProcedimentoForm(false);
+        setError("");
+        setFieldErrors({});
+        alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
     } catch (error) {
-      console.error("Erro ao adicionar/editar procedimento:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
-      setError(errorMessage);
-      if (error.response?.data?.errors) {
-        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
-      }
+        console.error("Erro ao adicionar/editar procedimento:", error);
+        const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
+        setError(errorMessage);
+        if (error.response?.data?.errors) {
+            setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+        }
     }
-  };
+};
 
   const filteredUsuarios = usuarios.filter(usuario => {
     if (!searchTerm.trim()) return true;
