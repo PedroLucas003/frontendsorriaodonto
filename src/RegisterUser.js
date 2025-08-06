@@ -277,19 +277,25 @@ const RegisterUser = () => {
     const procedimento = formData.procedimentos.find(p => p._id === procedimentoId);
     if (!procedimento) return;
     setEditandoProcedimentoId(procedimentoId);
+
     // O formato da data precisa ser DD/MM/AAAA para o formulário
     const formattedDate = procedimento.dataProcedimento ? formatDateForDisplay(procedimento.dataProcedimento) : '';
+
+    // AQUI É O PONTO CRUCIAL: a função formatValueForDisplay
+    // precisa ser usada para garantir que o valor seja exibido corretamente.
+    const formattedValue = formatValueForDisplay(procedimento.valor);
+
     setProcedimentoData({
-      procedimento: procedimento.procedimento || "",
-      denteFace: procedimento.denteFace || "",
-      valor: procedimento.valor || 0,
-      modalidadePagamento: procedimento.modalidadePagamento || "",
-      profissional: procedimento.profissional || "",
-      dataProcedimento: formattedDate, // Usamos a data formatada
-      valorFormatado: formatValueForDisplay(procedimento.valor) || ""
+        procedimento: procedimento.procedimento || "",
+        denteFace: procedimento.denteFace || "",
+        valor: procedimento.valor || 0, // Mantenha o valor numérico para o estado
+        modalidadePagamento: procedimento.modalidadePagamento || "",
+        profissional: procedimento.profissional || "",
+        dataProcedimento: formattedDate,
+        valorFormatado: formattedValue // Adiciona a versão formatada para exibição no input
     });
     setShowProcedimentoForm(true);
-  };
+};
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
@@ -1554,129 +1560,130 @@ const RegisterUser = () => {
         </button>
 
         {showProcedimentoForm && (
-            <div className="procedimento-form">
-                <h3>{editandoProcedimentoId ? 'Editar Procedimento' : 'Adicionar Novo Procedimento'}</h3>
+    <div className="procedimento-form">
+        <h3>{editandoProcedimentoId ? 'Editar Procedimento' : 'Adicionar Novo Procedimento'}</h3>
 
-                <div className="form-grid">
-                    <div className="form-group">
-                        <label htmlFor="novo-procedimento">Procedimento</label>
-                        <input
-                            type="text"
-                            id="novo-procedimento"
-                            name="procedimento"
-                            value={procedimentoData.procedimento}
-                            onChange={handleProcedimentoChange}
-                            placeholder="Digite o procedimento realizado"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="novo-denteFace">Dente/Face</label>
-                        <input
-                            type="text"
-                            id="novo-denteFace"
-                            name="denteFace"
-                            value={procedimentoData.denteFace}
-                            onChange={handleProcedimentoChange}
-                            placeholder="Ex: 11, 22, Face Lingual, etc."
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="novo-valor">Valor</label>
-                        <input
-                            type="text"
-                            id="novo-valor"
-                            name="valor"
-                            value={procedimentoData.valorFormatado || ''}
-                            onChange={handleProcedimentoChange}
-                            onBlur={() => {
-                                if (!procedimentoData.valorFormatado) {
-                                    setProcedimentoData(prev => ({
-                                        ...prev,
-                                        valor: 0,
-                                        valorFormatado: 'R$ 0,00'
-                                    }));
-                                }
-                            }}
-                            placeholder="R$ 0,00"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="novo-modalidadePagamento">Modalidade de Pagamento</label>
-                        <select
-                            id="novo-modalidadePagamento"
-                            name="modalidadePagamento"
-                            value={procedimentoData.modalidadePagamento}
-                            onChange={handleProcedimentoChange}
-                        >
-                            <option value="">Selecione...</option>
-                            {modalidadesPagamento.map((opcao) => (
-                                <option key={opcao} value={opcao}>{opcao}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="novo-profissional">Profissional</label>
-                        <input
-                            type="text"
-                            id="novo-profissional"
-                            name="profissional"
-                            value={procedimentoData.profissional}
-                            onChange={handleProcedimentoChange}
-                        />
-                    </div>
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>
-                    <input
-                        type="text"
-                        id="novo-dataProcedimento"
-                        name="dataProcedimento"
-                        value={procedimentoData.dataProcedimento}
-                        onChange={handleProcedimentoChange}
-                        placeholder="DD/MM/AAAA"
-                        maxLength={10}
-                        className={fieldErrors.dataProcedimento ? 'error-field' : ''}
-                    />
-                    {fieldErrors.dataProcedimento && (
-                        <span className="field-error">{fieldErrors.dataProcedimento}</span>
-                    )}
-                </div>
-
-                <div className="form-actions">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setProcedimentoData({
-                                procedimento: "",
-                                denteFace: "",
-                                valor: "",
-                                modalidadePagamento: "",
-                                profissional: "",
-                                dataProcedimento: ""
-                            });
-                            setShowProcedimentoForm(false);
-                            setEditandoProcedimentoId(null);
-                        }}
-                        className="btn btn-cancel"
-                    >
-                        Cancelar
-                    </button>
-                    
-                    <button
-                        type="button"
-                        onClick={handleAddProcedimento}
-                        className="btn btn-primary"
-                    >
-                        {editandoProcedimentoId ? 'Salvar Alterações' : 'Adicionar Procedimento'}
-                    </button>
-                </div>
+        <div className="form-grid">
+            {/* Campos do formulário ... */}
+            <div className="form-group">
+                <label htmlFor="novo-procedimento">Procedimento</label>
+                <input
+                    type="text"
+                    id="novo-procedimento"
+                    name="procedimento"
+                    value={procedimentoData.procedimento}
+                    onChange={handleProcedimentoChange}
+                    placeholder="Digite o procedimento realizado"
+                />
             </div>
-        )}
+
+            <div className="form-group">
+                <label htmlFor="novo-denteFace">Dente/Face</label>
+                <input
+                    type="text"
+                    id="novo-denteFace"
+                    name="denteFace"
+                    value={procedimentoData.denteFace}
+                    onChange={handleProcedimentoChange}
+                    placeholder="Ex: 11, 22, Face Lingual, etc."
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="novo-valor">Valor</label>
+                <input
+                    type="text"
+                    id="novo-valor"
+                    name="valor"
+                    value={procedimentoData.valorFormatado || ''}
+                    onChange={handleProcedimentoChange}
+                    onBlur={() => {
+                        if (!procedimentoData.valorFormatado) {
+                            setProcedimentoData(prev => ({
+                                ...prev,
+                                valor: 0,
+                                valorFormatado: 'R$ 0,00'
+                            }));
+                        }
+                    }}
+                    placeholder="R$ 0,00"
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="novo-modalidadePagamento">Modalidade de Pagamento</label>
+                <select
+                    id="novo-modalidadePagamento"
+                    name="modalidadePagamento"
+                    value={procedimentoData.modalidadePagamento}
+                    onChange={handleProcedimentoChange}
+                >
+                    <option value="">Selecione...</option>
+                    {modalidadesPagamento.map((opcao) => (
+                        <option key={opcao} value={opcao}>{opcao}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="novo-profissional">Profissional</label>
+                <input
+                    type="text"
+                    id="novo-profissional"
+                    name="profissional"
+                    value={procedimentoData.profissional}
+                    onChange={handleProcedimentoChange}
+                />
+            </div>
+        </div>
+
+        <div className="form-group">
+            <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>
+            <input
+                type="text"
+                id="novo-dataProcedimento"
+                name="dataProcedimento"
+                value={procedimentoData.dataProcedimento}
+                onChange={handleProcedimentoChange}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+                className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+            />
+            {fieldErrors.dataProcedimento && (
+                <span className="field-error">{fieldErrors.dataProcedimento}</span>
+            )}
+        </div>
+
+        <div className="form-actions">
+            <button
+                type="button"
+                onClick={() => {
+                    setProcedimentoData({
+                        procedimento: "",
+                        denteFace: "",
+                        valor: "",
+                        modalidadePagamento: "",
+                        profissional: "",
+                        dataProcedimento: ""
+                    });
+                    setShowProcedimentoForm(false);
+                    setEditandoProcedimentoId(null);
+                }}
+                className="btn btn-cancel"
+            >
+                Cancelar
+            </button>
+            
+            <button
+                type="button"
+                onClick={handleAddProcedimento}
+                className="btn btn-primary"
+            >
+                {editandoProcedimentoId ? 'Salvar Alterações' : 'Adicionar Procedimento'}
+            </button>
+        </div>
+    </div>
+)}
 
         <div className="procedimentos-list">
             {Array.isArray(formData.procedimentos) && formData.procedimentos.length > 0 ? (
