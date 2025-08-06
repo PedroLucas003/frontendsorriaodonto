@@ -295,34 +295,30 @@ const RegisterUser = () => {
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
+    let formattedValue = value;
 
+    // Tratamento para valor monetário
     if (name === "valor") {
-        // Limpa o valor para apenas números e vírgula
-        const cleanedValue = value.replace(/[^\d,]/g, '');
-        // Converte a string limpa para um valor numérico (substituindo vírgula por ponto)
-        const numericValue = parseFloat(cleanedValue.replace(',', '.'));
-        
-        // Verifica se o valor é válido antes de formatar
-        if (!isNaN(numericValue)) {
-            const valorFormatado = numericValue.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            setProcedimentoData(prev => ({
-                ...prev,
-                valor: numericValue,
-                valorFormatado: valorFormatado
-            }));
-        } else {
-            // Se o valor for inválido, limpa os campos
-            setProcedimentoData(prev => ({
-                ...prev,
-                valor: 0,
-                valorFormatado: ''
-            }));
-        }
+      // Remove tudo exceto números e vírgula
+      const rawValue = value.replace(/[^\d,]/g, '');
+
+      // Converte para número (substitui vírgula por ponto para parseFloat)
+      const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+
+      // Formata para exibição
+      const valorFormatado = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+      setProcedimentoData(prev => ({
+        ...prev,
+        valor: numericValue,
+        valorFormatado
+      }));
+      return;
     }
 
     // CORRIGIDO: Tratamento para data do procedimento.
