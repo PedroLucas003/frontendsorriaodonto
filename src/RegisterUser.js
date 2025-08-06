@@ -562,161 +562,157 @@ const RegisterUser = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Validação inicial do formulário
-  if (!validateForm()) {
-    return;
-  }
-
-  // Validar todos os campos obrigatórios (incluindo senha para novo cadastro)
-  let formIsValid = true;
-  const requiredFields = [
-    'nomeCompleto', 'cpf', 'telefone', 'endereco', 'dataNascimento'
-  ];
-
-  requiredFields.forEach(field => {
-    if (!formData[field]) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [field]: `${labels[field]} é obrigatório`
-      }));
-      formIsValid = false;
-    }
-  });
-
-  if (!editandoId) {
-    if (!formData.password) {
-      setFieldErrors(prev => ({ ...prev, password: "A senha é obrigatória" }));
-      formIsValid = false;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setFieldErrors(prev => ({ ...prev, confirmPassword: "As senhas não coincidem" }));
-      formIsValid = false;
-    }
-  }
-
-  if (!formIsValid) {
-    return;
-  }
-
-  // Função auxiliar para converter a data do formato DD/MM/AAAA para ISO
-  const convertDateToISO = (dateString, fieldName) => {
-    if (!dateString || dateString.length !== 10) {
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: `Data ${labels[fieldName]} inválida ou incompleta`
-      }));
-      return null;
+    // Validação inicial do formulário
+    if (!validateForm()) {
+      return;
     }
 
-    try {
-      const [day, month, year] = dateString.split('/');
-      const dateObj = new Date(`${year}-${month}-${day}T12:00:00Z`); // Usa UTC para evitar problemas de fuso horário
+    // Validar todos os campos obrigatórios
+    let formIsValid = true;
+    const requiredFields = [
+      'nomeCompleto', 'cpf', 'telefone', 'endereco',
+      'dataNascimento'
+    ];
 
-      if (isNaN(dateObj.getTime())) {
+    requiredFields.forEach(field => {
+      if (!formData[field]) {
         setFieldErrors(prev => ({
           ...prev,
-          [fieldName]: `Data ${labels[fieldName]} inválida`
+          [field]: `${labels[field]} é obrigatório`
+        }));
+        formIsValid = false;
+      }
+    });
+
+    if (!formIsValid) {
+      return;
+    }
+
+    // Converter datas para formato ISO
+    const convertDateToISO = (dateString, fieldName) => {
+      if (!dateString || dateString.length !== 10) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Data ${fieldName} inválida ou incompleta`
         }));
         return null;
       }
 
-      return dateObj.toISOString();
-    } catch (error) {
-      console.error(`Erro ao converter ${fieldName}:`, error);
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: `Erro ao processar data ${labels[fieldName]}`
-      }));
-      return null;
-    }
-  };
+      try {
+        const [day, month, year] = dateString.split('/');
+        // Usar meio-dia para evitar problemas de timezone
+        const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
 
-  // Converte as datas do formulário
-  const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
-  
-  // A data do procedimento pode ser opcional ou não existir em um cadastro inicial
-  let dataProcedimentoISO = null;
-  if (formData.dataProcedimento) {
-    dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
-  }
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Data ${fieldName} inválida`
+          }));
+          return null;
+        }
 
-  // Se a conversão de alguma data obrigatória falhou, interrompe o processo
-  if (!dataNascimentoISO || (formData.dataProcedimento && !dataProcedimentoISO)) {
-    return;
-  }
-  
-  // Prepara o objeto com os dados para envio à API
-  const dadosParaEnvio = {
-    nomeCompleto: formData.nomeCompleto.trim(),
-    cpf: formData.cpf, // Mantém a formatação para compatibilidade com a busca do back-end
-    telefone: formData.telefone, // Mantém a formatação para consistência
-    endereco: formData.endereco.trim(),
-    dataNascimento: dataNascimentoISO,
-    // Adiciona a data do procedimento somente se ela existir e for válida
-    ...(dataProcedimentoISO && { dataProcedimento: dataProcedimentoISO }), 
-    
-    // O campo dataNovoProcedimento é usado apenas no cadastro inicial
-    ...(!editandoId && { dataNovoProcedimento: dataProcedimentoISO }),
+        return dateObj.toISOString();
+      } catch (error) {
+        console.error(`Erro ao converter ${fieldName}:`, error);
+        setFieldErrors(prev => ({
+          ...prev,
+          [fieldName]: `Erro ao processar data ${fieldName}`
+        }));
+        return null;
+      }
+    };
 
-    detalhesDoencas: formData.detalhesDoencas.trim(),
-    quaisRemedios: formData.quaisRemedios.trim(),
-    quaisMedicamentos: formData.quaisMedicamentos.trim(),
-    quaisAnestesias: formData.quaisAnestesias.trim(),
-    habitos: {
-      frequenciaFumo: formData.frequenciaFumo,
-      frequenciaAlcool: formData.frequenciaAlcool
-    },
-    exames: {
-      exameSangue: formData.exameSangue.trim(),
-      coagulacao: formData.coagulacao.trim(),
-      cicatrizacao: formData.cicatrizacao.trim()
-    },
-    historicoCirurgia: formData.historicoCirurgia.trim(),
-    historicoOdontologico: formData.historicoOdontologico.trim(),
-    sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
-    respiracao: formData.respiracao.trim(),
-    peso: Number(formData.peso) || 0,
-    procedimento: formData.procedimento?.trim() || null,
-    denteFace: formData.denteFace?.trim() || null,
-    valor: formData.valor ? convertValueToFloat(formData.valor) : null,
-    modalidadePagamento: formData.modalidadePagamento || null,
-    profissional: formData.profissional?.trim() || null,
-  };
+    // Converter datas
+    const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
+    const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
 
-  // Adiciona a senha apenas para novo cadastro
-  if (!editandoId) {
-    dadosParaEnvio.password = formData.password;
-    dadosParaEnvio.confirmPassword = formData.confirmPassword;
-  }
-
-  try {
-    const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
-    const method = editandoId ? "put" : "post";
-
-    const response = await api[method](endpoint, dadosParaEnvio);
-
-    if (response.data?.errors) {
-      setFieldErrors(response.data.errors);
-      setError(response.data.message || "Erro de validação");
+    // Se alguma conversão falhou, retornar
+    if (!dataNascimentoISO || !dataProcedimentoISO) {
       return;
     }
 
-    alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
-    resetForm();
-    fetchUsuarios();
-  } catch (error) {
-    console.error("Erro ao enviar formulário:", error);
+    // Preparar dados para envio
+    const dadosParaEnvio = {
+      nomeCompleto: formData.nomeCompleto.trim(),
+      cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+      telefone: formatFone(formData.telefone.replace(/\D/g, '')),
+      endereco: formData.endereco.trim(),
+      dataNascimento: dataNascimentoISO,
+      dataProcedimento: dataProcedimentoISO,
+      ...(!editandoId && { dataNovoProcedimento: dataProcedimentoISO }),
+      detalhesDoencas: formData.detalhesDoencas.trim(),
+      quaisRemedios: formData.quaisRemedios.trim(),
+      quaisMedicamentos: formData.quaisMedicamentos.trim(),
+      quaisAnestesias: formData.quaisAnestesias.trim(),
+      habitos: {
+        frequenciaFumo: formData.frequenciaFumo,
+        frequenciaAlcool: formData.frequenciaAlcool
+      },
+      exames: {
+        exameSangue: formData.exameSangue.trim(),
+        coagulacao: formData.coagulacao.trim(),
+        cicatrizacao: formData.cicatrizacao.trim()
+      },
+      historicoCirurgia: formData.historicoCirurgia.trim(),
+      historicoOdontologico: formData.historicoOdontologico.trim(),
+      sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+      respiracao: formData.respiracao.trim(),
+      peso: Number(formData.peso) || 0,
+      procedimento: formData.procedimento?.trim() || null,
+      denteFace: formData.denteFace?.trim() || null,
+      valor: formData.valor ? convertValueToFloat(formData.valor) : null,
+      modalidadePagamento: formData.modalidadePagamento || null,
+      profissional: formData.profissional?.trim() || null,
+    };
 
-    if (error.response?.data?.errors) {
-      setFieldErrors(error.response.data.errors);
-      setError(error.response.data.message || "Corrija os erros no formulário");
-    } else {
-      setError(error.message || "Erro ao conectar com o servidor");
+    // Adicionar senha apenas para novo cadastro
+    if (!editandoId) {
+      if (!formData.password || formData.password.length < 6) {
+        setFieldErrors(prev => ({
+          ...prev,
+          password: "A senha deve ter pelo menos 6 caracteres"
+        }));
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setFieldErrors(prev => ({
+          ...prev,
+          confirmPassword: "As senhas não coincidem"
+        }));
+        return;
+      }
+      dadosParaEnvio.password = formData.password;
+      dadosParaEnvio.confirmPassword = formData.confirmPassword;
     }
-  }
-};
+
+    try {
+      const endpoint = editandoId ? `/api/users/${editandoId}` : "/api/register/user";
+      const method = editandoId ? "put" : "post";
+
+      const response = await api[method](endpoint, dadosParaEnvio);
+
+      if (response.data?.errors) {
+        setFieldErrors(response.data.errors);
+        setError(response.data.message || "Erro de validação");
+        return;
+      }
+
+      alert(`Usuário ${editandoId ? "atualizado" : "cadastrado"} com sucesso!`);
+      resetForm();
+      fetchUsuarios();
+    } catch (error) {
+      console.error("Erro ao enviar formulário:", error);
+
+      if (error.response?.data?.errors) {
+        setFieldErrors(error.response.data.errors);
+        setError(error.response.data.message || "Corrija os erros no formulário");
+      } else {
+        setError(error.message || "Erro ao conectar com o servidor");
+      }
+    }
+  };
 
   const resetForm = () => {
     setFormData({
