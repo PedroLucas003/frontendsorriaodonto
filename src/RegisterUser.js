@@ -293,45 +293,46 @@ const RegisterUser = () => {
     setShowProcedimentoForm(true);
 };
 
-  const handleProcedimentoChange = (e) => {
+   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
-    // Tratamento para valor monetário
+    // Tratamento para valor monetário (campo "valor")
     if (name === "valor") {
-      // Remove tudo exceto números e vírgula
-      const rawValue = value.replace(/[^\d,]/g, '');
+        // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
+        const cleanedValue = value.replace(/[^0-9,]/g, '');
 
-      // Converte para número (substitui vírgula por ponto para parseFloat)
-      const numericValue = rawValue ? parseFloat(rawValue.replace(',', '.')) : 0;
+        // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
+        // Isso previne o travamento no R$ 1,00
+        const numericString = cleanedValue.replace(',', '');
 
-      // Formata para exibição
-      const valorFormatado = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+        let numericValue = 0;
+        if (numericString) {
+          numericValue = parseInt(numericString, 10) / 100;
+        }
 
-      setProcedimentoData(prev => ({
-        ...prev,
-        valor: numericValue,
-        valorFormatado
-      }));
-      return;
+        // Formata o número para o padrão monetário brasileiro (R$ 0,00)
+        formattedValue = numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        setProcedimentoData(prev => ({
+          ...prev,
+          valor: numericValue,
+          valorFormatado: formattedValue
+        }));
+        return;
     }
 
-    // CORRIGIDO: Tratamento para data do procedimento.
-    // O nome do campo no estado é 'dataProcedimento'.
+    // Tratamento para a data do procedimento
     if (name === "dataProcedimento") {
-      // Aplica a máscara de data
       formattedValue = formatDateInput(value);
-
-      // Validação quando o campo estiver completo
       if (formattedValue.length === 10) {
         const [day, month, year] = formattedValue.split('/');
         const dateObj = new Date(`${year}-${month}-${day}T12:00:00Z`);
-
         if (isNaN(dateObj.getTime())) {
           setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
         } else {
@@ -340,7 +341,6 @@ const RegisterUser = () => {
           setFieldErrors(errors);
         }
       }
-
       setProcedimentoData(prev => ({ ...prev, [name]: formattedValue }));
       return;
     }
