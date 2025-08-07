@@ -253,31 +253,20 @@ const RegisterUser = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await api.delete(
-        `/api/users/${editandoId}/procedimento/${procedimentoId}`,
+      const response = await api.delete(
+        `/api/users/${editandoId}/procedimento/${procedimentoId}`, // Corrigido para singular
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      // Atualiza o estado do formulário de edição removendo o procedimento
-      setFormData(prev => ({
-        ...prev,
-        procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
-      }));
-
-      // Atualiza a lista principal de usuários
-      setUsuarios(prev => prev.map(u => {
-        if (u._id === editandoId) {
-          return {
-            ...u,
-            historicoProcedimentos: u.historicoProcedimentos.filter(p => p._id !== procedimentoId)
-          };
-        }
-        return u;
-      }));
-
-      alert("Procedimento excluído com sucesso!");
+      if (response.status === 200) {
+        setFormData(prev => ({
+          ...prev,
+          procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
+        }));
+        alert("Procedimento excluído com sucesso!");
+      }
     } catch (error) {
       console.error("Erro ao excluir procedimento:", error);
       setError(error.response?.data?.message || "Erro ao excluir procedimento. Tente novamente.");
@@ -293,16 +282,16 @@ const RegisterUser = () => {
     const formattedDate = dataOriginal ? formatDateForDisplay(dataOriginal) : '';
 
     setProcedimentoData({
-      procedimento: procedimento.procedimento || "",
-      denteFace: procedimento.denteFace || "",
-      valor: procedimento.valor || 0,
-      modalidadePagamento: procedimento.modalidadePagamento || "",
-      profissional: procedimento.profissional || "",
-      dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
-      valorFormatado: formatValueForDisplay(procedimento.valor) || "" // Usa o valor formatado para exibir no input
+        procedimento: procedimento.procedimento || "",
+        denteFace: procedimento.denteFace || "",
+        valor: procedimento.valor || 0,
+        modalidadePagamento: procedimento.modalidadePagamento || "",
+        profissional: procedimento.profissional || "",
+        dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
+        valorFormatado: formatValueForDisplay(procedimento.valor) || "" // Usa o valor formatado para exibir no input
     });
     setShowProcedimentoForm(true);
-  };
+};
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
@@ -577,39 +566,40 @@ const RegisterUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Lógica de ATUALIZAÇÃO
     if (editandoId) {
+      // Lógica de atualização
       const updatedFields = {};
+      const originalUser = usuarios.find(u => u._id === editandoId);
 
-      // Adicione aqui todos os campos que podem ser atualizados
-      if (formData.nomeCompleto !== undefined) updatedFields.nomeCompleto = formData.nomeCompleto.trim();
-      if (formData.cpf !== undefined) updatedFields.cpf = formData.cpf.replace(/\D/g, ''); // Envia o CPF sem formatação
-      if (formData.telefone !== undefined) updatedFields.telefone = formData.telefone.replace(/\D/g, ''); // Envia o telefone sem formatação
-      if (formData.endereco !== undefined) updatedFields.endereco = formData.endereco.trim();
-      if (formData.dataNascimento) {
-        const [day, month, year] = formData.dataNascimento.split('/');
-        updatedFields.dataNascimento = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
-      }
-      if (formData.detalhesDoencas !== undefined) updatedFields.detalhesDoencas = formData.detalhesDoencas.trim();
-      if (formData.quaisRemedios !== undefined) updatedFields.quaisRemedios = formData.quaisRemedios.trim();
-      if (formData.quaisMedicamentos !== undefined) updatedFields.quaisMedicamentos = formData.quaisMedicamentos.trim();
-      if (formData.quaisAnestesias !== undefined) updatedFields.quaisAnestesias = formData.quaisAnestesias.trim();
-      if (formData.frequenciaFumo !== undefined) updatedFields.habitos = { ...updatedFields.habitos, frequenciaFumo: formData.frequenciaFumo };
-      if (formData.frequenciaAlcool !== undefined) updatedFields.habitos = { ...updatedFields.habitos, frequenciaAlcool: formData.frequenciaAlcool };
-      if (formData.historicoCirurgia !== undefined) updatedFields.historicoCirurgia = formData.historicoCirurgia.trim();
-      if (formData.historicoOdontologico !== undefined) updatedFields.historicoOdontologico = formData.historicoOdontologico.trim();
-      if (formData.sangramentoPosProcedimento !== undefined) updatedFields.sangramentoPosProcedimento = formData.sangramentoPosProcedimento.trim();
-      if (formData.respiracao !== undefined) updatedFields.respiracao = formData.respiracao.trim();
-      if (formData.peso !== undefined) updatedFields.peso = Number(formData.peso);
-      if (formData.exameSangue !== undefined) updatedFields.exames = { ...updatedFields.exames, exameSangue: formData.exameSangue };
-      if (formData.coagulacao !== undefined) updatedFields.exames = { ...updatedFields.exames, coagulacao: formData.coagulacao };
-      if (formData.cicatrizacao !== undefined) updatedFields.exames = { ...updatedFields.exames, cicatrizacao: formData.cicatrizacao };
+      // Prepara os campos a serem enviados para a API
+      const fieldsToUpdate = [
+        'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
+        'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
+        'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
+        'respiracao', 'peso', 'frequenciaFumo', 'frequenciaAlcool',
+        'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento'
+      ];
 
-      if (formData.password && formData.password.length >= 6) {
-        if (formData.password !== formData.confirmPassword) {
-          setFieldErrors({ confirmPassword: "As senhas não coincidem!" });
-          return;
+      fieldsToUpdate.forEach(key => {
+        // Apenas adiciona o campo se ele tiver um valor no formulário
+        if (formData[key]) {
+          updatedFields[key] = formData[key];
         }
+      });
+      
+      // Lida com campos aninhados como 'habitos' e 'exames'
+      updatedFields.habitos = {
+        frequenciaFumo: formData.frequenciaFumo,
+        frequenciaAlcool: formData.frequenciaAlcool,
+      };
+      updatedFields.exames = {
+        exameSangue: formData.exameSangue,
+        coagulacao: formData.coagulacao,
+        cicatrizacao: formData.cicatrizacao,
+      };
+
+      // Se a senha foi preenchida, adiciona ao objeto de atualização
+      if (formData.password && formData.password.length >= 6) {
         updatedFields.password = formData.password;
       }
 
@@ -627,13 +617,28 @@ const RegisterUser = () => {
 
         alert("Usuário atualizado com sucesso!");
 
-        // Atualiza a lista principal de usuários
-        const updatedUserFromApi = response.data.user;
-        setUsuarios(prev => prev.map(u => u._id === updatedUserFromApi._id ? { ...u, ...updatedUserFromApi } : u));
+        // ----------------------------------------------------
+        // ALTERAÇÃO IMPORTANTE: MANTÉM NA PÁGINA DE EDIÇÃO
+        // ----------------------------------------------------
+        // Em vez de recarregar todos os usuários, você pode simplesmente
+        // chamar a função de edição novamente com o usuário atualizado da resposta
+        // da API, ou atualizar apenas o estado daquele usuário específico.
+        // A forma mais fácil é recarregar a lista e manter o modo de visualização.
 
-        // Atualiza o estado do formulário de edição para refletir os novos dados
-        handleEdit(updatedUserFromApi);
+        // Encontra o usuário atualizado na resposta da API
+        const updatedUser = response.data.user;
 
+        // Atualiza a lista de usuários localmente
+        setUsuarios(prevUsuarios =>
+          prevUsuarios.map(u => (u._id === editandoId ? { ...u, ...updatedUser } : u))
+        );
+
+        // Atualiza o formulário com os novos dados
+        handleEdit(updatedUser);
+
+        // Não chame resetForm() aqui para manter o estado de edição
+        // Você pode voltar para a lista de usuários com o botão "Voltar"
+        
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
         if (error.response?.data?.errors) {
@@ -644,15 +649,11 @@ const RegisterUser = () => {
         }
       }
     } else {
-      // --- Lógica de cadastro (mantida do seu código original)
-      // Você pode manter sua lógica de validação completa aqui para novos cadastros
-
-      // Validação inicial do formulário
+      // --- Lógica de cadastro (mantida do seu código original) ---
       if (!validateForm()) {
         return;
       }
-
-      // Validar todos os campos obrigatórios
+      
       let formIsValid = true;
       const requiredFields = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco',
@@ -675,7 +676,6 @@ const RegisterUser = () => {
         return;
       }
 
-      // Converter datas para formato ISO
       const convertDateToISO = (dateString, fieldName) => {
         if (!dateString || dateString.length !== 10) {
           setFieldErrors(prev => ({
@@ -684,11 +684,9 @@ const RegisterUser = () => {
           }));
           return null;
         }
-
         try {
           const [day, month, year] = dateString.split('/');
           const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-
           if (isNaN(dateObj.getTime())) {
             setFieldErrors(prev => ({
               ...prev,
@@ -696,7 +694,6 @@ const RegisterUser = () => {
             }));
             return null;
           }
-
           return dateObj.toISOString();
         } catch (error) {
           console.error(`Erro ao converter ${fieldName}:`, error);
@@ -714,7 +711,7 @@ const RegisterUser = () => {
       if (!dataNascimentoISO) {
         return;
       }
-
+      
       const dadosParaEnvio = {
         nomeCompleto: formData.nomeCompleto.trim(),
         cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
@@ -743,7 +740,6 @@ const RegisterUser = () => {
         confirmPassword: formData.confirmPassword
       };
 
-      // Adiciona dados de procedimento apenas se estiverem presentes no formulário de cadastro
       if (dataProcedimentoISO && formData.procedimento) {
         dadosParaEnvio.historicoProcedimentos = [{
           procedimento: formData.procedimento?.trim() || null,
@@ -765,7 +761,7 @@ const RegisterUser = () => {
         }
 
         alert("Usuário cadastrado com sucesso!");
-        resetForm();
+        resetForm(); // Chama resetForm para limpar o formulário de cadastro
         fetchUsuarios();
       } catch (error) {
         console.error("Erro ao enviar formulário:", error);
@@ -982,78 +978,87 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
+      // Validação e conversão da data do procedimento
       const dataProcedimentoInput = procedimentoData.dataProcedimento;
-      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
 
+      if (!dataProcedimentoInput) {
+        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data do procedimento é obrigatória" });
+        return;
+      }
+
+      // Regex para validar o formato DD/MM/AAAA
+      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(dataProcedimentoInput)) {
         setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA)" });
         return;
       }
 
-      let valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-      if (isNaN(valorNumerico)) {
-        setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-        return;
+      // Converte o valor monetário
+      let valorNumerico = 0;
+      if (procedimentoData.valorFormatado) {
+        try {
+          // A função convertValueToFloat lida com strings como "R$ 100,00" ou apenas "100"
+          valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+          if (isNaN(valorNumerico)) {
+            throw new Error("Valor inválido");
+          }
+        } catch (error) {
+          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+          return;
+        }
       }
 
       const dadosParaEnvio = {
         procedimento: procedimentoData.procedimento?.trim() || null,
         denteFace: procedimentoData.denteFace?.trim() || null,
-        valor: valorNumerico,
+        valor: valorNumerico || null,
         modalidadePagamento: procedimentoData.modalidadePagamento || null,
         profissional: procedimentoData.profissional?.trim() || null,
-        dataProcedimento: dataProcedimentoInput // Envia a string no formato DD/MM/AAAA para o backend tratar
+        dataProcedimento: dataProcedimentoInput // Envia a string no formato DD/MM/AAAA
       };
 
       let response;
       if (editandoProcedimentoId) {
+        // Requisição PUT para ATUALIZAR um procedimento específico
         response = await api.put(
           `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
           dadosParaEnvio,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        // Atualiza o estado do formulário com o procedimento modificado
-        const updatedProcedimento = response.data.procedimento;
+        // Atualiza a lista local com os dados enviados
+        const procedimentoAtualizado = {
+          ...dadosParaEnvio,
+          _id: editandoProcedimentoId,
+          valorFormatado: formatValueForDisplay(valorNumerico)
+        };
         setFormData(prev => ({
           ...prev,
           procedimentos: prev.procedimentos.map(p =>
-            p._id === updatedProcedimento._id ? { ...updatedProcedimento, valorFormatado: formatValueForDisplay(updatedProcedimento.valor) } : p
+            p._id === editandoProcedimentoId ? procedimentoAtualizado : p
           )
         }));
-
-        // Atualiza também a lista principal de usuários
-        setUsuarios(prevUsuarios => prevUsuarios.map(u => {
-          if (u._id === editandoId) {
-            const updatedHistorico = u.historicoProcedimentos.map(p =>
-              p._id === updatedProcedimento._id ? updatedProcedimento : p
-            );
-            return { ...u, historicoProcedimentos: updatedHistorico };
-          }
-          return u;
-        }));
-
       } else {
+        // Requisição PUT para ADICIONAR um NOVO procedimento
         response = await api.put(
           `/api/users/${editandoId}/procedimento`,
           dadosParaEnvio,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const novoProcedimento = response.data.procedimento;
+        const novoProcedimento = {
+          ...dadosParaEnvio,
+          _id: response.data.procedimento._id, // Obtém o ID do novo item da resposta da API
+          valorFormatado: formatValueForDisplay(valorNumerico),
+          dataProcedimento: dadosParaEnvio.dataProcedimento
+        };
         setFormData(prev => ({
           ...prev,
-          procedimentos: [...prev.procedimentos, { ...novoProcedimento, valorFormatado: formatValueForDisplay(novoProcedimento.valor) }]
-        }));
-
-        setUsuarios(prevUsuarios => prevUsuarios.map(u => {
-          if (u._id === editandoId) {
-            return { ...u, historicoProcedimentos: [...u.historicoProcedimentos, novoProcedimento] };
-          }
-          return u;
+          procedimentos: [...prev.procedimentos, novoProcedimento]
         }));
       }
 
+      // Limpa o formulário e os estados após o sucesso
       setProcedimentoData({
         procedimento: "", denteFace: "", valor: "", valorFormatado: "",
         modalidadePagamento: "", profissional: "", dataProcedimento: ""
@@ -1063,6 +1068,9 @@ const RegisterUser = () => {
       setError("");
       setFieldErrors({});
       alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+
+      // Atualiza a lista de usuários para refletir as mudanças
+      fetchUsuarios();
 
     } catch (error) {
       console.error("Erro ao adicionar/editar procedimento:", error);
