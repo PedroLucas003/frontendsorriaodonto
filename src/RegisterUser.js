@@ -253,20 +253,31 @@ const RegisterUser = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await api.delete(
-        `/api/users/${editandoId}/procedimento/${procedimentoId}`, // Corrigido para singular
+      await api.delete(
+        `/api/users/${editandoId}/procedimento/${procedimentoId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      if (response.status === 200) {
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
-        }));
-        alert("Procedimento excluído com sucesso!");
-      }
+      // Atualiza o estado do formulário de edição removendo o procedimento
+      setFormData(prev => ({
+        ...prev,
+        procedimentos: prev.procedimentos.filter(p => p._id !== procedimentoId)
+      }));
+
+      // Atualiza a lista principal de usuários
+      setUsuarios(prev => prev.map(u => {
+        if (u._id === editandoId) {
+          return {
+            ...u,
+            historicoProcedimentos: u.historicoProcedimentos.filter(p => p._id !== procedimentoId)
+          };
+        }
+        return u;
+      }));
+
+      alert("Procedimento excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir procedimento:", error);
       setError(error.response?.data?.message || "Erro ao excluir procedimento. Tente novamente.");
@@ -282,16 +293,16 @@ const RegisterUser = () => {
     const formattedDate = dataOriginal ? formatDateForDisplay(dataOriginal) : '';
 
     setProcedimentoData({
-        procedimento: procedimento.procedimento || "",
-        denteFace: procedimento.denteFace || "",
-        valor: procedimento.valor || 0,
-        modalidadePagamento: procedimento.modalidadePagamento || "",
-        profissional: procedimento.profissional || "",
-        dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
-        valorFormatado: formatValueForDisplay(procedimento.valor) || "" // Usa o valor formatado para exibir no input
+      procedimento: procedimento.procedimento || "",
+      denteFace: procedimento.denteFace || "",
+      valor: procedimento.valor || 0,
+      modalidadePagamento: procedimento.modalidadePagamento || "",
+      profissional: procedimento.profissional || "",
+      dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
+      valorFormatado: formatValueForDisplay(procedimento.valor) || "" // Usa o valor formatado para exibir no input
     });
     setShowProcedimentoForm(true);
-};
+  };
 
   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
@@ -566,42 +577,39 @@ const RegisterUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Se estiver em modo de edição, apenas valida e envia o formulário principal
+    // Lógica de ATUALIZAÇÃO
     if (editandoId) {
-      // Objeto para armazenar apenas os campos que mudaram
       const updatedFields = {};
 
-      // Verificamos a diferença entre o formData atual e o usuário original
-      const originalUser = usuarios.find(u => u._id === editandoId);
+      // Adicione aqui todos os campos que podem ser atualizados
+      if (formData.nomeCompleto !== undefined) updatedFields.nomeCompleto = formData.nomeCompleto.trim();
+      if (formData.cpf !== undefined) updatedFields.cpf = formData.cpf.replace(/\D/g, ''); // Envia o CPF sem formatação
+      if (formData.telefone !== undefined) updatedFields.telefone = formData.telefone.replace(/\D/g, ''); // Envia o telefone sem formatação
+      if (formData.endereco !== undefined) updatedFields.endereco = formData.endereco.trim();
+      if (formData.dataNascimento) {
+        const [day, month, year] = formData.dataNascimento.split('/');
+        updatedFields.dataNascimento = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+      }
+      if (formData.detalhesDoencas !== undefined) updatedFields.detalhesDoencas = formData.detalhesDoencas.trim();
+      if (formData.quaisRemedios !== undefined) updatedFields.quaisRemedios = formData.quaisRemedios.trim();
+      if (formData.quaisMedicamentos !== undefined) updatedFields.quaisMedicamentos = formData.quaisMedicamentos.trim();
+      if (formData.quaisAnestesias !== undefined) updatedFields.quaisAnestesias = formData.quaisAnestesias.trim();
+      if (formData.frequenciaFumo !== undefined) updatedFields.habitos = { ...updatedFields.habitos, frequenciaFumo: formData.frequenciaFumo };
+      if (formData.frequenciaAlcool !== undefined) updatedFields.habitos = { ...updatedFields.habitos, frequenciaAlcool: formData.frequenciaAlcool };
+      if (formData.historicoCirurgia !== undefined) updatedFields.historicoCirurgia = formData.historicoCirurgia.trim();
+      if (formData.historicoOdontologico !== undefined) updatedFields.historicoOdontologico = formData.historicoOdontologico.trim();
+      if (formData.sangramentoPosProcedimento !== undefined) updatedFields.sangramentoPosProcedimento = formData.sangramentoPosProcedimento.trim();
+      if (formData.respiracao !== undefined) updatedFields.respiracao = formData.respiracao.trim();
+      if (formData.peso !== undefined) updatedFields.peso = Number(formData.peso);
+      if (formData.exameSangue !== undefined) updatedFields.exames = { ...updatedFields.exames, exameSangue: formData.exameSangue };
+      if (formData.coagulacao !== undefined) updatedFields.exames = { ...updatedFields.exames, coagulacao: formData.coagulacao };
+      if (formData.cicatrizacao !== undefined) updatedFields.exames = { ...updatedFields.exames, cicatrizacao: formData.cicatrizacao };
 
-      // CUIDADO: Este é um exemplo simplificado. O ideal é ter um estado
-      // separado para o formulário de edição para facilitar a comparação.
-      // No seu caso, vamos iterar sobre todos os campos e incluir na requisição
-      // apenas os que estiverem preenchidos, tratando-os como campos a serem atualizados.
-
-      // Lógica de atualização
-      if (formData.nomeCompleto) updatedFields.nomeCompleto = formData.nomeCompleto.trim();
-      if (formData.cpf) updatedFields.cpf = formatCPF(formData.cpf.replace(/\D/g, ''));
-      if (formData.telefone) updatedFields.telefone = formatFone(formData.telefone.replace(/\D/g, ''));
-      if (formData.endereco) updatedFields.endereco = formData.endereco.trim();
-      if (formData.dataNascimento) updatedFields.dataNascimento = formData.dataNascimento;
-      if (formData.detalhesDoencas) updatedFields.detalhesDoencas = formData.detalhesDoencas.trim();
-      if (formData.quaisRemedios) updatedFields.quaisRemedios = formData.quaisRemedios.trim();
-      if (formData.quaisMedicamentos) updatedFields.quaisMedicamentos = formData.quaisMedicamentos.trim();
-      if (formData.quaisAnestesias) updatedFields.quaisAnestesias = formData.quaisAnestesias.trim();
-      if (formData.historicoCirurgia) updatedFields.historicoCirurgia = formData.historicoCirurgia.trim();
-      if (formData.historicoOdontologico) updatedFields.historicoOdontologico = formData.historicoOdontologico.trim();
-      if (formData.sangramentoPosProcedimento) updatedFields.sangramentoPosProcedimento = formData.sangramentoPosProcedimento.trim();
-      if (formData.respiracao) updatedFields.respiracao = formData.respiracao.trim();
-      if (formData.peso) updatedFields.peso = Number(formData.peso);
-      if (formData.frequenciaFumo) updatedFields.habitos = { ...updatedFields.habitos, frequenciaFumo: formData.frequenciaFumo };
-      if (formData.frequenciaAlcool) updatedFields.habitos = { ...updatedFields.habitos, frequenciaAlcool: formData.frequenciaAlcool };
-      if (formData.exameSangue) updatedFields.exames = { ...updatedFields.exames, exameSangue: formData.exameSangue };
-      if (formData.coagulacao) updatedFields.exames = { ...updatedFields.exames, coagulacao: formData.coagulacao };
-      if (formData.cicatrizacao) updatedFields.exames = { ...updatedFields.exames, cicatrizacao: formData.cicatrizacao };
-
-      // Se a senha foi preenchida, adiciona ao objeto
       if (formData.password && formData.password.length >= 6) {
+        if (formData.password !== formData.confirmPassword) {
+          setFieldErrors({ confirmPassword: "As senhas não coincidem!" });
+          return;
+        }
         updatedFields.password = formData.password;
       }
 
@@ -618,8 +626,14 @@ const RegisterUser = () => {
         }
 
         alert("Usuário atualizado com sucesso!");
-        resetForm();
-        fetchUsuarios();
+
+        // Atualiza a lista principal de usuários
+        const updatedUserFromApi = response.data.user;
+        setUsuarios(prev => prev.map(u => u._id === updatedUserFromApi._id ? { ...u, ...updatedUserFromApi } : u));
+
+        // Atualiza o estado do formulário de edição para refletir os novos dados
+        handleEdit(updatedUserFromApi);
+
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
         if (error.response?.data?.errors) {
@@ -968,87 +982,78 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Validação e conversão da data do procedimento
       const dataProcedimentoInput = procedimentoData.dataProcedimento;
-
-      if (!dataProcedimentoInput) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data do procedimento é obrigatória" });
-        return;
-      }
-
-      // Regex para validar o formato DD/MM/AAAA
       const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+
       if (!dateRegex.test(dataProcedimentoInput)) {
         setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA)" });
         return;
       }
 
-      // Converte o valor monetário
-      let valorNumerico = 0;
-      if (procedimentoData.valorFormatado) {
-        try {
-          // A função convertValueToFloat lida com strings como "R$ 100,00" ou apenas "100"
-          valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-          if (isNaN(valorNumerico)) {
-            throw new Error("Valor inválido");
-          }
-        } catch (error) {
-          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-          return;
-        }
+      let valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+      if (isNaN(valorNumerico)) {
+        setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+        return;
       }
 
       const dadosParaEnvio = {
         procedimento: procedimentoData.procedimento?.trim() || null,
         denteFace: procedimentoData.denteFace?.trim() || null,
-        valor: valorNumerico || null,
+        valor: valorNumerico,
         modalidadePagamento: procedimentoData.modalidadePagamento || null,
         profissional: procedimentoData.profissional?.trim() || null,
-        dataProcedimento: dataProcedimentoInput // Envia a string no formato DD/MM/AAAA
+        dataProcedimento: dataProcedimentoInput // Envia a string no formato DD/MM/AAAA para o backend tratar
       };
 
       let response;
       if (editandoProcedimentoId) {
-        // Requisição PUT para ATUALIZAR um procedimento específico
         response = await api.put(
           `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
           dadosParaEnvio,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        // Atualiza a lista local com os dados enviados
-        const procedimentoAtualizado = {
-          ...dadosParaEnvio,
-          _id: editandoProcedimentoId,
-          valorFormatado: formatValueForDisplay(valorNumerico)
-        };
+        // Atualiza o estado do formulário com o procedimento modificado
+        const updatedProcedimento = response.data.procedimento;
         setFormData(prev => ({
           ...prev,
           procedimentos: prev.procedimentos.map(p =>
-            p._id === editandoProcedimentoId ? procedimentoAtualizado : p
+            p._id === updatedProcedimento._id ? { ...updatedProcedimento, valorFormatado: formatValueForDisplay(updatedProcedimento.valor) } : p
           )
         }));
+
+        // Atualiza também a lista principal de usuários
+        setUsuarios(prevUsuarios => prevUsuarios.map(u => {
+          if (u._id === editandoId) {
+            const updatedHistorico = u.historicoProcedimentos.map(p =>
+              p._id === updatedProcedimento._id ? updatedProcedimento : p
+            );
+            return { ...u, historicoProcedimentos: updatedHistorico };
+          }
+          return u;
+        }));
+
       } else {
-        // Requisição PUT para ADICIONAR um NOVO procedimento
         response = await api.put(
           `/api/users/${editandoId}/procedimento`,
           dadosParaEnvio,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const novoProcedimento = {
-          ...dadosParaEnvio,
-          _id: response.data.procedimento._id, // Obtém o ID do novo item da resposta da API
-          valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: dadosParaEnvio.dataProcedimento
-        };
+        const novoProcedimento = response.data.procedimento;
         setFormData(prev => ({
           ...prev,
-          procedimentos: [...prev.procedimentos, novoProcedimento]
+          procedimentos: [...prev.procedimentos, { ...novoProcedimento, valorFormatado: formatValueForDisplay(novoProcedimento.valor) }]
+        }));
+
+        setUsuarios(prevUsuarios => prevUsuarios.map(u => {
+          if (u._id === editandoId) {
+            return { ...u, historicoProcedimentos: [...u.historicoProcedimentos, novoProcedimento] };
+          }
+          return u;
         }));
       }
 
-      // Limpa o formulário e os estados após o sucesso
       setProcedimentoData({
         procedimento: "", denteFace: "", valor: "", valorFormatado: "",
         modalidadePagamento: "", profissional: "", dataProcedimento: ""
@@ -1058,9 +1063,6 @@ const RegisterUser = () => {
       setError("");
       setFieldErrors({});
       alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
-
-      // Atualiza a lista de usuários para refletir as mudanças
-      fetchUsuarios();
 
     } catch (error) {
       console.error("Erro ao adicionar/editar procedimento:", error);
