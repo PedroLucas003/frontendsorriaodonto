@@ -978,18 +978,20 @@ const RegisterUser = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Validação e conversão da data do procedimento
+      // Validação da data do procedimento
       const dataProcedimentoInput = procedimentoData.dataProcedimento;
 
-      if (!dataProcedimentoInput) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data do procedimento é obrigatória" });
+      if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
+        setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
         return;
       }
+      
+      // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
+      const [day, month, year] = dataProcedimentoInput.split('/');
+      const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
 
-      // Regex para validar o formato DD/MM/AAAA
-      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-      if (!dateRegex.test(dataProcedimentoInput)) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA)" });
+      if (isNaN(dataProcedimentoObjeto.getTime())) {
+        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
         return;
       }
 
@@ -997,7 +999,6 @@ const RegisterUser = () => {
       let valorNumerico = 0;
       if (procedimentoData.valorFormatado) {
         try {
-          // A função convertValueToFloat lida com strings como "R$ 100,00" ou apenas "100"
           valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
           if (isNaN(valorNumerico)) {
             throw new Error("Valor inválido");
@@ -1014,7 +1015,8 @@ const RegisterUser = () => {
         valor: valorNumerico || null,
         modalidadePagamento: procedimentoData.modalidadePagamento || null,
         profissional: procedimentoData.profissional?.trim() || null,
-        dataProcedimento: dataProcedimentoInput // Envia a string no formato DD/MM/AAAA
+        // **CORREÇÃO AQUI:** Envia o objeto de data já corrigido
+        dataProcedimento: dataProcedimentoObjeto
       };
 
       let response;
@@ -1026,12 +1028,14 @@ const RegisterUser = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        // Atualiza a lista local com os dados enviados
+        // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
         const procedimentoAtualizado = {
           ...dadosParaEnvio,
           _id: editandoProcedimentoId,
-          valorFormatado: formatValueForDisplay(valorNumerico)
+          valorFormatado: formatValueForDisplay(valorNumerico),
+          dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
         };
+        
         setFormData(prev => ({
           ...prev,
           procedimentos: prev.procedimentos.map(p =>
@@ -1046,19 +1050,20 @@ const RegisterUser = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
+        // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
         const novoProcedimento = {
           ...dadosParaEnvio,
-          _id: response.data.procedimento._id, // Obtém o ID do novo item da resposta da API
+          _id: response.data.procedimento._id,
           valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: dadosParaEnvio.dataProcedimento
+          dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
         };
+        
         setFormData(prev => ({
           ...prev,
           procedimentos: [...prev.procedimentos, novoProcedimento]
         }));
       }
 
-      // Limpa o formulário e os estados após o sucesso
       setProcedimentoData({
         procedimento: "", denteFace: "", valor: "", valorFormatado: "",
         modalidadePagamento: "", profissional: "", dataProcedimento: ""
@@ -1069,9 +1074,7 @@ const RegisterUser = () => {
       setFieldErrors({});
       alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
 
-      // Atualiza a lista de usuários para refletir as mudanças
       fetchUsuarios();
-
     } catch (error) {
       console.error("Erro ao adicionar/editar procedimento:", error);
       const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
