@@ -685,15 +685,16 @@ const RegisterUser = () => {
           return null;
         }
         try {
-          const [day, month, year] = dateString.split('/');
-          const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-          if (isNaN(dateObj.getTime())) {
-            setFieldErrors(prev => ({
-              ...prev,
-              [fieldName]: `Data ${fieldName} inválida`
-            }));
-            return null;
-          }
+          const [day, month, year] = procedimentoData.dataProcedimento.split('/');
+// Cria uma data com base no fuso horário local, sem forçar UTC
+const dataProcedimento = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+if (isNaN(dataProcedimento.getTime())) {
+    return res.status(400).json({
+        message: "Data inválida. Use o formato DD/MM/AAAA.",
+        error: "INVALID_DATE"
+    });
+}
           return dateObj.toISOString();
         } catch (error) {
           console.error(`Erro ao converter ${fieldName}:`, error);
