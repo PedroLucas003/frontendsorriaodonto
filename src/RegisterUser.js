@@ -278,53 +278,57 @@ const RegisterUser = () => {
     if (!procedimento) return;
     setEditandoProcedimentoId(procedimentoId);
 
+    // Converte a data do banco (ISO) para o formato DD/MM/AAAA
     const dataOriginal = procedimento.dataProcedimento;
-    const formattedDate = dataOriginal ? formatDateForDisplay(dataOriginal) : '';
+    const formattedDate = dataOriginal ? new Date(dataOriginal).toLocaleDateString('pt-BR') : '';
+
+    // Converte o valor numérico para o formato de exibição
+    const valorDisplay = formatValueForDisplay(procedimento.valor);
 
     setProcedimentoData({
-        procedimento: procedimento.procedimento || "",
-        denteFace: procedimento.denteFace || "",
-        valor: procedimento.valor || 0,
-        modalidadePagamento: procedimento.modalidadePagamento || "",
-        profissional: procedimento.profissional || "",
-        dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
-        valorFormatado: formatValueForDisplay(procedimento.valor) || "" // Usa o valor formatado para exibir no input
+      procedimento: procedimento.procedimento || "",
+      denteFace: procedimento.denteFace || "",
+      valor: procedimento.valor || 0, // Passa o valor numérico original
+      modalidadePagamento: procedimento.modalidadePagamento || "",
+      profissional: procedimento.profissional || "",
+      dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
+      valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
     });
     setShowProcedimentoForm(true);
-};
+  };
 
-   const handleProcedimentoChange = (e) => {
+  const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     // Tratamento para valor monetário (campo "valor")
     if (name === "valor") {
-        // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
-        const cleanedValue = value.replace(/[^0-9,]/g, '');
+      // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
+      const cleanedValue = value.replace(/[^0-9,]/g, '');
 
-        // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
-        // Isso previne o travamento no R$ 1,00
-        const numericString = cleanedValue.replace(',', '');
+      // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
+      // Isso previne o travamento no R$ 1,00
+      const numericString = cleanedValue.replace(',', '');
 
-        let numericValue = 0;
-        if (numericString) {
-          numericValue = parseInt(numericString, 10) / 100;
-        }
+      let numericValue = 0;
+      if (numericString) {
+        numericValue = parseInt(numericString, 10) / 100;
+      }
 
-        // Formata o número para o padrão monetário brasileiro (R$ 0,00)
-        formattedValue = numericValue.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+      // Formata o número para o padrão monetário brasileiro (R$ 0,00)
+      formattedValue = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
 
-        setProcedimentoData(prev => ({
-          ...prev,
-          valor: numericValue,
-          valorFormatado: formattedValue
-        }));
-        return;
+      setProcedimentoData(prev => ({
+        ...prev,
+        valor: numericValue,
+        valorFormatado: formattedValue
+      }));
+      return;
     }
 
     // Tratamento para a data do procedimento
@@ -586,7 +590,7 @@ const RegisterUser = () => {
           updatedFields[key] = formData[key];
         }
       });
-      
+
       // Lida com campos aninhados como 'habitos' e 'exames'
       updatedFields.habitos = {
         frequenciaFumo: formData.frequenciaFumo,
@@ -638,7 +642,7 @@ const RegisterUser = () => {
 
         // Não chame resetForm() aqui para manter o estado de edição
         // Você pode voltar para a lista de usuários com o botão "Voltar"
-        
+
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
         if (error.response?.data?.errors) {
@@ -653,7 +657,7 @@ const RegisterUser = () => {
       if (!validateForm()) {
         return;
       }
-      
+
       let formIsValid = true;
       const requiredFields = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco',
@@ -711,7 +715,7 @@ const RegisterUser = () => {
       if (!dataNascimentoISO) {
         return;
       }
-      
+
       const dadosParaEnvio = {
         nomeCompleto: formData.nomeCompleto.trim(),
         cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
@@ -986,7 +990,7 @@ const RegisterUser = () => {
         return;
       }
       
-      // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
+      // CONVERSÃO CORRIGIDA: Cria um objeto de data no fuso horário LOCAL do navegador
       const [day, month, year] = dataProcedimentoInput.split('/');
       const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
 
@@ -1015,7 +1019,7 @@ const RegisterUser = () => {
         valor: valorNumerico || null,
         modalidadePagamento: procedimentoData.modalidadePagamento || null,
         profissional: procedimentoData.profissional?.trim() || null,
-        // **CORREÇÃO AQUI:** Envia o objeto de data já corrigido
+        // **CORREÇÃO AQUI:** Envia o objeto de data já corrigido, não a string
         dataProcedimento: dataProcedimentoObjeto
       };
 
@@ -1028,12 +1032,12 @@ const RegisterUser = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
         const procedimentoAtualizado = {
           ...dadosParaEnvio,
           _id: editandoProcedimentoId,
           valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
+          // Usa a data do objeto enviado, que já está correta
+          dataProcedimento: dataProcedimentoObjeto 
         };
         
         setFormData(prev => ({
@@ -1049,13 +1053,13 @@ const RegisterUser = () => {
           dadosParaEnvio,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
+        
         const novoProcedimento = {
           ...dadosParaEnvio,
           _id: response.data.procedimento._id,
           valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
+          // Usa a data do objeto enviado, que já está correta
+          dataProcedimento: dataProcedimentoObjeto
         };
         
         setFormData(prev => ({
