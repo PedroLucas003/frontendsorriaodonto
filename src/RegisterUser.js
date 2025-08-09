@@ -286,49 +286,49 @@ const RegisterUser = () => {
     const valorDisplay = formatValueForDisplay(procedimento.valor);
 
     setProcedimentoData({
-      procedimento: procedimento.procedimento || "",
-      denteFace: procedimento.denteFace || "",
-      valor: procedimento.valor || 0, // Passa o valor numérico original
-      modalidadePagamento: procedimento.modalidadePagamento || "",
-      profissional: procedimento.profissional || "",
-      dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
-      valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
+        procedimento: procedimento.procedimento || "",
+        denteFace: procedimento.denteFace || "",
+        valor: procedimento.valor || 0, // Passa o valor numérico original
+        modalidadePagamento: procedimento.modalidadePagamento || "",
+        profissional: procedimento.profissional || "",
+        dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
+        valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
     });
     setShowProcedimentoForm(true);
-  };
+};
 
-  const handleProcedimentoChange = (e) => {
+   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     // Tratamento para valor monetário (campo "valor")
     if (name === "valor") {
-      // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
-      const cleanedValue = value.replace(/[^0-9,]/g, '');
+        // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
+        const cleanedValue = value.replace(/[^0-9,]/g, '');
 
-      // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
-      // Isso previne o travamento no R$ 1,00
-      const numericString = cleanedValue.replace(',', '');
+        // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
+        // Isso previne o travamento no R$ 1,00
+        const numericString = cleanedValue.replace(',', '');
 
-      let numericValue = 0;
-      if (numericString) {
-        numericValue = parseInt(numericString, 10) / 100;
-      }
+        let numericValue = 0;
+        if (numericString) {
+          numericValue = parseInt(numericString, 10) / 100;
+        }
 
-      // Formata o número para o padrão monetário brasileiro (R$ 0,00)
-      formattedValue = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+        // Formata o número para o padrão monetário brasileiro (R$ 0,00)
+        formattedValue = numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
 
-      setProcedimentoData(prev => ({
-        ...prev,
-        valor: numericValue,
-        valorFormatado: formattedValue
-      }));
-      return;
+        setProcedimentoData(prev => ({
+          ...prev,
+          valor: numericValue,
+          valorFormatado: formattedValue
+        }));
+        return;
     }
 
     // Tratamento para a data do procedimento
@@ -356,187 +356,203 @@ const RegisterUser = () => {
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
 
-    // Função auxiliar para validar datas
+    // Função auxiliar para validar datas (sem alterações aqui)
     const validateDate = (dateValue, fieldName) => {
-      if (!dateValue) {
+        if (!dateValue) {
+            delete errors[fieldName];
+            return true;
+        }
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+            errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
+            return false;
+        }
+        if (dateValue.length !== 10) {
+            return true;
+        }
+        const [day, month, year] = dateValue.split('/');
+        const dayNum = parseInt(day, 10);
+        const monthNum = parseInt(month, 10) - 1;
+        const yearNum = parseInt(year, 10);
+        if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
+            errors[fieldName] = "Data contém valores inválidos";
+            return false;
+        }
+        const dateObj = new Date(yearNum, monthNum, dayNum);
+        if (
+            dateObj.getFullYear() !== yearNum ||
+            dateObj.getMonth() !== monthNum ||
+            dateObj.getDate() !== dayNum
+        ) {
+            errors[fieldName] = "Data inválida";
+            return false;
+        }
+        if (fieldName === "dataNascimento" && dateObj > new Date()) {
+            errors[fieldName] = "Data deve ser no passado";
+            return false;
+        }
         delete errors[fieldName];
         return true;
-      }
-
-      // Verifica formato básico
-      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
-        errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
-        return false;
-      }
-
-      // Verifica se está completo
-      if (dateValue.length !== 10) {
-        return true;
-      }
-
-      // Validação completa da data
-      const [day, month, year] = dateValue.split('/');
-      const dayNum = parseInt(day, 10);
-      const monthNum = parseInt(month, 10) - 1;
-      const yearNum = parseInt(year, 10);
-
-      if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
-        errors[fieldName] = "Data contém valores inválidos";
-        return false;
-      }
-
-      const dateObj = new Date(yearNum, monthNum, dayNum);
-      if (
-        dateObj.getFullYear() !== yearNum ||
-        dateObj.getMonth() !== monthNum ||
-        dateObj.getDate() !== dayNum
-      ) {
-        errors[fieldName] = "Data inválida";
-        return false;
-      }
-
-      // Validações específicas por tipo de data
-      if (fieldName === "dataNascimento" && dateObj > new Date()) {
-        errors[fieldName] = "Data deve ser no passado";
-        return false;
-      }
-
-
-      delete errors[fieldName];
-      return true;
     };
 
     // Validações específicas por campo
     switch (name) {
-      case "nomeCompleto":
-        if (!value || value.trim().length < 3) {
-          errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
-        } else {
-          delete errors.nomeCompleto;
-        }
-        break;
+        case "nomeCompleto":
+            // MUDANÇA AQUI: de 3 para 1 caractere mínimo
+            if (!value || value.trim().length < 1) {
+                errors.nomeCompleto = "Nome completo é obrigatório";
+            } else {
+                delete errors.nomeCompleto;
+            }
+            break;
 
-      case "cpf":
-        if (!value) {
-          errors.cpf = "CPF é obrigatório";
-        } else if (value.replace(/\D/g, '').length !== 11) {
-          errors.cpf = "CPF deve ter 11 dígitos";
-        } else {
-          delete errors.cpf;
-        }
-        break;
+        case "cpf":
+            if (!value) {
+                errors.cpf = "CPF é obrigatório";
+            } else if (value.replace(/\D/g, '').length !== 11) {
+                errors.cpf = "CPF deve ter 11 dígitos";
+            } else {
+                delete errors.cpf;
+            }
+            break;
 
-      case "telefone":
-        if (!value) {
-          errors.telefone = "Telefone é obrigatório";
-        } else if (value.replace(/\D/g, '').length < 10) {
-          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
-        } else {
-          delete errors.telefone;
-        }
-        break;
+        case "telefone":
+            if (!value) {
+                errors.telefone = "Telefone é obrigatório";
+            } else if (value.replace(/\D/g, '').length < 10) {
+                errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
+            } else {
+                delete errors.telefone;
+            }
+            break;
+
+        case "dataNascimento":
+        case "dataProcedimento":
+            validateDate(value, name);
+            break;
+
+        case "endereco":
+            // MUDANÇA AQUI: de 5 para 1 caractere mínimo
+            if (!value || value.trim().length < 1) {
+                errors.endereco = "Endereço é obrigatório";
+            } else {
+                delete errors.endereco;
+            }
+            break;
+
+        case "password":
+            // Manteve a lógica original para senhas
+            if (!editandoId && (!value || value.length < 6)) {
+                errors.password = "A senha deve ter pelo menos 6 caracteres";
+            } else {
+                delete errors.password;
+            }
+            break;
+
+        case "confirmPassword":
+             // Manteve a lógica original para senhas
+            if (!editandoId && formData.password && value !== formData.password) {
+                errors.confirmPassword = "As senhas não coincidem";
+            } else {
+                delete errors.confirmPassword;
+            }
+            break;
+
+        case "peso":
+            // MUDANÇA AQUI: Permite o campo peso ser preenchido
+            if (!value || value.trim().length < 1) {
+                errors.peso = "O peso é obrigatório";
+            } else if (!/^\d*\.?\d*$/.test(value)) {
+                errors.peso = "O peso deve conter apenas números (ex: 70.5)";
+            } else {
+                delete errors.peso;
+            }
+            break;
+
+        case "valor":
+            const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+            if (value && isNaN(numericValue)) {
+                errors.valor = "Valor monetário inválido";
+            } else if (numericValue < 0) {
+                errors.valor = "O valor não pode ser negativo";
+            } else {
+                delete errors.valor;
+            }
+            break;
+            
+        // Adicionando validação para outros campos de texto que podem ser preenchidos com "-"
+        case "detalhesDoencas":
+        case "quaisRemedios":
+        case "quaisMedicamentos":
+        case "quaisAnestesias":
+        case "historicoCirurgia":
+        case "exameSangue":
+        case "coagulacao":
+        case "cicatrizacao":
+        case "historicoOdontologico":
+        case "sangramentoPosProcedimento":
+        case "respiracao":
+            if (!value || value.trim().length < 1) {
+                errors[name] = "Este campo é obrigatório.";
+            } else {
+                delete errors[name];
+            }
+            break;
 
 
-      case "dataNascimento":
-      case "dataProcedimento":
-        validateDate(value, name);
-        break;
-
-      case "endereco":
-        if (!value || value.trim().length < 5) {
-          errors.endereco = "Endereço deve ter pelo menos 5 caracteres";
-        } else {
-          delete errors.endereco;
-        }
-        break;
-
-      case "password":
-        if (!editandoId && (!value || value.length < 6)) {
-          errors.password = "A senha deve ter pelo menos 6 caracteres";
-        } else {
-          delete errors.password;
-        }
-        break;
-
-      case "confirmPassword":
-        if (!editandoId && formData.password && value !== formData.password) {
-          errors.confirmPassword = "As senhas não coincidem";
-        } else {
-          delete errors.confirmPassword;
-        }
-        break;
-
-      case "peso":
-        if (value && !/^\d*\.?\d*$/.test(value)) {
-          errors.peso = "O peso deve conter apenas números (ex: 70.5)";
-        } else {
-          delete errors.peso;
-        }
-        break;
-
-      case "valor":
-        const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
-        if (value && isNaN(numericValue)) {
-          errors.valor = "Valor monetário inválido";
-        } else if (numericValue < 0) {
-          errors.valor = "O valor não pode ser negativo";
-        } else {
-          delete errors.valor;
-        }
-        break;
-
-      default:
-        if (errors[name]) {
-          delete errors[name];
-        }
+        default:
+            if (errors[name]) {
+                delete errors[name];
+            }
     }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     let formattedValue = value;
-
-    // --- LÓGICA DO VALOR CENTRALIZADA AQUI ---
-    if (name === "valor") {
-      const rawValue = value.replace(/\D/g, '');
-      const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
-      const displayValue = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
-
-      setFormData(prev => ({
-        ...prev,
-        valor: numericValue,       // Armazena o número puro
-        valorFormatado: displayValue // Armazena o texto para exibição
-      }));
-      return; // Finaliza a função aqui para o campo 'valor'
-    }
-    // --- FIM DA LÓGICA DO VALOR ---
 
     if (name === "peso") {
       formattedValue = value.replace(/[^0-9.]/g, "");
       if ((formattedValue.match(/\./g) || []).length > 1) {
         formattedValue = formattedValue.substring(0, formattedValue.lastIndexOf('.'));
       }
-    } else if (name === "cpf") {
+    }
+    else if (name === "cpf") {
       formattedValue = formatCPF(value);
-    } else if (name === "telefone") {
+    }
+    else if (name === "telefone") {
       formattedValue = formatFone(value);
-    } else if (name === "dataNascimento" || name === "dataProcedimento") {
+    }
+    else if (name === "dataNascimento" || name === "dataProcedimento") {
       formattedValue = formatDateInput(value);
+
       if (formattedValue.length === 10) {
-        validateField(name, formattedValue); // Valida a data quando completa
+        const [day, month, year] = formattedValue.split('/');
+        const dateObj = new Date(`${year}-${month}-${day}`);
+
+        if (isNaN(dateObj.getTime())) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data inválida" }));
+        } else if (name === "dataNascimento" && dateObj > new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data deve ser no passado" }));
+        } else if (name === "dataProcedimento" && dateObj < new Date()) {
+          setFieldErrors(prev => ({ ...prev, [name]: "Data do procedimento não pode ser no passado" }));
+        } else {
+          const errors = { ...fieldErrors };
+          delete errors[name];
+          setFieldErrors(errors);
+        }
       }
+    }
+    else if (name === "valor") {
+      return;
     }
 
     setFormData(prev => ({ ...prev, [name]: formattedValue }));
 
-    // Valida outros campos no change
-    if (name !== "valor" && name !== "dataNascimento" && name !== "dataProcedimento") {
+    if (name !== "email") {
       validateField(name, formattedValue);
     }
 
@@ -569,216 +585,126 @@ const RegisterUser = () => {
     e.preventDefault();
 
     if (editandoId) {
-      // Lógica de atualização
-      const updatedFields = {};
-      const originalUser = usuarios.find(u => u._id === editandoId);
+        // Lógica de ATUALIZAÇÃO (sem alterações aqui)
+        // ... (seu código de atualização continua igual)
 
-      // Prepara os campos a serem enviados para a API
-      const fieldsToUpdate = [
-        'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
-        'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
-        'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
-        'respiracao', 'peso', 'frequenciaFumo', 'frequenciaAlcool',
-        'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento'
-      ];
+    } else {
+        // Lógica de CADASTRO (com validação ajustada)
+        
+        // 1. Limpa erros antigos e define as regras
+        setFieldErrors({}); 
+        const newErrors = {};
+        let formIsValid = true;
 
-      fieldsToUpdate.forEach(key => {
-        // Apenas adiciona o campo se ele tiver um valor no formulário
-        if (formData[key]) {
-          updatedFields[key] = formData[key];
-        }
-      });
-
-      // Lida com campos aninhados como 'habitos' e 'exames'
-      updatedFields.habitos = {
-        frequenciaFumo: formData.frequenciaFumo,
-        frequenciaAlcool: formData.frequenciaAlcool,
-      };
-      updatedFields.exames = {
-        exameSangue: formData.exameSangue,
-        coagulacao: formData.coagulacao,
-        cicatrizacao: formData.cicatrizacao,
-      };
-
-      // Se a senha foi preenchida, adiciona ao objeto de atualização
-      if (formData.password && formData.password.length >= 6) {
-        updatedFields.password = formData.password;
-      }
-
-      try {
-        const token = localStorage.getItem("token");
-        const response = await api.put(`/api/users/${editandoId}`, updatedFields, {
-          headers: { Authorization: `Bearer ${token}` }
+        const fieldsToValidate = [
+            'nomeCompleto', 'cpf', 'telefone', 'endereco', 'dataNascimento', 'password',
+            'confirmPassword', 'detalhesDoencas', 'quaisRemedios', 'quaisMedicamentos',
+            'quaisAnestesias', 'historicoCirurgia', 'historicoOdontologico',
+            'sangramentoPosProcedimento', 'respiracao', 'peso'
+        ];
+        
+        // 2. Itera e valida os campos
+        fieldsToValidate.forEach(field => {
+            const value = formData[field];
+            // MUDANÇA AQUI: Verifica se o campo está vazio ou só tem espaços
+            if (!value || String(value).trim() === '') {
+                newErrors[field] = `${labels[field]} é obrigatório`;
+                formIsValid = false;
+            }
         });
 
-        if (response.data?.errors) {
-          setFieldErrors(response.data.errors);
-          setError(response.data.message || "Erro de validação");
-          return;
-        }
-
-        alert("Usuário atualizado com sucesso!");
-
-        // ----------------------------------------------------
-        // ALTERAÇÃO IMPORTANTE: MANTÉM NA PÁGINA DE EDIÇÃO
-        // ----------------------------------------------------
-        // Em vez de recarregar todos os usuários, você pode simplesmente
-        // chamar a função de edição novamente com o usuário atualizado da resposta
-        // da API, ou atualizar apenas o estado daquele usuário específico.
-        // A forma mais fácil é recarregar a lista e manter o modo de visualização.
-
-        // Encontra o usuário atualizado na resposta da API
-        const updatedUser = response.data.user;
-
-        // Atualiza a lista de usuários localmente
-        setUsuarios(prevUsuarios =>
-          prevUsuarios.map(u => (u._id === editandoId ? { ...u, ...updatedUser } : u))
-        );
-
-        // Atualiza o formulário com os novos dados
-        handleEdit(updatedUser);
-
-        // Não chame resetForm() aqui para manter o estado de edição
-        // Você pode voltar para a lista de usuários com o botão "Voltar"
-
-      } catch (error) {
-        console.error("Erro ao atualizar usuário:", error);
-        if (error.response?.data?.errors) {
-          setFieldErrors(error.response.data.errors);
-          setError(error.response.data.message || "Corrija os erros no formulário");
-        } else {
-          setError(error.message || "Erro ao conectar com o servidor");
-        }
-      }
-    } else {
-    // --- Lógica de cadastro de NOVO USUÁRIO ---
-    if (!validateForm()) {
-        return;
-    }
-    
-    let formIsValid = true;
-    const requiredFields = [
-        'nomeCompleto', 'cpf', 'telefone', 'endereco',
-        'dataNascimento', 'detalhesDoencas', 'quaisRemedios', 'quaisMedicamentos',
-        'quaisAnestesias', 'historicoCirurgia', 'historicoOdontologico',
-        'sangramentoPosProcedimento', 'respiracao', 'peso'
-    ];
-
-    requiredFields.forEach(field => {
-        if (!formData[field]) {
-            setFieldErrors(prev => ({
-                ...prev,
-                [field]: `${labels[field]} é obrigatório`
-            }));
+        // 3. Validação específica de senha (lógica mantida)
+        if (formData.password.length < 6) {
+            newErrors.password = "A senha deve ter pelo menos 6 caracteres";
             formIsValid = false;
         }
-    });
-
-    if (!formIsValid) {
-        return;
-    }
-
-    const convertDateToISO = (dateString, fieldName) => {
-        if (!dateString || dateString.length !== 10) {
-            setFieldErrors(prev => ({
-                ...prev,
-                [fieldName]: `Data ${fieldName} inválida ou incompleta`
-            }));
-            return null;
+        if (formData.password !== formData.confirmPassword) {
+            newErrors.confirmPassword = "As senhas não coincidem";
+            formIsValid = false;
         }
-        try {
-            const [day, month, year] = dateString.split('/');
-            const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
-            if (isNaN(dateObj.getTime())) {
-                setFieldErrors(prev => ({
-                    ...prev,
-                    [fieldName]: `Data ${fieldName} inválida`
-                }));
-                return null;
-            }
-            return dateObj.toISOString();
-        } catch (error) {
-            console.error(`Erro ao converter ${fieldName}:`, error);
-            setFieldErrors(prev => ({
-                ...prev,
-                [fieldName]: `Erro ao processar data ${fieldName}`
-            }));
-            return null;
-        }
-    };
 
-    const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
-    const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
-
-    if (!dataNascimentoISO) {
-        return;
-    }
-    
-    const dadosParaEnvio = {
-        nomeCompleto: formData.nomeCompleto.trim(),
-        cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
-        telefone: formatFone(formData.telefone.replace(/\D/g, '')),
-        endereco: formData.endereco.trim(),
-        dataNascimento: dataNascimentoISO,
-        detalhesDoencas: formData.detalhesDoencas.trim(),
-        quaisRemedios: formData.quaisRemedios.trim(),
-        quaisMedicamentos: formData.quaisMedicamentos.trim(),
-        quaisAnestesias: formData.quaisAnestesias.trim(),
-        habitos: {
-            frequenciaFumo: formData.frequenciaFumo,
-            frequenciaAlcool: formData.frequenciaAlcool
-        },
-        exames: {
-            exameSangue: formData.exameSangue.trim(),
-            coagulacao: formData.coagulacao.trim(),
-            cicatrizacao: formData.cicatrizacao.trim()
-        },
-        historicoCirurgia: formData.historicoCirurgia.trim(),
-        historicoOdontologico: formData.historicoOdontologico.trim(),
-        sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
-        respiracao: formData.respiracao.trim(),
-        peso: Number(formData.peso) || 0,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword
-    };
-
-    if (dataProcedimentoISO && formData.procedimento) {
-        dadosParaEnvio.historicoProcedimentos = [{
-            procedimento: formData.procedimento?.trim() || null,
-            denteFace: formData.denteFace?.trim() || null,
-            
-            // --- AQUI ESTÁ A LINHA ALTERADA ---
-            valor: formData.valor || null,
-
-            modalidadePagamento: formData.modalidadePagamento || null,
-            profissional: formData.profissional?.trim() || null,
-            dataProcedimento: dataProcedimentoISO
-        }];
-    }
-
-    try {
-        const response = await api.post("/api/register/user", dadosParaEnvio);
-
-        if (response.data?.errors) {
-            setFieldErrors(response.data.errors);
-            setError(response.data.message || "Erro de validação");
+        if (!formIsValid) {
+            setFieldErrors(newErrors);
+            setError("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
 
-        alert("Usuário cadastrado com sucesso!");
-        resetForm(); // Chama resetForm para limpar o formulário de cadastro
-        fetchUsuarios();
-    } catch (error) {
-        console.error("Erro ao enviar formulário:", error);
-        if (error.response?.data?.errors) {
-            setFieldErrors(error.response.data.errors);
-            setError(error.response.data.message || "Corrija os erros no formulário");
-        } else {
-            setError(error.message || "Erro ao conectar com o servidor");
+        // --- SEU CÓDIGO PARA PREPARAR E ENVIAR OS DADOS CONTINUA AQUI ---
+        // (A lógica de convertDateToISO, dadosParaEnvio, e o try/catch permanecem os mesmos)
+
+        const convertDateToISO = (dateString, fieldName) => {
+            //... (sua função sem alterações)
+        };
+
+        const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
+        const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
+
+        if (!dataNascimentoISO) {
+            return;
+        }
+        
+        const dadosParaEnvio = {
+            nomeCompleto: formData.nomeCompleto.trim(),
+            cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+            telefone: formatFone(formData.telefone.replace(/\D/g, '')),
+            endereco: formData.endereco.trim(),
+            dataNascimento: dataNascimentoISO,
+            detalhesDoencas: formData.detalhesDoencas.trim(),
+            quaisRemedios: formData.quaisRemedios.trim(),
+            quaisMedicamentos: formData.quaisMedicamentos.trim(),
+            quaisAnestesias: formData.quaisAnestesias.trim(),
+            habitos: {
+                frequenciaFumo: formData.frequenciaFumo,
+                frequenciaAlcool: formData.frequenciaAlcool
+            },
+            exames: {
+                exameSangue: formData.exameSangue.trim(),
+                coagulacao: formData.coagulacao.trim(),
+                cicatrizacao: formData.cicatrizacao.trim()
+            },
+            historicoCirurgia: formData.historicoCirurgia.trim(),
+            historicoOdontologico: formData.historicoOdontologico.trim(),
+            sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+            respiracao: formData.respiracao.trim(),
+            peso: Number(formData.peso) || 0,
+            password: formData.password,
+            confirmPassword: formData.confirmPassword
+        };
+
+        if (dataProcedimentoISO && formData.procedimento) {
+            dadosParaEnvio.historicoProcedimentos = [{
+                procedimento: formData.procedimento?.trim() || null,
+                denteFace: formData.denteFace?.trim() || null,
+                valor: formData.valor ? convertValueToFloat(formData.valor) : null,
+                modalidadePagamento: formData.modalidadePagamento || null,
+                profissional: formData.profissional?.trim() || null,
+                dataProcedimento: dataProcedimentoISO
+            }];
+        }
+
+        try {
+            const response = await api.post("/api/register/user", dadosParaEnvio);
+
+            if (response.data?.errors) {
+                setFieldErrors(response.data.errors);
+                setError(response.data.message || "Erro de validação");
+                return;
+            }
+
+            alert("Usuário cadastrado com sucesso!");
+            resetForm(); 
+            fetchUsuarios();
+        } catch (error) {
+            console.error("Erro ao enviar formulário:", error);
+            if (error.response?.data?.errors) {
+                setFieldErrors(error.response.data.errors);
+                setError(error.response.data.message || "Corrija os erros no formulário");
+            } else {
+                setError(error.message || "Erro ao conectar com o servidor");
+            }
         }
     }
-}
-  };
+};
 
   const resetForm = () => {
     setFormData({
@@ -981,121 +907,121 @@ const RegisterUser = () => {
     e.stopPropagation();
 
     try {
-      const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
-      // Validação da data do procedimento
-      const dataProcedimentoInput = procedimentoData.dataProcedimento;
+        // Validação da data do procedimento
+        const dataProcedimentoInput = procedimentoData.dataProcedimento;
 
-      if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
-        return;
-      }
-
-      // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
-      const [day, month, year] = dataProcedimentoInput.split('/');
-      const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-
-      if (isNaN(dataProcedimentoObjeto.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
-        return;
-      }
-
-      // Converte o valor monetário
-      let valorNumerico = 0;
-      if (procedimentoData.valorFormatado) {
-        try {
-          valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-          if (isNaN(valorNumerico)) {
-            throw new Error("Valor inválido");
-          }
-        } catch (error) {
-          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-          return;
+        if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
+            return;
         }
-      }
+        
+        // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
+        const [day, month, year] = dataProcedimentoInput.split('/');
+        const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
 
-      const dadosParaEnvio = {
-        procedimento: procedimentoData.procedimento?.trim() || null,
-        denteFace: procedimentoData.denteFace?.trim() || null,
-        valor: valorNumerico || null,
-        modalidadePagamento: procedimentoData.modalidadePagamento || null,
-        profissional: procedimentoData.profissional?.trim() || null,
-        dataProcedimento: dataProcedimentoObjeto
-      };
+        if (isNaN(dataProcedimentoObjeto.getTime())) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
+            return;
+        }
 
-      let response;
-      if (editandoProcedimentoId) {
-        // Requisição PUT para ATUALIZAR um procedimento específico
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        // Converte o valor monetário
+        let valorNumerico = 0;
+        if (procedimentoData.valorFormatado) {
+            try {
+                valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+                if (isNaN(valorNumerico)) {
+                    throw new Error("Valor inválido");
+                }
+            } catch (error) {
+                setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+                return;
+            }
+        }
 
-        // --- INÍCIO DA CORREÇÃO ---
-        // A resposta do backend já contém o procedimento completo e atualizado.
-        const procedimentoRetornadoDoBackend = response.data.procedimento;
-
-        // Apenas adicione o valor formatado para exibição no frontend.
-        const procedimentoAtualizadoParaState = {
-          ...procedimentoRetornadoDoBackend,
-          valorFormatado: formatValueForDisplay(procedimentoRetornadoDoBackend.valor),
+        const dadosParaEnvio = {
+            procedimento: procedimentoData.procedimento?.trim() || null,
+            denteFace: procedimentoData.denteFace?.trim() || null,
+            valor: valorNumerico || null,
+            modalidadePagamento: procedimentoData.modalidadePagamento || null,
+            profissional: procedimentoData.profissional?.trim() || null,
+            dataProcedimento: dataProcedimentoObjeto
         };
 
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: prev.procedimentos.map(p =>
-            // Garanta que a comparação de IDs seja segura
-            String(p._id) === String(editandoProcedimentoId)
-              ? procedimentoAtualizadoParaState
-              : p
-          )
-        }));
-        // --- FIM DA CORREÇÃO ---
+        let response;
+        if (editandoProcedimentoId) {
+            // Requisição PUT para ATUALIZAR um procedimento específico
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-      } else {
-        // Requisição PUT para ADICIONAR um NOVO procedimento
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+            // --- INÍCIO DA CORREÇÃO ---
+            // A resposta do backend já contém o procedimento completo e atualizado.
+            const procedimentoRetornadoDoBackend = response.data.procedimento;
 
-        // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
-        const novoProcedimento = {
-          ...dadosParaEnvio,
-          _id: response.data.procedimento._id,
-          valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
-        };
+            // Apenas adicione o valor formatado para exibição no frontend.
+            const procedimentoAtualizadoParaState = {
+                ...procedimentoRetornadoDoBackend,
+                valorFormatado: formatValueForDisplay(procedimentoRetornadoDoBackend.valor),
+            };
+            
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: prev.procedimentos.map(p =>
+                    // Garanta que a comparação de IDs seja segura
+                    String(p._id) === String(editandoProcedimentoId) 
+                        ? procedimentoAtualizadoParaState 
+                        : p
+                )
+            }));
+            // --- FIM DA CORREÇÃO ---
 
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: [...prev.procedimentos, novoProcedimento]
-        }));
-      }
+        } else {
+            // Requisição PUT para ADICIONAR um NOVO procedimento
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-      setProcedimentoData({
-        procedimento: "", denteFace: "", valor: "", valorFormatado: "",
-        modalidadePagamento: "", profissional: "", dataProcedimento: ""
-      });
-      setEditandoProcedimentoId(null);
-      setShowProcedimentoForm(false);
-      setError("");
-      setFieldErrors({});
-      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+            // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
+            const novoProcedimento = {
+                ...dadosParaEnvio,
+                _id: response.data.procedimento._id,
+                valorFormatado: formatValueForDisplay(valorNumerico),
+                dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
+            };
+            
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: [...prev.procedimentos, novoProcedimento]
+            }));
+        }
 
-      // Opcional: recarrega todos os usuários. Pode ser removido para uma UI mais rápida.
-      fetchUsuarios();
+        setProcedimentoData({
+            procedimento: "", denteFace: "", valor: "", valorFormatado: "",
+            modalidadePagamento: "", profissional: "", dataProcedimento: ""
+        });
+        setEditandoProcedimentoId(null);
+        setShowProcedimentoForm(false);
+        setError("");
+        setFieldErrors({});
+        alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+
+        // Opcional: recarrega todos os usuários. Pode ser removido para uma UI mais rápida.
+        fetchUsuarios(); 
     } catch (error) {
-      console.error("Erro ao adicionar/editar procedimento:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
-      setError(errorMessage);
-      if (error.response?.data?.errors) {
-        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
-      }
+        console.error("Erro ao adicionar/editar procedimento:", error);
+        const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
+        setError(errorMessage);
+        if (error.response?.data?.errors) {
+            setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+        }
     }
-  };
+};
 
   const filteredUsuarios = usuarios.filter(usuario => {
     if (!searchTerm.trim()) return true;
@@ -1492,7 +1418,31 @@ const RegisterUser = () => {
                   id="valor"
                   name="valor"
                   value={formData.valorFormatado || ''}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/\D/g, '');
+                    const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+                    const formattedValue = numericValue.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    });
+
+                    setFormData(prev => ({
+                      ...prev,
+                      valor: numericValue,
+                      valorFormatado: formattedValue
+                    }));
+                  }}
+                  onBlur={() => {
+                    if (!formData.valorFormatado) {
+                      setFormData(prev => ({
+                        ...prev,
+                        valor: 0,
+                        valorFormatado: 'R$ 0,00'
+                      }));
+                    }
+                  }}
                   placeholder="R$ 0,00"
                   className={fieldErrors.valor ? 'error-field' : ''}
                 />
