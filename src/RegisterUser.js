@@ -356,158 +356,144 @@ const RegisterUser = () => {
   const validateField = (name, value) => {
     const errors = { ...fieldErrors };
 
-    // Função auxiliar para validar datas (sem alterações aqui)
+    // Função auxiliar para validar datas
     const validateDate = (dateValue, fieldName) => {
-        if (!dateValue) {
-            delete errors[fieldName];
-            return true;
-        }
-        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
-            errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
-            return false;
-        }
-        if (dateValue.length !== 10) {
-            return true;
-        }
-        const [day, month, year] = dateValue.split('/');
-        const dayNum = parseInt(day, 10);
-        const monthNum = parseInt(month, 10) - 1;
-        const yearNum = parseInt(year, 10);
-        if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
-            errors[fieldName] = "Data contém valores inválidos";
-            return false;
-        }
-        const dateObj = new Date(yearNum, monthNum, dayNum);
-        if (
-            dateObj.getFullYear() !== yearNum ||
-            dateObj.getMonth() !== monthNum ||
-            dateObj.getDate() !== dayNum
-        ) {
-            errors[fieldName] = "Data inválida";
-            return false;
-        }
-        if (fieldName === "dataNascimento" && dateObj > new Date()) {
-            errors[fieldName] = "Data deve ser no passado";
-            return false;
-        }
+      if (!dateValue) {
         delete errors[fieldName];
         return true;
+      }
+
+      // Verifica formato básico
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+        errors[fieldName] = "Formato inválido (DD/MM/AAAA)";
+        return false;
+      }
+
+      // Verifica se está completo
+      if (dateValue.length !== 10) {
+        return true;
+      }
+
+      // Validação completa da data
+      const [day, month, year] = dateValue.split('/');
+      const dayNum = parseInt(day, 10);
+      const monthNum = parseInt(month, 10) - 1;
+      const yearNum = parseInt(year, 10);
+
+      if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) {
+        errors[fieldName] = "Data contém valores inválidos";
+        return false;
+      }
+
+      const dateObj = new Date(yearNum, monthNum, dayNum);
+      if (
+        dateObj.getFullYear() !== yearNum ||
+        dateObj.getMonth() !== monthNum ||
+        dateObj.getDate() !== dayNum
+      ) {
+        errors[fieldName] = "Data inválida";
+        return false;
+      }
+
+      // Validações específicas por tipo de data
+      if (fieldName === "dataNascimento" && dateObj > new Date()) {
+        errors[fieldName] = "Data deve ser no passado";
+        return false;
+      }
+
+
+      delete errors[fieldName];
+      return true;
     };
 
     // Validações específicas por campo
     switch (name) {
-        case "nomeCompleto":
-            // MUDANÇA AQUI: de 3 para 1 caractere mínimo
-            if (!value || value.trim().length < 1) {
-                errors.nomeCompleto = "Nome completo é obrigatório";
-            } else {
-                delete errors.nomeCompleto;
-            }
-            break;
+      case "nomeCompleto":
+        if (!value || value.trim().length < 3) {
+          errors.nomeCompleto = "Nome completo deve ter pelo menos 3 caracteres";
+        } else {
+          delete errors.nomeCompleto;
+        }
+        break;
 
-        case "cpf":
-            if (!value) {
-                errors.cpf = "CPF é obrigatório";
-            } else if (value.replace(/\D/g, '').length !== 11) {
-                errors.cpf = "CPF deve ter 11 dígitos";
-            } else {
-                delete errors.cpf;
-            }
-            break;
+      case "cpf":
+        if (!value) {
+          errors.cpf = "CPF é obrigatório";
+        } else if (value.replace(/\D/g, '').length !== 11) {
+          errors.cpf = "CPF deve ter 11 dígitos";
+        } else {
+          delete errors.cpf;
+        }
+        break;
 
-        case "telefone":
-            if (!value) {
-                errors.telefone = "Telefone é obrigatório";
-            } else if (value.replace(/\D/g, '').length < 10) {
-                errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
-            } else {
-                delete errors.telefone;
-            }
-            break;
-
-        case "dataNascimento":
-        case "dataProcedimento":
-            validateDate(value, name);
-            break;
-
-        case "endereco":
-            // MUDANÇA AQUI: de 5 para 1 caractere mínimo
-            if (!value || value.trim().length < 1) {
-                errors.endereco = "Endereço é obrigatório";
-            } else {
-                delete errors.endereco;
-            }
-            break;
-
-        case "password":
-            // Manteve a lógica original para senhas
-            if (!editandoId && (!value || value.length < 6)) {
-                errors.password = "A senha deve ter pelo menos 6 caracteres";
-            } else {
-                delete errors.password;
-            }
-            break;
-
-        case "confirmPassword":
-             // Manteve a lógica original para senhas
-            if (!editandoId && formData.password && value !== formData.password) {
-                errors.confirmPassword = "As senhas não coincidem";
-            } else {
-                delete errors.confirmPassword;
-            }
-            break;
-
-        case "peso":
-            // MUDANÇA AQUI: Permite o campo peso ser preenchido
-            if (!value || value.trim().length < 1) {
-                errors.peso = "O peso é obrigatório";
-            } else if (!/^\d*\.?\d*$/.test(value)) {
-                errors.peso = "O peso deve conter apenas números (ex: 70.5)";
-            } else {
-                delete errors.peso;
-            }
-            break;
-
-        case "valor":
-            const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
-            if (value && isNaN(numericValue)) {
-                errors.valor = "Valor monetário inválido";
-            } else if (numericValue < 0) {
-                errors.valor = "O valor não pode ser negativo";
-            } else {
-                delete errors.valor;
-            }
-            break;
-            
-        // Adicionando validação para outros campos de texto que podem ser preenchidos com "-"
-        case "detalhesDoencas":
-        case "quaisRemedios":
-        case "quaisMedicamentos":
-        case "quaisAnestesias":
-        case "historicoCirurgia":
-        case "exameSangue":
-        case "coagulacao":
-        case "cicatrizacao":
-        case "historicoOdontologico":
-        case "sangramentoPosProcedimento":
-        case "respiracao":
-            if (!value || value.trim().length < 1) {
-                errors[name] = "Este campo é obrigatório.";
-            } else {
-                delete errors[name];
-            }
-            break;
+      case "telefone":
+        if (!value) {
+          errors.telefone = "Telefone é obrigatório";
+        } else if (value.replace(/\D/g, '').length < 10) {
+          errors.telefone = "Telefone inválido (mínimo 10 dígitos)";
+        } else {
+          delete errors.telefone;
+        }
+        break;
 
 
-        default:
-            if (errors[name]) {
-                delete errors[name];
-            }
+      case "dataNascimento":
+      case "dataProcedimento":
+        validateDate(value, name);
+        break;
+
+      case "endereco":
+        if (!value || value.trim().length < 5) {
+          errors.endereco = "Endereço deve ter pelo menos 5 caracteres";
+        } else {
+          delete errors.endereco;
+        }
+        break;
+
+      case "password":
+        if (!editandoId && (!value || value.length < 6)) {
+          errors.password = "A senha deve ter pelo menos 6 caracteres";
+        } else {
+          delete errors.password;
+        }
+        break;
+
+      case "confirmPassword":
+        if (!editandoId && formData.password && value !== formData.password) {
+          errors.confirmPassword = "As senhas não coincidem";
+        } else {
+          delete errors.confirmPassword;
+        }
+        break;
+
+      case "peso":
+        if (value && !/^\d*\.?\d*$/.test(value)) {
+          errors.peso = "O peso deve conter apenas números (ex: 70.5)";
+        } else {
+          delete errors.peso;
+        }
+        break;
+
+      case "valor":
+        const numericValue = value ? Number(value.toString().replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+        if (value && isNaN(numericValue)) {
+          errors.valor = "Valor monetário inválido";
+        } else if (numericValue < 0) {
+          errors.valor = "O valor não pode ser negativo";
+        } else {
+          delete errors.valor;
+        }
+        break;
+
+      default:
+        if (errors[name]) {
+          delete errors[name];
+        }
     }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-};
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -585,126 +571,213 @@ const RegisterUser = () => {
     e.preventDefault();
 
     if (editandoId) {
-        // Lógica de ATUALIZAÇÃO (sem alterações aqui)
-        // ... (seu código de atualização continua igual)
+      // Lógica de atualização
+      const updatedFields = {};
+      const originalUser = usuarios.find(u => u._id === editandoId);
 
-    } else {
-        // Lógica de CADASTRO (com validação ajustada)
-        
-        // 1. Limpa erros antigos e define as regras
-        setFieldErrors({}); 
-        const newErrors = {};
-        let formIsValid = true;
+      // Prepara os campos a serem enviados para a API
+      const fieldsToUpdate = [
+        'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
+        'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
+        'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
+        'respiracao', 'peso', 'frequenciaFumo', 'frequenciaAlcool',
+        'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento'
+      ];
 
-        const fieldsToValidate = [
-            'nomeCompleto', 'cpf', 'telefone', 'endereco', 'dataNascimento', 'password',
-            'confirmPassword', 'detalhesDoencas', 'quaisRemedios', 'quaisMedicamentos',
-            'quaisAnestesias', 'historicoCirurgia', 'historicoOdontologico',
-            'sangramentoPosProcedimento', 'respiracao', 'peso'
-        ];
-        
-        // 2. Itera e valida os campos
-        fieldsToValidate.forEach(field => {
-            const value = formData[field];
-            // MUDANÇA AQUI: Verifica se o campo está vazio ou só tem espaços
-            if (!value || String(value).trim() === '') {
-                newErrors[field] = `${labels[field]} é obrigatório`;
-                formIsValid = false;
-            }
+      fieldsToUpdate.forEach(key => {
+        // Apenas adiciona o campo se ele tiver um valor no formulário
+        if (formData[key]) {
+          updatedFields[key] = formData[key];
+        }
+      });
+      
+      // Lida com campos aninhados como 'habitos' e 'exames'
+      updatedFields.habitos = {
+        frequenciaFumo: formData.frequenciaFumo,
+        frequenciaAlcool: formData.frequenciaAlcool,
+      };
+      updatedFields.exames = {
+        exameSangue: formData.exameSangue,
+        coagulacao: formData.coagulacao,
+        cicatrizacao: formData.cicatrizacao,
+      };
+
+      // Se a senha foi preenchida, adiciona ao objeto de atualização
+      if (formData.password && formData.password.length >= 6) {
+        updatedFields.password = formData.password;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await api.put(`/api/users/${editandoId}`, updatedFields, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // 3. Validação específica de senha (lógica mantida)
-        if (formData.password.length < 6) {
-            newErrors.password = "A senha deve ter pelo menos 6 caracteres";
-            formIsValid = false;
-        }
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = "As senhas não coincidem";
-            formIsValid = false;
+        if (response.data?.errors) {
+          setFieldErrors(response.data.errors);
+          setError(response.data.message || "Erro de validação");
+          return;
         }
 
-        if (!formIsValid) {
-            setFieldErrors(newErrors);
-            setError("Por favor, preencha todos os campos obrigatórios.");
-            return;
-        }
+        alert("Usuário atualizado com sucesso!");
 
-        // --- SEU CÓDIGO PARA PREPARAR E ENVIAR OS DADOS CONTINUA AQUI ---
-        // (A lógica de convertDateToISO, dadosParaEnvio, e o try/catch permanecem os mesmos)
+        // ----------------------------------------------------
+        // ALTERAÇÃO IMPORTANTE: MANTÉM NA PÁGINA DE EDIÇÃO
+        // ----------------------------------------------------
+        // Em vez de recarregar todos os usuários, você pode simplesmente
+        // chamar a função de edição novamente com o usuário atualizado da resposta
+        // da API, ou atualizar apenas o estado daquele usuário específico.
+        // A forma mais fácil é recarregar a lista e manter o modo de visualização.
 
-        const convertDateToISO = (dateString, fieldName) => {
-            //... (sua função sem alterações)
-        };
+        // Encontra o usuário atualizado na resposta da API
+        const updatedUser = response.data.user;
 
-        const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
-        const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
+        // Atualiza a lista de usuários localmente
+        setUsuarios(prevUsuarios =>
+          prevUsuarios.map(u => (u._id === editandoId ? { ...u, ...updatedUser } : u))
+        );
 
-        if (!dataNascimentoISO) {
-            return;
-        }
+        // Atualiza o formulário com os novos dados
+        handleEdit(updatedUser);
+
+        // Não chame resetForm() aqui para manter o estado de edição
+        // Você pode voltar para a lista de usuários com o botão "Voltar"
         
-        const dadosParaEnvio = {
-            nomeCompleto: formData.nomeCompleto.trim(),
-            cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
-            telefone: formatFone(formData.telefone.replace(/\D/g, '')),
-            endereco: formData.endereco.trim(),
-            dataNascimento: dataNascimentoISO,
-            detalhesDoencas: formData.detalhesDoencas.trim(),
-            quaisRemedios: formData.quaisRemedios.trim(),
-            quaisMedicamentos: formData.quaisMedicamentos.trim(),
-            quaisAnestesias: formData.quaisAnestesias.trim(),
-            habitos: {
-                frequenciaFumo: formData.frequenciaFumo,
-                frequenciaAlcool: formData.frequenciaAlcool
-            },
-            exames: {
-                exameSangue: formData.exameSangue.trim(),
-                coagulacao: formData.coagulacao.trim(),
-                cicatrizacao: formData.cicatrizacao.trim()
-            },
-            historicoCirurgia: formData.historicoCirurgia.trim(),
-            historicoOdontologico: formData.historicoOdontologico.trim(),
-            sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
-            respiracao: formData.respiracao.trim(),
-            peso: Number(formData.peso) || 0,
-            password: formData.password,
-            confirmPassword: formData.confirmPassword
-        };
-
-        if (dataProcedimentoISO && formData.procedimento) {
-            dadosParaEnvio.historicoProcedimentos = [{
-                procedimento: formData.procedimento?.trim() || null,
-                denteFace: formData.denteFace?.trim() || null,
-                valor: formData.valor ? convertValueToFloat(formData.valor) : null,
-                modalidadePagamento: formData.modalidadePagamento || null,
-                profissional: formData.profissional?.trim() || null,
-                dataProcedimento: dataProcedimentoISO
-            }];
+      } catch (error) {
+        console.error("Erro ao atualizar usuário:", error);
+        if (error.response?.data?.errors) {
+          setFieldErrors(error.response.data.errors);
+          setError(error.response.data.message || "Corrija os erros no formulário");
+        } else {
+          setError(error.message || "Erro ao conectar com o servidor");
         }
+      }
+    } else {
+      // --- Lógica de cadastro (mantida do seu código original) ---
+      if (!validateForm()) {
+        return;
+      }
+      
+      let formIsValid = true;
+      const requiredFields = [
+        'nomeCompleto', 'cpf', 'telefone', 'endereco',
+        'dataNascimento', 'detalhesDoencas', 'quaisRemedios', 'quaisMedicamentos',
+        'quaisAnestesias', 'historicoCirurgia', 'historicoOdontologico',
+        'sangramentoPosProcedimento', 'respiracao', 'peso'
+      ];
 
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [field]: `${labels[field]} é obrigatório`
+          }));
+          formIsValid = false;
+        }
+      });
+
+      if (!formIsValid) {
+        return;
+      }
+
+      const convertDateToISO = (dateString, fieldName) => {
+        if (!dateString || dateString.length !== 10) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Data ${fieldName} inválida ou incompleta`
+          }));
+          return null;
+        }
         try {
-            const response = await api.post("/api/register/user", dadosParaEnvio);
-
-            if (response.data?.errors) {
-                setFieldErrors(response.data.errors);
-                setError(response.data.message || "Erro de validação");
-                return;
-            }
-
-            alert("Usuário cadastrado com sucesso!");
-            resetForm(); 
-            fetchUsuarios();
+          const [day, month, year] = dateString.split('/');
+          const dateObj = new Date(`${year}-${month}-${day}T12:00:00`);
+          if (isNaN(dateObj.getTime())) {
+            setFieldErrors(prev => ({
+              ...prev,
+              [fieldName]: `Data ${fieldName} inválida`
+            }));
+            return null;
+          }
+          return dateObj.toISOString();
         } catch (error) {
-            console.error("Erro ao enviar formulário:", error);
-            if (error.response?.data?.errors) {
-                setFieldErrors(error.response.data.errors);
-                setError(error.response.data.message || "Corrija os erros no formulário");
-            } else {
-                setError(error.message || "Erro ao conectar com o servidor");
-            }
+          console.error(`Erro ao converter ${fieldName}:`, error);
+          setFieldErrors(prev => ({
+            ...prev,
+            [fieldName]: `Erro ao processar data ${fieldName}`
+          }));
+          return null;
         }
+      };
+
+      const dataNascimentoISO = convertDateToISO(formData.dataNascimento, "dataNascimento");
+      const dataProcedimentoISO = convertDateToISO(formData.dataProcedimento, "dataProcedimento");
+
+      if (!dataNascimentoISO) {
+        return;
+      }
+      
+      const dadosParaEnvio = {
+        nomeCompleto: formData.nomeCompleto.trim(),
+        cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
+        telefone: formatFone(formData.telefone.replace(/\D/g, '')),
+        endereco: formData.endereco.trim(),
+        dataNascimento: dataNascimentoISO,
+        detalhesDoencas: formData.detalhesDoencas.trim(),
+        quaisRemedios: formData.quaisRemedios.trim(),
+        quaisMedicamentos: formData.quaisMedicamentos.trim(),
+        quaisAnestesias: formData.quaisAnestesias.trim(),
+        habitos: {
+          frequenciaFumo: formData.frequenciaFumo,
+          frequenciaAlcool: formData.frequenciaAlcool
+        },
+        exames: {
+          exameSangue: formData.exameSangue.trim(),
+          coagulacao: formData.coagulacao.trim(),
+          cicatrizacao: formData.cicatrizacao.trim()
+        },
+        historicoCirurgia: formData.historicoCirurgia.trim(),
+        historicoOdontologico: formData.historicoOdontologico.trim(),
+        sangramentoPosProcedimento: formData.sangramentoPosProcedimento.trim(),
+        respiracao: formData.respiracao.trim(),
+        peso: Number(formData.peso) || 0,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword
+      };
+
+      if (dataProcedimentoISO && formData.procedimento) {
+        dadosParaEnvio.historicoProcedimentos = [{
+          procedimento: formData.procedimento?.trim() || null,
+          denteFace: formData.denteFace?.trim() || null,
+          valor: formData.valor ? convertValueToFloat(formData.valor) : null,
+          modalidadePagamento: formData.modalidadePagamento || null,
+          profissional: formData.profissional?.trim() || null,
+          dataProcedimento: dataProcedimentoISO
+        }];
+      }
+
+      try {
+        const response = await api.post("/api/register/user", dadosParaEnvio);
+
+        if (response.data?.errors) {
+          setFieldErrors(response.data.errors);
+          setError(response.data.message || "Erro de validação");
+          return;
+        }
+
+        alert("Usuário cadastrado com sucesso!");
+        resetForm(); // Chama resetForm para limpar o formulário de cadastro
+        fetchUsuarios();
+      } catch (error) {
+        console.error("Erro ao enviar formulário:", error);
+        if (error.response?.data?.errors) {
+          setFieldErrors(error.response.data.errors);
+          setError(error.response.data.message || "Corrija os erros no formulário");
+        } else {
+          setError(error.message || "Erro ao conectar com o servidor");
+        }
+      }
     }
-};
+  };
 
   const resetForm = () => {
     setFormData({
