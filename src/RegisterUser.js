@@ -571,88 +571,94 @@ const RegisterUser = () => {
     e.preventDefault();
 
     if (editandoId) {
-      // Lógica de atualização
-      const updatedFields = {};
-      const originalUser = usuarios.find(u => u._id === editandoId);
+    // Lógica de atualização
+    const updatedFields = {};
+    const originalUser = usuarios.find(u => u._id === editandoId);
 
-      // Prepara os campos a serem enviados para a API
-      const fieldsToUpdate = [
+    // Lista de campos que serão atualizados
+    const fieldsToUpdate = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
         'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
         'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
         'respiracao', 'peso', 'frequenciaFumo', 'frequenciaAlcool',
-        'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento'
-      ];
+        'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento',
+        // --- ADICIONE OS CAMPOS DO PROCEDIMENTO PRINCIPAL AQUI ---
+        'procedimento', 'denteFace', 'modalidadePagamento', 'profissional'
+    ];
 
-      fieldsToUpdate.forEach(key => {
-        // Apenas adiciona o campo se ele tiver um valor no formulário
-        if (formData[key]) {
-          updatedFields[key] = formData[key];
+    fieldsToUpdate.forEach(key => {
+        // Envia o campo apenas se ele tiver um valor no formulário
+        if (formData[key] !== undefined && formData[key] !== null) {
+            updatedFields[key] = formData[key];
         }
-      });
-      
-      // Lida com campos aninhados como 'habitos' e 'exames'
-      updatedFields.habitos = {
+    });
+
+    // --- LÓGICA ADICIONADA PARA VALOR E DATAS ---
+
+    // 1. Trata o campo de VALOR (converte para número)
+    if (formData.valor !== undefined && formData.valor !== null) {
+        updatedFields.valor = convertValueToFloat(formData.valor);
+    }
+    
+    // 2. Trata a DATA DE NASCIMENTO (converte para ISO)
+    if (formData.dataNascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataNascimento)) {
+        const [day, month, year] = formData.dataNascimento.split('/');
+        updatedFields.dataNascimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
+    }
+
+    // 3. Trata a DATA DO PROCEDIMENTO (converte para ISO)
+    if (formData.dataProcedimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataProcedimento)) {
+        const [day, month, year] = formData.dataProcedimento.split('/');
+        updatedFields.dataProcedimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
+    }
+
+    // --- FIM DA LÓGICA ADICIONADA ---
+
+    // Lida com campos aninhados como 'habitos' e 'exames'
+    updatedFields.habitos = {
         frequenciaFumo: formData.frequenciaFumo,
         frequenciaAlcool: formData.frequenciaAlcool,
-      };
-      updatedFields.exames = {
+    };
+    updatedFields.exames = {
         exameSangue: formData.exameSangue,
         coagulacao: formData.coagulacao,
         cicatrizacao: formData.cicatrizacao,
-      };
+    };
 
-      // Se a senha foi preenchida, adiciona ao objeto de atualização
-      if (formData.password && formData.password.length >= 6) {
+    // Se a senha foi preenchida, adiciona ao objeto de atualização
+    if (formData.password && formData.password.length >= 6) {
         updatedFields.password = formData.password;
-      }
+    }
 
-      try {
+    try {
         const token = localStorage.getItem("token");
+        // A requisição PUT continua a mesma, mas agora com os dados corretos
         const response = await api.put(`/api/users/${editandoId}`, updatedFields, {
-          headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
         });
 
         if (response.data?.errors) {
-          setFieldErrors(response.data.errors);
-          setError(response.data.message || "Erro de validação");
-          return;
+            setFieldErrors(response.data.errors);
+            setError(response.data.message || "Erro de validação");
+            return;
         }
 
         alert("Usuário atualizado com sucesso!");
-
-        // ----------------------------------------------------
-        // ALTERAÇÃO IMPORTANTE: MANTÉM NA PÁGINA DE EDIÇÃO
-        // ----------------------------------------------------
-        // Em vez de recarregar todos os usuários, você pode simplesmente
-        // chamar a função de edição novamente com o usuário atualizado da resposta
-        // da API, ou atualizar apenas o estado daquele usuário específico.
-        // A forma mais fácil é recarregar a lista e manter o modo de visualização.
-
-        // Encontra o usuário atualizado na resposta da API
-        const updatedUser = response.data.user;
-
-        // Atualiza a lista de usuários localmente
-        setUsuarios(prevUsuarios =>
-          prevUsuarios.map(u => (u._id === editandoId ? { ...u, ...updatedUser } : u))
-        );
-
-        // Atualiza o formulário com os novos dados
-        handleEdit(updatedUser);
-
-        // Não chame resetForm() aqui para manter o estado de edição
-        // Você pode voltar para a lista de usuários com o botão "Voltar"
         
-      } catch (error) {
+        // Atualiza o usuário na lista local para refletir as mudanças imediatamente
+        fetchUsuarios(); 
+        handleEdit(response.data.user); // Recarrega os dados do formulário com as informações atualizadas
+
+    } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
         if (error.response?.data?.errors) {
-          setFieldErrors(error.response.data.errors);
-          setError(error.response.data.message || "Corrija os erros no formulário");
+            setFieldErrors(error.response.data.errors);
+            setError(error.response.data.message || "Corrija os erros no formulário");
         } else {
-          setError(error.message || "Erro ao conectar com o servidor");
+            setError(error.message || "Erro ao conectar com o servidor");
         }
-      }
-    } else {
+    }
+} else {
       // --- Lógica de cadastro (mantida do seu código original) ---
       if (!validateForm()) {
         return;
