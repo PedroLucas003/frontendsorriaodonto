@@ -286,49 +286,49 @@ const RegisterUser = () => {
     const valorDisplay = formatValueForDisplay(procedimento.valor);
 
     setProcedimentoData({
-      procedimento: procedimento.procedimento || "",
-      denteFace: procedimento.denteFace || "",
-      valor: procedimento.valor || 0, // Passa o valor numérico original
-      modalidadePagamento: procedimento.modalidadePagamento || "",
-      profissional: procedimento.profissional || "",
-      dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
-      valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
+        procedimento: procedimento.procedimento || "",
+        denteFace: procedimento.denteFace || "",
+        valor: procedimento.valor || 0, // Passa o valor numérico original
+        modalidadePagamento: procedimento.modalidadePagamento || "",
+        profissional: procedimento.profissional || "",
+        dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
+        valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
     });
     setShowProcedimentoForm(true);
-  };
+};
 
-  const handleProcedimentoChange = (e) => {
+   const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     // Tratamento para valor monetário (campo "valor")
     if (name === "valor") {
-      // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
-      const cleanedValue = value.replace(/[^0-9,]/g, '');
+        // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
+        const cleanedValue = value.replace(/[^0-9,]/g, '');
 
-      // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
-      // Isso previne o travamento no R$ 1,00
-      const numericString = cleanedValue.replace(',', '');
+        // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
+        // Isso previne o travamento no R$ 1,00
+        const numericString = cleanedValue.replace(',', '');
 
-      let numericValue = 0;
-      if (numericString) {
-        numericValue = parseInt(numericString, 10) / 100;
-      }
+        let numericValue = 0;
+        if (numericString) {
+          numericValue = parseInt(numericString, 10) / 100;
+        }
 
-      // Formata o número para o padrão monetário brasileiro (R$ 0,00)
-      formattedValue = numericValue.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+        // Formata o número para o padrão monetário brasileiro (R$ 0,00)
+        formattedValue = numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
 
-      setProcedimentoData(prev => ({
-        ...prev,
-        valor: numericValue,
-        valorFormatado: formattedValue
-      }));
-      return;
+        setProcedimentoData(prev => ({
+          ...prev,
+          valor: numericValue,
+          valorFormatado: formattedValue
+        }));
+        return;
     }
 
     // Tratamento para a data do procedimento
@@ -571,32 +571,50 @@ const RegisterUser = () => {
     e.preventDefault();
 
     if (editandoId) {
-    // Lógica de atualização (esta parte continua a mesma)
+    // Lógica de atualização
     const updatedFields = {};
+    const originalUser = usuarios.find(u => u._id === editandoId);
+
+    // Lista de campos que serão atualizados
     const fieldsToUpdate = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
         'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
         'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
         'respiracao', 'peso', 'frequenciaFumo', 'frequenciaAlcool',
-        'exameSangue', 'coagulacao', 'cicatrizacao',
+        'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento',
+        // --- ADICIONE OS CAMPOS DO PROCEDIMENTO PRINCIPAL AQUI ---
         'procedimento', 'denteFace', 'modalidadePagamento', 'profissional'
     ];
+
     fieldsToUpdate.forEach(key => {
+        // Envia o campo apenas se ele tiver um valor no formulário
         if (formData[key] !== undefined && formData[key] !== null) {
             updatedFields[key] = formData[key];
         }
     });
+
+    // --- LÓGICA ADICIONADA PARA VALOR E DATAS ---
+
+    // 1. Trata o campo de VALOR (converte para número)
     if (formData.valor !== undefined && formData.valor !== null) {
         updatedFields.valor = convertValueToFloat(formData.valor);
     }
+    
+    // 2. Trata a DATA DE NASCIMENTO (converte para ISO)
     if (formData.dataNascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataNascimento)) {
         const [day, month, year] = formData.dataNascimento.split('/');
         updatedFields.dataNascimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
     }
+
+    // 3. Trata a DATA DO PROCEDIMENTO (converte para ISO)
     if (formData.dataProcedimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataProcedimento)) {
         const [day, month, year] = formData.dataProcedimento.split('/');
         updatedFields.dataProcedimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
     }
+
+    // --- FIM DA LÓGICA ADICIONADA ---
+
+    // Lida com campos aninhados como 'habitos' e 'exames'
     updatedFields.habitos = {
         frequenciaFumo: formData.frequenciaFumo,
         frequenciaAlcool: formData.frequenciaAlcool,
@@ -606,12 +624,15 @@ const RegisterUser = () => {
         coagulacao: formData.coagulacao,
         cicatrizacao: formData.cicatrizacao,
     };
+
+    // Se a senha foi preenchida, adiciona ao objeto de atualização
     if (formData.password && formData.password.length >= 6) {
         updatedFields.password = formData.password;
     }
 
     try {
         const token = localStorage.getItem("token");
+        // A requisição PUT continua a mesma, mas agora com os dados corretos
         const response = await api.put(`/api/users/${editandoId}`, updatedFields, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -622,17 +643,11 @@ const RegisterUser = () => {
             return;
         }
 
-        // --- INÍCIO DA ALTERAÇÃO ---
-
         alert("Usuário atualizado com sucesso!");
-
-        // 1. Busca a lista de usuários para atualizar a tabela na tela inicial.
-        fetchUsuarios();
-
-        // 2. Chama a função que reseta o formulário e te leva de volta para a lista.
-        handleVoltar();
-
-        // --- FIM DA ALTERAÇÃO ---
+        
+        // Atualiza o usuário na lista local para refletir as mudanças imediatamente
+        fetchUsuarios(); 
+        handleEdit(response.data.user); // Recarrega os dados do formulário com as informações atualizadas
 
     } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
@@ -648,7 +663,7 @@ const RegisterUser = () => {
       if (!validateForm()) {
         return;
       }
-
+      
       let formIsValid = true;
       const requiredFields = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco',
@@ -706,7 +721,7 @@ const RegisterUser = () => {
       if (!dataNascimentoISO) {
         return;
       }
-
+      
       const dadosParaEnvio = {
         nomeCompleto: formData.nomeCompleto.trim(),
         cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
@@ -971,121 +986,121 @@ const RegisterUser = () => {
     e.stopPropagation();
 
     try {
-      const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
-      // Validação da data do procedimento
-      const dataProcedimentoInput = procedimentoData.dataProcedimento;
+        // Validação da data do procedimento
+        const dataProcedimentoInput = procedimentoData.dataProcedimento;
 
-      if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
-        return;
-      }
-
-      // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
-      const [day, month, year] = dataProcedimentoInput.split('/');
-      const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-
-      if (isNaN(dataProcedimentoObjeto.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
-        return;
-      }
-
-      // Converte o valor monetário
-      let valorNumerico = 0;
-      if (procedimentoData.valorFormatado) {
-        try {
-          valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-          if (isNaN(valorNumerico)) {
-            throw new Error("Valor inválido");
-          }
-        } catch (error) {
-          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-          return;
+        if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
+            return;
         }
-      }
+        
+        // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
+        const [day, month, year] = dataProcedimentoInput.split('/');
+        const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
 
-      const dadosParaEnvio = {
-        procedimento: procedimentoData.procedimento?.trim() || null,
-        denteFace: procedimentoData.denteFace?.trim() || null,
-        valor: valorNumerico || null,
-        modalidadePagamento: procedimentoData.modalidadePagamento || null,
-        profissional: procedimentoData.profissional?.trim() || null,
-        dataProcedimento: dataProcedimentoObjeto
-      };
+        if (isNaN(dataProcedimentoObjeto.getTime())) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
+            return;
+        }
 
-      let response;
-      if (editandoProcedimentoId) {
-        // Requisição PUT para ATUALIZAR um procedimento específico
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        // Converte o valor monetário
+        let valorNumerico = 0;
+        if (procedimentoData.valorFormatado) {
+            try {
+                valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+                if (isNaN(valorNumerico)) {
+                    throw new Error("Valor inválido");
+                }
+            } catch (error) {
+                setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+                return;
+            }
+        }
 
-        // --- INÍCIO DA CORREÇÃO ---
-        // A resposta do backend já contém o procedimento completo e atualizado.
-        const procedimentoRetornadoDoBackend = response.data.procedimento;
-
-        // Apenas adicione o valor formatado para exibição no frontend.
-        const procedimentoAtualizadoParaState = {
-          ...procedimentoRetornadoDoBackend,
-          valorFormatado: formatValueForDisplay(procedimentoRetornadoDoBackend.valor),
+        const dadosParaEnvio = {
+            procedimento: procedimentoData.procedimento?.trim() || null,
+            denteFace: procedimentoData.denteFace?.trim() || null,
+            valor: valorNumerico || null,
+            modalidadePagamento: procedimentoData.modalidadePagamento || null,
+            profissional: procedimentoData.profissional?.trim() || null,
+            dataProcedimento: dataProcedimentoObjeto
         };
 
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: prev.procedimentos.map(p =>
-            // Garanta que a comparação de IDs seja segura
-            String(p._id) === String(editandoProcedimentoId)
-              ? procedimentoAtualizadoParaState
-              : p
-          )
-        }));
-        // --- FIM DA CORREÇÃO ---
+        let response;
+        if (editandoProcedimentoId) {
+            // Requisição PUT para ATUALIZAR um procedimento específico
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-      } else {
-        // Requisição PUT para ADICIONAR um NOVO procedimento
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento`,
-          dadosParaEnvio,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+            // --- INÍCIO DA CORREÇÃO ---
+            // A resposta do backend já contém o procedimento completo e atualizado.
+            const procedimentoRetornadoDoBackend = response.data.procedimento;
 
-        // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
-        const novoProcedimento = {
-          ...dadosParaEnvio,
-          _id: response.data.procedimento._id,
-          valorFormatado: formatValueForDisplay(valorNumerico),
-          dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
-        };
+            // Apenas adicione o valor formatado para exibição no frontend.
+            const procedimentoAtualizadoParaState = {
+                ...procedimentoRetornadoDoBackend,
+                valorFormatado: formatValueForDisplay(procedimentoRetornadoDoBackend.valor),
+            };
+            
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: prev.procedimentos.map(p =>
+                    // Garanta que a comparação de IDs seja segura
+                    String(p._id) === String(editandoProcedimentoId) 
+                        ? procedimentoAtualizadoParaState 
+                        : p
+                )
+            }));
+            // --- FIM DA CORREÇÃO ---
 
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: [...prev.procedimentos, novoProcedimento]
-        }));
-      }
+        } else {
+            // Requisição PUT para ADICIONAR um NOVO procedimento
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento`,
+                dadosParaEnvio,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-      setProcedimentoData({
-        procedimento: "", denteFace: "", valor: "", valorFormatado: "",
-        modalidadePagamento: "", profissional: "", dataProcedimento: ""
-      });
-      setEditandoProcedimentoId(null);
-      setShowProcedimentoForm(false);
-      setError("");
-      setFieldErrors({});
-      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+            // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
+            const novoProcedimento = {
+                ...dadosParaEnvio,
+                _id: response.data.procedimento._id,
+                valorFormatado: formatValueForDisplay(valorNumerico),
+                dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
+            };
+            
+            setFormData(prev => ({
+                ...prev,
+                procedimentos: [...prev.procedimentos, novoProcedimento]
+            }));
+        }
 
-      // Opcional: recarrega todos os usuários. Pode ser removido para uma UI mais rápida.
-      fetchUsuarios();
+        setProcedimentoData({
+            procedimento: "", denteFace: "", valor: "", valorFormatado: "",
+            modalidadePagamento: "", profissional: "", dataProcedimento: ""
+        });
+        setEditandoProcedimentoId(null);
+        setShowProcedimentoForm(false);
+        setError("");
+        setFieldErrors({});
+        alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+
+        // Opcional: recarrega todos os usuários. Pode ser removido para uma UI mais rápida.
+        fetchUsuarios(); 
     } catch (error) {
-      console.error("Erro ao adicionar/editar procedimento:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
-      setError(errorMessage);
-      if (error.response?.data?.errors) {
-        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
-      }
+        console.error("Erro ao adicionar/editar procedimento:", error);
+        const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
+        setError(errorMessage);
+        if (error.response?.data?.errors) {
+            setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+        }
     }
-  };
+};
 
   const filteredUsuarios = usuarios.filter(usuario => {
     if (!searchTerm.trim()) return true;
@@ -1154,7 +1169,7 @@ const RegisterUser = () => {
       </div>
 
       {modoVisualizacao && (
-        <button onClick={handleVoltar} className="btn btn-voltar">
+        <button onClick={handleVoltar} className="btn-voltar">
           <i className="bi bi-arrow-left"></i> Voltar
         </button>
       )}
@@ -1571,7 +1586,7 @@ const RegisterUser = () => {
                 setEditandoProcedimentoId(null);
                 setShowProcedimentoForm(!showProcedimentoForm);
               }}
-              className="btn btn-add-procedimento"
+              className="btn-add-procedimento"
             >
               {showProcedimentoForm ? 'Cancelar' : 'Adicionar Novo Procedimento'}
             </button>
@@ -1726,7 +1741,7 @@ const RegisterUser = () => {
                               e.stopPropagation();
                               handleEditProcedimento(proc._id);
                             }}
-                            className="btn btn-tabela btn-edit-procedimento"
+                            className="btn-tabela btn-edit-procedimento"
                             title="Editar procedimento"
                           >
                             <i className="bi bi-pencil"></i>
@@ -1738,7 +1753,7 @@ const RegisterUser = () => {
                               e.stopPropagation();
                               handleDeleteProcedimento(proc._id);
                             }}
-                            className="btn btn-tabela btn-delete-procedimento"
+                            className="btn-tabela btn-delete-procedimento"
                             title="Excluir procedimento"
                           >
                             <i className="bi bi-trash"></i>
