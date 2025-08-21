@@ -571,55 +571,55 @@ const RegisterUser = () => {
     e.preventDefault();
 
     if (editandoId) {
-      // Lógica de atualização (esta parte continua a mesma)
-      const updatedFields = {};
-      const fieldsToUpdate = [
+    // Lógica de atualização (esta parte continua a mesma)
+    const updatedFields = {};
+    const fieldsToUpdate = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
         'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
         'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
         'respiracao', 'peso', 'frequenciaFumo', 'frequenciaAlcool',
         'exameSangue', 'coagulacao', 'cicatrizacao',
         'procedimento', 'denteFace', 'modalidadePagamento', 'profissional'
-      ];
-      fieldsToUpdate.forEach(key => {
+    ];
+    fieldsToUpdate.forEach(key => {
         if (formData[key] !== undefined && formData[key] !== null) {
-          updatedFields[key] = formData[key];
+            updatedFields[key] = formData[key];
         }
-      });
-      if (formData.valor !== undefined && formData.valor !== null) {
+    });
+    if (formData.valor !== undefined && formData.valor !== null) {
         updatedFields.valor = convertValueToFloat(formData.valor);
-      }
-      if (formData.dataNascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataNascimento)) {
+    }
+    if (formData.dataNascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataNascimento)) {
         const [day, month, year] = formData.dataNascimento.split('/');
         updatedFields.dataNascimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
-      }
-      if (formData.dataProcedimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataProcedimento)) {
+    }
+    if (formData.dataProcedimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataProcedimento)) {
         const [day, month, year] = formData.dataProcedimento.split('/');
         updatedFields.dataProcedimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
-      }
-      updatedFields.habitos = {
+    }
+    updatedFields.habitos = {
         frequenciaFumo: formData.frequenciaFumo,
         frequenciaAlcool: formData.frequenciaAlcool,
-      };
-      updatedFields.exames = {
+    };
+    updatedFields.exames = {
         exameSangue: formData.exameSangue,
         coagulacao: formData.coagulacao,
         cicatrizacao: formData.cicatrizacao,
-      };
-      if (formData.password && formData.password.length >= 6) {
+    };
+    if (formData.password && formData.password.length >= 6) {
         updatedFields.password = formData.password;
-      }
+    }
 
-      try {
+    try {
         const token = localStorage.getItem("token");
         const response = await api.put(`/api/users/${editandoId}`, updatedFields, {
-          headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
         });
 
         if (response.data?.errors) {
-          setFieldErrors(response.data.errors);
-          setError(response.data.message || "Erro de validação");
-          return;
+            setFieldErrors(response.data.errors);
+            setError(response.data.message || "Erro de validação");
+            return;
         }
 
         // --- INÍCIO DA ALTERAÇÃO ---
@@ -634,16 +634,16 @@ const RegisterUser = () => {
 
         // --- FIM DA ALTERAÇÃO ---
 
-      } catch (error) {
+    } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
         if (error.response?.data?.errors) {
-          setFieldErrors(error.response.data.errors);
-          setError(error.response.data.message || "Corrija os erros no formulário");
+            setFieldErrors(error.response.data.errors);
+            setError(error.response.data.message || "Corrija os erros no formulário");
         } else {
-          setError(error.message || "Erro ao conectar com o servidor");
+            setError(error.message || "Erro ao conectar com o servidor");
         }
-      }
-    } else {
+    }
+} else {
       // --- Lógica de cadastro (mantida do seu código original) ---
       if (!validateForm()) {
         return;
@@ -1154,7 +1154,7 @@ const RegisterUser = () => {
       </div>
 
       {modoVisualizacao && (
-        <button onClick={handleVoltar} className="btn-voltar">
+        <button onClick={handleVoltar} className="btn btn-voltar">
           <i className="bi bi-arrow-left"></i> Voltar
         </button>
       )}
@@ -1571,7 +1571,7 @@ const RegisterUser = () => {
                 setEditandoProcedimentoId(null);
                 setShowProcedimentoForm(!showProcedimentoForm);
               }}
-              className="btn-add-procedimento"
+              className="btn btn-add-procedimento"
             >
               {showProcedimentoForm ? 'Cancelar' : 'Adicionar Novo Procedimento'}
             </button>
@@ -1726,7 +1726,7 @@ const RegisterUser = () => {
                               e.stopPropagation();
                               handleEditProcedimento(proc._id);
                             }}
-                            className="btn-tabela btn-edit-procedimento"
+                            className="btn btn-tabela btn-edit-procedimento"
                             title="Editar procedimento"
                           >
                             <i className="bi bi-pencil"></i>
@@ -1738,7 +1738,7 @@ const RegisterUser = () => {
                               e.stopPropagation();
                               handleDeleteProcedimento(proc._id);
                             }}
-                            className="btn-tabela btn-delete-procedimento"
+                            className="btn btn-tabela btn-delete-procedimento"
                             title="Excluir procedimento"
                           >
                             <i className="bi bi-trash"></i>

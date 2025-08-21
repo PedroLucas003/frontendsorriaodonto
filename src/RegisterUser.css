@@ -9,7 +9,10 @@
   color: #333;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   color: inherit;
   margin-top: 0;
   font-weight: 600;
@@ -197,11 +200,46 @@ textarea {
   background-color: #3a5ce4;
 }
 
-/* Botões na tabela */
+/* ===== NOVO ESTILO ADICIONADO ===== */
+/* Para o botão "Nossos especialistas" da página inicial */
+.btn-especialistas {
+  background-color: #4a6cf7;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(74, 108, 247, 0.2);
+}
+
+.btn-especialistas:hover {
+  background-color: #3a5ce4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 108, 247, 0.3);
+}
+
+/* ===== ESTILO MELHORADO ===== */
+/* Botões na tabela (para os ícones de editar/excluir procedimento) */
 .btn-tabela {
-  padding: 0.5rem;
-  min-width: 40px;
+  padding: 0;
+  /* Remove padding para controlar o tamanho com width/height */
+  width: 40px;
+  /* Largura fixa */
+  height: 40px;
+  /* Altura fixa para ficar quadrado */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Garante que o ícone dentro dele não tenha margem */
+.btn-tabela i {
+  margin: 0;
+  font-size: 1.1rem;
 }
 
 /* Botões de procedimento */
@@ -245,10 +283,9 @@ textarea {
   margin-top: 0.5rem;
 }
 
-.procedimento-actions .btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-}
+/* Este seletor foi removido pois não é mais necessário com as classes corretas no JSX */
+/* .procedimento-actions .btn { ... } */
+
 
 /* ===== TABELA ===== */
 .table-container {
@@ -307,12 +344,12 @@ tr:nth-child(even) {
   margin-bottom: 1rem;
   border-left: 4px solid #4a6cf7;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .procedimento-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .procedimento-details {
@@ -338,7 +375,7 @@ tr:nth-child(even) {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.9);
+  background-color: rgba(0, 0, 0, 0.9);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -502,19 +539,19 @@ tr:nth-child(even) {
   .container {
     padding: 15px;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   table {
     font-size: 14px;
   }
-  
+
   .procedimento-details {
     grid-template-columns: 1fr;
   }
-  
+
   .procedimento-actions {
     justify-content: flex-start;
     margin-top: 0.5rem;
@@ -525,25 +562,25 @@ tr:nth-child(even) {
   h1 {
     font-size: 1.5rem;
   }
-  
+
   h2 {
     font-size: 1.25rem;
   }
-  
+
   .btn {
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
   }
-  
+
   .form-section {
     padding: 1rem;
   }
-  
+
   .actions {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .btn-table {
     width: 100%;
   }
