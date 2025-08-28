@@ -1,332 +1,184 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from './MainPage.module.css';
+// src/components/MainPage/MainPage.jsx
 
-function MainPage() {
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./MainPage.css"; // Certifique-se que o CSS está neste arquivo
+
+const MainPage = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
-  const [mobileMenuActive, setMobileMenuActive] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth <= 1170);
-    };
-
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
+      setIsScrolled(window.scrollY > 50);
     };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('resize', checkIfMobile);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [scrolled]);
+  // ==> DADOS REAIS INTEGRADOS DO SEU CÓDIGO ANTIGO <==
+  const specialists = [
+    { name: "Dra. Dérica Barbosa", cro: "CRO-PE 13478", specialties: ["Ortodontia", "Cirurgia de Siso", "Clínica geral"], image: "/derica.jpeg" },
+    { name: "Dra. Lenise Nascimento", cro: "CRO-PE 11455", specialties: ["Prótese", "Cirurgia de siso", "Clínica geral"], image: "/dfoto.jpeg" },
+    { name: "Dr. Tiago Silva", cro: "CRO-PE 19868", specialties: ["Clínico geral"], image: "/tfoto.jpeg" },
+    { name: "Dra. Letícia Araújo", cro: "CRO-PE 17791", specialties: ["Atendimento infantil", "Clínica geral"], image: "/leticia.jpeg" },
+    { name: "Dra. Rafaela Silva", cro: "CRO-PE 14461", specialties: ["Prótese", "Clínica geral"], image: "/rfoto.jpeg" },
+    { name: "Dr. Marcelo Ferreira", cro: "CRO-PE 16077", specialties: ["Ortodontia", "Clínica Geral"], image: "/marcelo.jpeg" },
+    { name: "Dra. Rayane Ketima", cro: "CRO-PE 14887", specialties: ["Cirurgia", "Clínica Geral"], image: "/rayane.jpeg" },
+    { name: "Dra. Samille Patrizzia", cro: "CRO-PE 11460", specialties: ["Endodontia (Canal de Molar)"], image: "/samille.jpeg" },
+  ];
 
-  const toggleMobileMenu = () => {
-    setMobileMenuActive(!mobileMenuActive);
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+    setIsMenuOpen(false);
   };
 
+  // Ícones como componentes para não precisar de bibliotecas externas
+  const MenuIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="18" y2="18" /></svg> );
+  const XIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m18 6-12 12" /><path d="m6 6 12 12" /></svg> );
+  const ClockIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg> );
+  const MapPinIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg> );
+  const PhoneIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg> );
+  const MessageCircleIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg> );
+  const InstagramIcon = () => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="20" height="20" x="2" y="2" rx="5" ry="5" /><path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" /></svg> );
+
   return (
-    <div className={styles.container}>
-      <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
-        <nav className={styles.navbar}>
-          <div className={styles.logoContainer}>
-            <img src="/logo.png" alt="Logo Sorria Odonto" className={styles.logoImage} />
-            <span className={styles.logoText}>Sorria Odonto</span>
-          </div>
+    <div className="app">
+      <div className="background-elements">
+        <div className="abstract-shape-1"></div>
+        <div className="abstract-shape-2"></div>
+        <div className="abstract-shape-3"></div>
+        <div className="abstract-shape-4"></div>
+      </div>
 
-          <div className={styles.navButtonsContainer}>
-            <div className={styles.navButtons}>
-              <button
-                onClick={() => navigate('/prontuario')}
-                className={`${styles.navButton} ${styles.primaryButton}`}
-              >
-                Prontuário
-              </button>
-              <button
-                onClick={() => navigate('/login')}
-                className={`${styles.navButton} ${styles.secondaryButton}`}
-              >
-                Login
-              </button>
+      <header className={`header ${isScrolled ? "header-scrolled" : ""}`}>
+        <div className="container">
+          <div className="header-content">
+            <div className="logo">
+              <img src="/logo.png" alt="Logo Sorria Odonto" className="logo-image" style={{height: "40px"}}/>
+              <span className="logo-text">Sorria Odonto</span>
             </div>
-          </div>
-
-          {isMobile && (
-            <button
-              className={styles.mobileBtn}
-              onClick={toggleMobileMenu}
-              aria-expanded={mobileMenuActive}
-              aria-label="Menu de navegação"
-            >
-              <i className={`fa-solid ${mobileMenuActive ? 'fa-x' : 'fa-bars'}`}></i>
+            <nav className="nav-desktop">
+              <button className="btn btn-ghost" onClick={() => navigate("/prontuario")}>Prontuário</button>
+              <button className="btn btn-primary" onClick={() => navigate("/login")}>Login</button>
+            </nav>
+            <button className="btn btn-icon nav-mobile-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <XIcon /> : <MenuIcon />}
             </button>
+          </div>
+          {isMenuOpen && (
+            <div className="nav-mobile">
+              <button className="btn btn-ghost btn-full" onClick={() => {navigate("/prontuario"); setIsMenuOpen(false);}}>Prontuário</button>
+              <button className="btn btn-ghost btn-full" onClick={() => {navigate("/login"); setIsMenuOpen(false);}}>Login</button>
+            </div>
           )}
-        </nav>
-
-        {isMobile && (
-          <div className={`${styles.mobileMenu} ${mobileMenuActive ? styles.active : ''}`}>
-            <div className={styles.mobileButtons}>
-              <button
-                onClick={() => {
-                  navigate('/prontuario');
-                  setMobileMenuActive(false);
-                }}
-                className={`${styles.navButton} ${styles.primaryButton}`}
-              >
-                Prontuário
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/login');
-                  setMobileMenuActive(false);
-                }}
-                className={`${styles.navButton} ${styles.secondaryButton}`}
-              >
-                Login
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
       </header>
-
-      <main className={styles.content}>
-        <section id="home" className={styles.homeSection}>
-          <div className={styles.shape}></div>
-          <div className={styles.cta}>
-            <h1 className={styles.title}>
-              Seu sorriso perfeito
-              <span> começa aqui</span>
-            </h1>
-
-            <p className={styles.description}>
-              Cuidamos da sua saúde bucal com tratamentos personalizados e tecnologia de ponta
-            </p>
-
-            <div className={styles.ctaButtons}>
-              <a href="#services" className={`${styles.btnDefault} ${styles.primaryButton}`}>
-                Nossos especialistas
-              </a>
-
-              <a href="https://wa.me/5581998757234" className={styles.phoneButton}>
-                <button className={`${styles.btnDefault} ${styles.primaryButton}`}>
-                  <i className="fa-solid fa-phone"></i>
-                </button>
-                (81) 99875-7234
-              </a>
-            </div>
-
-            <div className={styles.socialMediaButtons}>
-              <a
-                href="https://wa.me/5581998757234"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp"
-              >
-                <i className="fa-brands fa-whatsapp"></i>
-              </a>
-              <a
-                href="https://www.instagram.com/sorriaodontofn?igsh=MWFuaGxqd25mNHM3Zw=="
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-              >
-                <i className="fa-brands fa-instagram"></i>
-              </a>
-            </div>
-          </div>
-
-          <div className={styles.banner}>
-            <img
-              src="/Gêmeos.png"
-              alt="Dentista atendendo paciente"
-              className={styles.responsiveImage}
-            />
-          </div>
-        </section>
-
-        <section id="services" className={styles.servicesSection}>
-          <h2 className={styles.sectionTitle}>Nossos Especialistas</h2>
-          <h3 className={styles.sectionSubtitle}>Conheça nossa equipe de profissionais</h3>
-
-          <div className={styles.servicesGrid}>
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-tooth"></i>
+      
+      <main>
+        <section className="hero">
+          <div className="container">
+            <div className="hero-content">
+              <div className="hero-text">
+                <h1 className="hero-title">Seu sorriso perfeito <span>começa aqui</span></h1>
+                <p className="hero-subtitle">Cuidamos da sua saúde bucal com tratamentos personalizados e tecnologia de ponta.</p>
+                <div className="hero-buttons">
+                  <button className="btn btn-primary btn-large" onClick={() => scrollToSection("especialistas")}>Nossos Especialistas</button>
+                  <a href="https://wa.me/5581998757234" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-large">
+                    <MessageCircleIcon /> Agende uma consulta
+                  </a>
+                </div>
               </div>
-              <img src="/derica.jpeg" className={styles.serviceImage} alt="Dra. Dérica Barbosa" />
-              <h3 className={styles.serviceTitle}>Dra. Dérica Barbosa</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 13478<br />
-                Ortodontia, Cirurgia de Siso, Clínica geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-teeth"></i>
+              <div className="hero-image">
+                <div className="hero-image-bg"></div>
+                <div className="hero-image-glow"></div>
+                <img src="/Gêmeos.png" alt="Dentistas da Sorria Odonto" className="hero-img"/>
               </div>
-              <img src="/dfoto.jpeg" className={styles.serviceImage} alt="Dra. Lenise Nascimento" />
-              <h3 className={styles.serviceTitle}>Dra. Lenise Nascimento</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 11455<br />
-                Prótese, Cirurgia de siso, Clínica geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-tooth"></i>
-              </div>
-              <img src="/tfoto.jpeg" className={styles.serviceImage} alt="Dr. Tiago Silva" />
-              <h3 className={styles.serviceTitle}>Dr. Tiago Silva</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 19868<br />
-                Clínico geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-face-smile"></i>
-              </div>
-              <img src="/leticia.jpeg" className={styles.serviceImage} alt="Dra. Letícia Araújo" />
-              <h3 className={styles.serviceTitle}>Dra. Letícia Araújo</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 17791<br />
-                Atendimento infantil, Clínica geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-teeth-open"></i>
-              </div>
-              <img src="/rfoto.jpeg" className={styles.serviceImage} alt="Dra. Rafaela Silva" />
-              <h3 className={styles.serviceTitle}>Dra. Rafaela Silva</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 14461<br />
-                Prótese, Clínica geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-teeth"></i>
-              </div>
-              <img src="/marcelo.jpeg" className={styles.serviceImage} alt="Dr. Marcelo Ferreira" />
-              <h3 className={styles.serviceTitle}>Dr. Marcelo Ferreira</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 16077<br />
-                Ortodontia e Clínica Geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-teeth-open"></i>
-              </div>
-              <img src="/rayane.jpeg" className={styles.serviceImage} alt="Dra. Rayane Ketima" />
-              <h3 className={styles.serviceTitle}>Dra. Rayane Ketima</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 14887<br />
-                Cirurgia e Clínica Geral
-              </span>
-            </div>
-
-            <div className={styles.serviceCard}>
-              <div className={styles.serviceIcon}>
-                <i className="fa-solid fa-teeth-open"></i>
-              </div>
-              <img src="/samille.jpeg" className={styles.serviceImage} alt="Dra. Samille Patrizzia" />
-              <h3 className={styles.serviceTitle}>Dra. Samille Patrizzia</h3>
-              <span className={styles.serviceDescription}>
-                CRO-PE 11460<br />
-                Endodontia (Canal de Molar)
-              </span>
             </div>
           </div>
         </section>
 
-        <section id="location" className={styles.locationSection}>
-          <h2 className={styles.sectionTitle}>Nossa Localização</h2>
-          <h3 className={styles.sectionSubtitle}>Venha nos visitar</h3>
-
-          <div className={styles.locationContent}>
-            <div className={styles.locationInfo}>
-              <i className="fa-solid fa-location-dot"></i>
-              <p>Rua da Aurora, 66, Centro Feira Nova, Pernambuco, Brazil</p>
+        <section id="especialistas" className="specialists">
+          <div className="specialists-bg"></div>
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">Nossa Equipe de Especialistas</h2>
+              <p className="section-subtitle">Conheça nossa equipe de profissionais.</p>
             </div>
+            <div className="specialists-grid">
+              {specialists.map((specialist, index) => (
+                <div key={index} className="specialist-card" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <div className="specialist-image">
+                    <img src={specialist.image} alt={specialist.name} />
+                  </div>
+                  <h3 className="specialist-name">{specialist.name}</h3>
+                  <p className="specialist-cro">{specialist.cro}</p>
+                  <div className="specialties-tags">
+                    {specialist.specialties.map((tag, idx) => <span key={idx} className="specialty-tag">{tag}</span>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-            <div className={styles.mapContainer}>
-              <iframe
-                title="Localização da Clínica Odontológica Sorria Odonto"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3951.4818532590134!2d-35.389067988542614!3d-7.949054492042189!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7aba5546a95cb79%3A0x1ceedea9b0820f29!2sR.%20da%20Aurora%2C%2066%2C%20Feira%20Nova%20-%20PE%2C%2055715-000!5e0!3m2!1spt-BR!2sbr!4v1752873896726!5m2!1spt-BR!2sbr"
-                width="100%"
-                height="450"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+        <section id="localizacao" className="location">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">Nossa Localização</h2>
+              <p className="section-subtitle">Venha nos visitar!</p>
+            </div>
+            <div className="location-content">
+              <div className="location-info">
+                <div className="info-item"><div className="info-icon"><MapPinIcon /></div><div className="info-text"><h3>Endereço</h3><p>Rua da Aurora, 66, Centro<br/>Feira Nova, Pernambuco, Brazil</p></div></div>
+                <div className="info-item"><div className="info-icon"><PhoneIcon /></div><div className="info-text"><h3>Contato</h3><p>(81) 99875-7234</p></div></div>
+                <div className="info-item"><div className="info-icon"><ClockIcon /></div><div className="info-text"><h3>Horário</h3><p>Segunda a Sexta: 8h às 18h<br/>Sábado: 8h às 12h</p></div></div>
+              </div>
+              <div className="location-map">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.992892975988!2d-35.39380568522384!3d-7.465997994615372!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab0e0a3f6a2b8b%3A0x4a4a1c5d0b9a3f9a!2sR.%20da%20Aurora%2C%2066%20-%20Centro%2C%20Feira%20Nova%20-%20PE%2C%2055715-000!5e0!3m2!1spt-BR!2sbr" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Localização Sorria Odonto"></iframe>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerContent}>
-          <div className={styles.footerLogo}>
-            <div className={styles.footerLogoContainer}>
-              <img src="/logo.png" alt="Logo Sorria Odonto" className={styles.footerLogoImage} />
-              <span className={styles.footerLogoText}>Sorria Odonto</span>
-            </div>
-            <p>Cuidando do seu sorriso com excelência</p>
-          </div>
-
-          <div className={styles.footerInfo}>
-            <div className={styles.footerSection}>
-              <h4>Desde 2020</h4>
-              <p>7x Prêmio destaque de melhor clínica</p>
-              <p>Prêmio destaque REGIONAL</p>
+      <footer className="footer">
+        <div className="container">
+          <div className="footer-content">
+            <div className="footer-section">
+              <div className="footer-logo">
+                 <img src="/logo.png" alt="Logo Sorria Odonto" className="logo-image" style={{height: "50px"}}/>
+              </div>
+              <p>Cuidando do seu sorriso com excelência.</p>
               <p>EPAO 1334</p>
             </div>
-
-            <div className={styles.footerSection}>
-              <h4>Nossos Dentistas</h4>
-              <p>Dr. Eronildo</p>
-              <p>Dr. Eronilson</p>
+            <div className="footer-section">
+              <h3>Nossos Dentistas</h3>
+              <ul><li>Dr. Eronildo</li><li>Dr. Eronilson</li></ul>
             </div>
-
-            <div className={styles.footerSection}>
-              <h4>Contato</h4>
-              <p><i className="fa-solid fa-phone"></i> (81) 99875-7234</p>
-              <div className={styles.footerSocial}>
-                <a href="https://wa.me/5581998757234" target="_blank" rel="noopener noreferrer">
-                  <i className="fa-brands fa-whatsapp"></i>
-                </a>
-                <a href="https://www.instagram.com/sorriaodontofn?igsh=MWFuaGxqd25mNHM3Zw==" target="_blank" rel="noopener noreferrer">
-                  <i className="fa-brands fa-instagram"></i>
-                </a>
+            <div className="footer-section">
+              <h3>Destaques</h3>
+              <ul><li>🏆 7x Prêmio destaque de melhor clínica</li><li>⭐ Prêmio destaque REGIONAL</li></ul>
+            </div>
+            <div className="footer-section">
+              <h3>Contato</h3>
+              <div className="contact-links">
+                <a href="https://wa.me/5581998757234" className="contact-link" target="_blank" rel="noopener noreferrer"><MessageCircleIcon /><span>WhatsApp</span></a>
+                <a href="https://www.instagram.com/sorriaodontofn?igsh=MWFuaGxqd25mNHM3Zw==" className="contact-link" target="_blank" rel="noopener noreferrer"><InstagramIcon /><span>Instagram</span></a>
               </div>
             </div>
           </div>
-        </div>
-
-        <div className={styles.footerCopyright}>
-          <p>&copy; {new Date().getFullYear()} Sorria Odonto. Todos os direitos reservados.</p>
+          <div className="footer-bottom">
+            <p>© {new Date().getFullYear()} Sorria Odonto. Todos os direitos reservados.</p>
+          </div>
         </div>
       </footer>
     </div>
   );
-}
+};
 
 export default MainPage;
