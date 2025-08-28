@@ -1,4 +1,4 @@
-/* Seu CSS Global - (index.css ou App.css) */
+/* Arquivo: index.css (VERSÃO CORRIGIDA) */
 
 * {
   margin: 0;
@@ -8,29 +8,25 @@
 
 html {
   scroll-behavior: smooth;
-  height: 100%; /* ADICIONADO: Garante que o html ocupe 100% da altura da viewport */
-  width: 100%; /* ADICIONADO: Garante que o html ocupe 100% da largura da viewport */
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  /* Mantemos sua fonte original 'Poppins' como a principal para todo o site */
+  font-family: 'Poppins', sans-serif; 
   line-height: 1.6;
-  overflow-x: hidden; /* Mantém para evitar scroll horizontal indesejado */
   
-  /* ADICIONADO: Garante que o body ocupe 100% da altura do html (que já é 100% da viewport) */
-  height: 100%; 
-  width: 100%; /* Garante que o body ocupe 100% da largura do html */
-  background-color: #f5f5f5; /* Sua cor de fundo principal */
+  /* A cor de fundo será controlada pelo componente para maior flexibilidade */
+  background-color: #f5f5f5; 
+  color: #374151;
+  overflow-x: hidden;
 }
 
-/* Garante que imagens não ultrapassem containers */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* Links padrão */
 a {
   text-decoration: none;
   color: inherit;
