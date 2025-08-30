@@ -121,6 +121,7 @@ const RegisterUser = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [modoVisualizacao, setModoVisualizacao] = useState(false);
   const [showProcedimentoForm, setShowProcedimentoForm] = useState(false);
+  const [arquivoProcedimento, setArquivoProcedimento] = useState(null);
   const [procedimentoData, setProcedimentoData] = useState({
     procedimento: "",
     denteFace: "",
@@ -129,6 +130,8 @@ const RegisterUser = () => {
     profissional: "",
     dataNovoProcedimento: ""
   });
+
+  
 
   const modalidadesPagamento = [
     "Dinheiro",
@@ -1028,13 +1031,20 @@ const RegisterUser = () => {
             dataProcedimento: dataProcedimentoObjeto
         };
 
+        if (arquivoProcedimento) {
+            formData.append('arquivo', arquivoProcedimento);
+        }
+
         let response;
         if (editandoProcedimentoId) {
-            // Requisição PUT para ATUALIZAR um procedimento específico
+            // Requisição PUT para ATUALIZAR
             response = await api.put(
                 `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-                dadosParaEnvio,
-                { headers: { Authorization: `Bearer ${token}` } }
+                formData, // <-- ENVIAR FORMDATA
+                { headers: { 
+                    Authorization: `Bearer ${token}`,
+                    // NÃO defina 'Content-Type', o navegador fará isso automaticamente para FormData
+                }}
             );
 
             // --- INÍCIO DA CORREÇÃO ---
@@ -1059,12 +1069,16 @@ const RegisterUser = () => {
             // --- FIM DA CORREÇÃO ---
 
         } else {
-            // Requisição PUT para ADICIONAR um NOVO procedimento
+            // Requisição PUT para ADICIONAR
             response = await api.put(
                 `/api/users/${editandoId}/procedimento`,
-                dadosParaEnvio,
-                { headers: { Authorization: `Bearer ${token}` } }
+                formData, // <-- ENVIAR FORMDATA
+                { headers: {
+                     Authorization: `Bearer ${token}` 
+                }}
             );
+
+            
 
             // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
             const novoProcedimento = {
@@ -1089,6 +1103,10 @@ const RegisterUser = () => {
         setError("");
         setFieldErrors({});
         alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+        setArquivoProcedimento(null);
+        // Limpe o input do arquivo manualmente, se necessário
+        const fileInput = document.getElementById('novo-arquivo');
+        if(fileInput) fileInput.value = null;
 
         // Opcional: recarrega todos os usuários. Pode ser removido para uma UI mais rápida.
         fetchUsuarios(); 
@@ -1668,6 +1686,18 @@ const RegisterUser = () => {
                   </div>
                 </div>
 
+                {/* NOVO CAMPO DE UPLOAD DE ARQUIVO */}
+<div className="form-group">
+    <label htmlFor="novo-arquivo">Anexo (Imagem)</label>
+    <input
+        type="file"
+        id="novo-arquivo"
+        name="arquivo"
+        accept="image/*" // Aceita apenas imagens
+        onChange={(e) => setArquivoProcedimento(e.target.files[0])}
+    />
+</div>
+
                 <div className="form-group">
                   <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>
                   <input
@@ -1724,7 +1754,7 @@ const RegisterUser = () => {
                   })
                   .map((proc, index) => (
                     <div key={proc._id || `proc-${index}`} className="procedimento-item">
-                      <div className="procedimento-details single-line">
+                      <div className="procedimento-details ">
                         {proc.dataProcedimento && (
                           <span><strong>Data:</strong> {formatDateForDisplay(proc.dataProcedimento)}</span>
                         )}
@@ -1733,6 +1763,20 @@ const RegisterUser = () => {
                         <span><strong>Valor:</strong> {formatValueForDisplay(proc.valor)}</span>
                         <span><strong>Pagamento:</strong> {proc.modalidadePagamento || "Não especificado"}</span>
                         <span><strong>Profissional:</strong> {proc.profissional || "Não especificado"}</span>
+                        {/* NOVO SPAN PARA EXIBIR O LINK DO ARQUIVO */}
+        {proc.arquivo && (
+            <span>
+                <strong>Anexo:</strong>
+                <a 
+                    href={`${api.defaults.baseURL}/uploads/${proc.arquivo}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="link-anexo"
+                >
+                    Ver Imagem
+                </a>
+            </span>
+        )}
                         <div className="procedimento-actions">
                           <button
                             type="button"

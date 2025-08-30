@@ -548,3 +548,21 @@ tr:nth-child(even) {
     width: 100%;
   }
 }
+.link-anexo {
+    margin-left: 5px;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.link-anexo:hover {
+    text-decoration: underline;
+}
+
+.procedimento-item .procedimento-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    flex-grow: 1;
+}
