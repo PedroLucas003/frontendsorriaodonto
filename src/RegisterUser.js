@@ -131,7 +131,7 @@ const RegisterUser = () => {
     dataNovoProcedimento: ""
   });
 
-  
+
 
   const modalidadesPagamento = [
     "Dinheiro",
@@ -289,49 +289,49 @@ const RegisterUser = () => {
     const valorDisplay = formatValueForDisplay(procedimento.valor);
 
     setProcedimentoData({
-        procedimento: procedimento.procedimento || "",
-        denteFace: procedimento.denteFace || "",
-        valor: procedimento.valor || 0, // Passa o valor numérico original
-        modalidadePagamento: procedimento.modalidadePagamento || "",
-        profissional: procedimento.profissional || "",
-        dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
-        valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
+      procedimento: procedimento.procedimento || "",
+      denteFace: procedimento.denteFace || "",
+      valor: procedimento.valor || 0, // Passa o valor numérico original
+      modalidadePagamento: procedimento.modalidadePagamento || "",
+      profissional: procedimento.profissional || "",
+      dataProcedimento: formattedDate, // Usa a data formatada para exibir no input
+      valorFormatado: valorDisplay || "" // Usa o valor formatado para exibir no input
     });
     setShowProcedimentoForm(true);
-};
+  };
 
-   const handleProcedimentoChange = (e) => {
+  const handleProcedimentoChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     // Tratamento para valor monetário (campo "valor")
     if (name === "valor") {
-        // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
-        const cleanedValue = value.replace(/[^0-9,]/g, '');
+      // Remove tudo que não é dígito, exceto a vírgula para lidar com a formatação
+      const cleanedValue = value.replace(/[^0-9,]/g, '');
 
-        // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
-        // Isso previne o travamento no R$ 1,00
-        const numericString = cleanedValue.replace(',', '');
+      // Trata o valor como uma string de números (sem vírgula, ex: '1000' para 10,00)
+      // Isso previne o travamento no R$ 1,00
+      const numericString = cleanedValue.replace(',', '');
 
-        let numericValue = 0;
-        if (numericString) {
-          numericValue = parseInt(numericString, 10) / 100;
-        }
+      let numericValue = 0;
+      if (numericString) {
+        numericValue = parseInt(numericString, 10) / 100;
+      }
 
-        // Formata o número para o padrão monetário brasileiro (R$ 0,00)
-        formattedValue = numericValue.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+      // Formata o número para o padrão monetário brasileiro (R$ 0,00)
+      formattedValue = numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
 
-        setProcedimentoData(prev => ({
-          ...prev,
-          valor: numericValue,
-          valorFormatado: formattedValue
-        }));
-        return;
+      setProcedimentoData(prev => ({
+        ...prev,
+        valor: numericValue,
+        valorFormatado: formattedValue
+      }));
+      return;
     }
 
     // Tratamento para a data do procedimento
@@ -574,12 +574,12 @@ const RegisterUser = () => {
     e.preventDefault();
 
     if (editandoId) {
-    // Lógica de atualização
-    const updatedFields = {};
-    const originalUser = usuarios.find(u => u._id === editandoId);
+      // Lógica de atualização
+      const updatedFields = {};
+      const originalUser = usuarios.find(u => u._id === editandoId);
 
-    // Lista de campos que serão atualizados
-    const fieldsToUpdate = [
+      // Lista de campos que serão atualizados
+      const fieldsToUpdate = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco', 'detalhesDoencas',
         'quaisRemedios', 'quaisMedicamentos', 'quaisAnestesias',
         'historicoCirurgia', 'historicoOdontologico', 'sangramentoPosProcedimento',
@@ -587,86 +587,86 @@ const RegisterUser = () => {
         'exameSangue', 'coagulacao', 'cicatrizacao', 'dataNascimento',
         // --- ADICIONE OS CAMPOS DO PROCEDIMENTO PRINCIPAL AQUI ---
         'procedimento', 'denteFace', 'modalidadePagamento', 'profissional'
-    ];
+      ];
 
-    fieldsToUpdate.forEach(key => {
+      fieldsToUpdate.forEach(key => {
         // Envia o campo apenas se ele tiver um valor no formulário
         if (formData[key] !== undefined && formData[key] !== null) {
-            updatedFields[key] = formData[key];
+          updatedFields[key] = formData[key];
         }
-    });
+      });
 
-    // --- LÓGICA ADICIONADA PARA VALOR E DATAS ---
+      // --- LÓGICA ADICIONADA PARA VALOR E DATAS ---
 
-    // 1. Trata o campo de VALOR (converte para número)
-    if (formData.valor !== undefined && formData.valor !== null) {
+      // 1. Trata o campo de VALOR (converte para número)
+      if (formData.valor !== undefined && formData.valor !== null) {
         updatedFields.valor = convertValueToFloat(formData.valor);
-    }
-    
-    // 2. Trata a DATA DE NASCIMENTO (converte para ISO)
-    if (formData.dataNascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataNascimento)) {
+      }
+
+      // 2. Trata a DATA DE NASCIMENTO (converte para ISO)
+      if (formData.dataNascimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataNascimento)) {
         const [day, month, year] = formData.dataNascimento.split('/');
         updatedFields.dataNascimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
-    }
+      }
 
-    // 3. Trata a DATA DO PROCEDIMENTO (converte para ISO)
-    if (formData.dataProcedimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataProcedimento)) {
+      // 3. Trata a DATA DO PROCEDIMENTO (converte para ISO)
+      if (formData.dataProcedimento && /^\d{2}\/\d{2}\/\d{4}$/.test(formData.dataProcedimento)) {
         const [day, month, year] = formData.dataProcedimento.split('/');
         updatedFields.dataProcedimento = new Date(`${year}-${month}-${day}T12:00:00Z`);
-    }
+      }
 
-    // --- FIM DA LÓGICA ADICIONADA ---
+      // --- FIM DA LÓGICA ADICIONADA ---
 
-    // Lida com campos aninhados como 'habitos' e 'exames'
-    updatedFields.habitos = {
+      // Lida com campos aninhados como 'habitos' e 'exames'
+      updatedFields.habitos = {
         frequenciaFumo: formData.frequenciaFumo,
         frequenciaAlcool: formData.frequenciaAlcool,
-    };
-    updatedFields.exames = {
+      };
+      updatedFields.exames = {
         exameSangue: formData.exameSangue,
         coagulacao: formData.coagulacao,
         cicatrizacao: formData.cicatrizacao,
-    };
+      };
 
-    // Se a senha foi preenchida, adiciona ao objeto de atualização
-    if (formData.password && formData.password.length >= 6) {
+      // Se a senha foi preenchida, adiciona ao objeto de atualização
+      if (formData.password && formData.password.length >= 6) {
         updatedFields.password = formData.password;
-    }
+      }
 
-    try {
+      try {
         const token = localStorage.getItem("token");
         // A requisição PUT continua a mesma, mas agora com os dados corretos
         const response = await api.put(`/api/users/${editandoId}`, updatedFields, {
-            headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         if (response.data?.errors) {
-            setFieldErrors(response.data.errors);
-            setError(response.data.message || "Erro de validação");
-            return;
+          setFieldErrors(response.data.errors);
+          setError(response.data.message || "Erro de validação");
+          return;
         }
 
         alert("Usuário atualizado com sucesso!");
-        
+
         // Atualiza o usuário na lista local para refletir as mudanças imediatamente
-        fetchUsuarios(); 
+        fetchUsuarios();
         handleEdit(response.data.user); // Recarrega os dados do formulário com as informações atualizadas
 
-    } catch (error) {
+      } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
         if (error.response?.data?.errors) {
-            setFieldErrors(error.response.data.errors);
-            setError(error.response.data.message || "Corrija os erros no formulário");
+          setFieldErrors(error.response.data.errors);
+          setError(error.response.data.message || "Corrija os erros no formulário");
         } else {
-            setError(error.message || "Erro ao conectar com o servidor");
+          setError(error.message || "Erro ao conectar com o servidor");
         }
-    }
-} else {
+      }
+    } else {
       // --- Lógica de cadastro (mantida do seu código original) ---
       if (!validateForm()) {
         return;
       }
-      
+
       let formIsValid = true;
       const requiredFields = [
         'nomeCompleto', 'cpf', 'telefone', 'endereco',
@@ -724,7 +724,7 @@ const RegisterUser = () => {
       if (!dataNascimentoISO) {
         return;
       }
-      
+
       const dadosParaEnvio = {
         nomeCompleto: formData.nomeCompleto.trim(),
         cpf: formatCPF(formData.cpf.replace(/\D/g, '')),
@@ -991,128 +991,106 @@ const RegisterUser = () => {
     try {
         const token = localStorage.getItem("token");
 
-        // Validação da data do procedimento
+        // 1. Validações de data e valor (seu código aqui está correto)
         const dataProcedimentoInput = procedimentoData.dataProcedimento;
-
         if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
             setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
             return;
         }
         
-        // Converte a data do formato DD/MM/AAAA para um objeto Date LOCAL
         const [day, month, year] = dataProcedimentoInput.split('/');
         const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-
         if (isNaN(dataProcedimentoObjeto.getTime())) {
             setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
             return;
         }
 
-        // Converte o valor monetário
         let valorNumerico = 0;
         if (procedimentoData.valorFormatado) {
-            try {
-                valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-                if (isNaN(valorNumerico)) {
-                    throw new Error("Valor inválido");
-                }
-            } catch (error) {
+            valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+            if (isNaN(valorNumerico)) {
                 setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
                 return;
             }
         }
 
-        const dadosParaEnvio = {
-            procedimento: procedimentoData.procedimento?.trim() || null,
-            denteFace: procedimentoData.denteFace?.trim() || null,
-            valor: valorNumerico || null,
-            modalidadePagamento: procedimentoData.modalidadePagamento || null,
-            profissional: procedimentoData.profissional?.trim() || null,
-            dataProcedimento: dataProcedimentoObjeto
-        };
+        // 2. Cria um objeto FormData para empacotar os dados e o arquivo
+        const formData = new FormData();
 
+        // 3. Adiciona os campos do formulário ao FormData
+        formData.append('procedimento', procedimentoData.procedimento || '');
+        formData.append('denteFace', procedimentoData.denteFace || '');
+        formData.append('valor', valorNumerico);
+        formData.append('modalidadePagamento', procedimentoData.modalidadePagamento || '');
+        formData.append('profissional', procedimentoData.profissional || '');
+        formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
+
+        // 4. Adiciona o arquivo (se existir)
         if (arquivoProcedimento) {
             formData.append('arquivo', arquivoProcedimento);
         }
 
+        // 5. Envia o FormData para a API
         let response;
         if (editandoProcedimentoId) {
-            // Requisição PUT para ATUALIZAR
+            // Requisição para ATUALIZAR
             response = await api.put(
                 `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-                formData, // <-- ENVIAR FORMDATA
-                { headers: { 
-                    Authorization: `Bearer ${token}`,
-                    // NÃO defina 'Content-Type', o navegador fará isso automaticamente para FormData
-                }}
+                formData, // Enviando o FormData
+                { headers: { Authorization: `Bearer ${token}` } }
             );
+        } else {
+            // Requisição para ADICIONAR
+            response = await api.put(
+                `/api/users/${editandoId}/procedimento`,
+                formData, // Enviando o FormData
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+        }
 
-            // --- INÍCIO DA CORREÇÃO ---
-            // A resposta do backend já contém o procedimento completo e atualizado.
-            const procedimentoRetornadoDoBackend = response.data.procedimento;
-
-            // Apenas adicione o valor formatado para exibição no frontend.
-            const procedimentoAtualizadoParaState = {
-                ...procedimentoRetornadoDoBackend,
-                valorFormatado: formatValueForDisplay(procedimentoRetornadoDoBackend.valor),
+        // 6. Atualiza o estado da UI com a resposta do backend
+        if (editandoProcedimentoId) {
+            const procedimentoAtualizado = {
+                ...response.data.procedimento,
+                valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
             };
-            
             setFormData(prev => ({
                 ...prev,
                 procedimentos: prev.procedimentos.map(p =>
-                    // Garanta que a comparação de IDs seja segura
-                    String(p._id) === String(editandoProcedimentoId) 
-                        ? procedimentoAtualizadoParaState 
-                        : p
+                    String(p._id) === String(editandoProcedimentoId) ? procedimentoAtualizado : p
                 )
             }));
-            // --- FIM DA CORREÇÃO ---
-
         } else {
-            // Requisição PUT para ADICIONAR
-            response = await api.put(
-                `/api/users/${editandoId}/procedimento`,
-                formData, // <-- ENVIAR FORMDATA
-                { headers: {
-                     Authorization: `Bearer ${token}` 
-                }}
-            );
-
-            
-
-            // AQUI VOCÊ TAMBÉM PRECISA CORRIGIR O USO DA DATA DE RETORNO
             const novoProcedimento = {
-                ...dadosParaEnvio,
-                _id: response.data.procedimento._id,
-                valorFormatado: formatValueForDisplay(valorNumerico),
-                dataProcedimento: response.data.procedimento.dataProcedimento // Usa a data formatada pelo backend
+                ...response.data.procedimento, // Usa a resposta do backend, que contém o _id e o nome do arquivo
+                valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
             };
-            
             setFormData(prev => ({
                 ...prev,
                 procedimentos: [...prev.procedimentos, novoProcedimento]
             }));
         }
 
+        // 7. Limpa o formulário
         setProcedimentoData({
             procedimento: "", denteFace: "", valor: "", valorFormatado: "",
             modalidadePagamento: "", profissional: "", dataProcedimento: ""
         });
+        setArquivoProcedimento(null);
+        const fileInput = document.getElementById('novo-arquivo');
+        if(fileInput) fileInput.value = null;
+
         setEditandoProcedimentoId(null);
         setShowProcedimentoForm(false);
         setError("");
         setFieldErrors({});
         alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
-        setArquivoProcedimento(null);
-        // Limpe o input do arquivo manualmente, se necessário
-        const fileInput = document.getElementById('novo-arquivo');
-        if(fileInput) fileInput.value = null;
+        
+        fetchUsuarios();
 
-        // Opcional: recarrega todos os usuários. Pode ser removido para uma UI mais rápida.
-        fetchUsuarios(); 
     } catch (error) {
         console.error("Erro ao adicionar/editar procedimento:", error);
-        const errorMessage = error.response?.data?.message || error.message || "Erro ao adicionar/editar procedimento. Tente novamente.";
+        const errorMessage = error.response?.data?.message || "Ocorreu um erro. Verifique os dados e o arquivo enviado (limite 5MB).";
         setError(errorMessage);
         if (error.response?.data?.errors) {
             setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
@@ -1687,16 +1665,16 @@ const RegisterUser = () => {
                 </div>
 
                 {/* NOVO CAMPO DE UPLOAD DE ARQUIVO */}
-<div className="form-group">
-    <label htmlFor="novo-arquivo">Anexo (Imagem)</label>
-    <input
-        type="file"
-        id="novo-arquivo"
-        name="arquivo"
-        accept="image/*" // Aceita apenas imagens
-        onChange={(e) => setArquivoProcedimento(e.target.files[0])}
-    />
-</div>
+                <div className="form-group">
+                  <label htmlFor="novo-arquivo">Anexo (Imagem)</label>
+                  <input
+                    type="file"
+                    id="novo-arquivo"
+                    name="arquivo"
+                    accept="image/*" // Aceita apenas imagens
+                    onChange={(e) => setArquivoProcedimento(e.target.files[0])}
+                  />
+                </div>
 
                 <div className="form-group">
                   <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>
@@ -1764,19 +1742,19 @@ const RegisterUser = () => {
                         <span><strong>Pagamento:</strong> {proc.modalidadePagamento || "Não especificado"}</span>
                         <span><strong>Profissional:</strong> {proc.profissional || "Não especificado"}</span>
                         {/* NOVO SPAN PARA EXIBIR O LINK DO ARQUIVO */}
-        {proc.arquivo && (
-            <span>
-                <strong>Anexo:</strong>
-                <a 
-                    href={`${api.defaults.baseURL}/uploads/${proc.arquivo}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="link-anexo"
-                >
-                    Ver Imagem
-                </a>
-            </span>
-        )}
+                        {proc.arquivo && (
+                          <span>
+                            <strong>Anexo:</strong>
+                            <a
+                              href={`${api.defaults.baseURL}/uploads/${proc.arquivo}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="link-anexo"
+                            >
+                              Ver Imagem
+                            </a>
+                          </span>
+                        )}
                         <div className="procedimento-actions">
                           <button
                             type="button"
