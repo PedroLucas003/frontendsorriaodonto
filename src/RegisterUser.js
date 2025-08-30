@@ -842,18 +842,15 @@ const RegisterUser = () => {
     setModoVisualizacao(true);
     setShowProcedimentoSection(false);
 
-    // Função corrigida para formatar datas sem problemas de timezone
+    // Sua função auxiliar para formatar datas (mantida, pois é útil)
     const formatDateWithoutTimezone = (dateString) => {
       if (!dateString) return '';
       try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return '';
-
-        // Ajuste para evitar problemas de timezone
         const day = String(date.getUTCDate()).padStart(2, '0');
         const month = String(date.getUTCMonth() + 1).padStart(2, '0');
         const year = date.getUTCFullYear();
-
         return `${day}/${month}/${year}`;
       } catch (e) {
         console.error("Erro ao formatar data:", e);
@@ -861,44 +858,19 @@ const RegisterUser = () => {
       }
     };
 
-    // Formatação das datas usando a nova função
+    // Formata a data de nascimento
     let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
-    let dataProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataProcedimento);
-    let dataNovoProcedimentoFormatada = formatDateWithoutTimezone(usuario.dataNovoProcedimento);
 
-    // Formatação do valor monetário
-    let valorFormatado = '';
-    if (usuario.valor !== undefined && usuario.valor !== null) {
-      const numericValue = typeof usuario.valor === 'number' ? usuario.valor : parseFloat(usuario.valor);
-      if (!isNaN(numericValue)) {
-        valorFormatado = numericValue.toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        });
-      }
-    }
-
-    const historicoProcedimentos = Array.isArray(usuario.historicoProcedimentos)
-      ? usuario.historicoProcedimentos
-      : [];
-
-    // Cria o procedimento principal
-    const procedimentoPrincipal = {
-      procedimento: usuario.procedimento || "",
-      denteFace: usuario.denteFace || "",
-      valor: usuario.valor || 0,
-      valorFormatado: valorFormatado,
-      modalidadePagamento: usuario.modalidadePagamento || "",
-      profissional: usuario.profissional || "",
-      dataProcedimento: usuario.dataProcedimento || "",
-      dataNovoProcedimento: usuario.dataNovoProcedimento || "",
-      isPrincipal: true,
-      createdAt: usuario.createdAt || new Date().toISOString()
-    };
-
-    // Processa e ordena os procedimentos secundários (do mais recente para o mais antigo)
-    const procedimentosSecundarios = historicoProcedimentos
+    // --- INÍCIO DA CORREÇÃO ---
+    
+    // 1. Removemos a criação do "procedimentoPrincipal".
+    //    Agora, todos os procedimentos vêm de um só lugar: o histórico.
+    
+    // 2. Processamos a lista de procedimentos diretamente do histórico do usuário.
+    //    Isso garante que cada procedimento listado tenha um _id real do banco de dados.
+    const procedimentosFormatados = (usuario.historicoProcedimentos || [])
       .map(p => {
+        // Formatamos o valor para cada procedimento individualmente
         let valorProcFormatado = '';
         if (p.valor !== undefined && p.valor !== null) {
           const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
@@ -911,38 +883,46 @@ const RegisterUser = () => {
         }
 
         return {
-          ...p,
+          ...p, // Inclui todos os dados do procedimento, inclusive o _id
           valorFormatado: valorProcFormatado,
-          dataProcedimento: p.dataProcedimento || p.createdAt,
-          isPrincipal: false,
-          createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString()
+          dataProcedimento: p.dataProcedimento || p.createdAt, // Fallback para data
         };
       })
       .sort((a, b) => {
-        // Ordena por data de criação (mais recente primeiro)
-        const dateA = new Date(a.createdAt || 0);
-        const dateB = new Date(b.createdAt || 0);
+        // Ordenamos pela data do mais recente para o mais antigo
+        const dateA = new Date(a.dataProcedimento || 0);
+        const dateB = new Date(b.dataProcedimento || 0);
         return dateB - dateA;
       });
 
-    // Combina o procedimento principal com os secundários ordenados
-    const procedimentosCompletos = [procedimentoPrincipal, ...procedimentosSecundarios];
+    // --- FIM DA CORREÇÃO ---
 
     setFormData({
       ...usuario,
       cpf: formatCPF(usuario.cpf),
       telefone: formatFone(usuario.telefone),
       dataNascimento: dataNascimentoFormatada,
-      dataProcedimento: dataProcedimentoFormatada,
-      dataNovoProcedimento: dataNovoProcedimentoFormatada,
-      valor: usuario.valor || 0,
-      valorFormatado: valorFormatado,
+      
+      // 3. Limpamos os campos de procedimento do nível superior do formulário.
+      //    Eles eram usados pelo "procedimento principal" e não são mais necessários aqui.
+      procedimento: "",
+      denteFace: "",
+      valor: "",
+      valorFormatado: "",
+      modalidadePagamento: "",
+      profissional: "",
+      dataProcedimento: "",
+      dataNovoProcedimento: "",
+
+      // 4. Usamos a lista de procedimentos correta e formatada.
+      procedimentos: procedimentosFormatados,
+
+      // O resto dos dados é preenchido normalmente
       frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
       frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
       exameSangue: usuario.exames?.exameSangue || "",
       coagulacao: usuario.exames?.coagulacao || "",
       cicatrizacao: usuario.exames?.cicatrizacao || "",
-      procedimentos: procedimentosCompletos,
       password: "",
       confirmPassword: ""
     });
