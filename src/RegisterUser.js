@@ -1002,7 +1002,7 @@ const RegisterUser = () => {
           setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
           return;
         }
-      }
+      } 
 
       const formData = new FormData();
 
