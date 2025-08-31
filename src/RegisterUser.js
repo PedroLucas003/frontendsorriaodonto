@@ -1013,17 +1013,20 @@ const RegisterUser = () => {
       formData.append('profissional', procedimentoData.profissional || '');
       formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
 
-      // --- LÓGICA DE ARQUIVO FINALIZADA ---
-      if (arquivosProcedimento.length > 0) {
-        // Se novos arquivos foram selecionados, anexa todos eles.
-        arquivosProcedimento.forEach(file => {
-          formData.append('arquivos', file);
-        });
-      } else if (editandoProcedimentoId && procedimentoData.arquivosExistentes.length === 0) {
-        // Se está editando E o array de anexos existentes foi limpo (pelo botão "Remover"),
-        // enviamos a flag para o backend.
-        formData.append('removerArquivos', 'true');
-      }
+      if (editandoProcedimentoId) {
+    // Se estamos editando, enviamos a lista de arquivos que sobraram no estado.
+    // O backend vai usar esta lista como a nova lista de arquivos.
+    procedimentoData.arquivosExistentes.forEach(arquivo => {
+        formData.append('arquivosMantidos', arquivo);
+    });
+}
+
+// A lógica para adicionar novos arquivos continua a mesma
+if (arquivosProcedimento.length > 0) {
+    arquivosProcedimento.forEach(file => {
+        formData.append('arquivos', file); // 'arquivos' para os novos, 'arquivosMantidos' para os antigos
+    });
+}
 
       let response;
       if (editandoProcedimentoId) {
@@ -1092,6 +1095,16 @@ const RegisterUser = () => {
       }
     }
   };
+
+  const handleRemoverArquivoExistente = (arquivoParaRemover) => {
+    setProcedimentoData(prev => ({
+        ...prev,
+        // Filtra o array, mantendo apenas os arquivos que NÃO são o que queremos remover
+        arquivosExistentes: prev.arquivosExistentes.filter(
+            arquivo => arquivo !== arquivoParaRemover
+        )
+    }));
+};
 
   const filteredUsuarios = usuarios.filter(usuario => {
     if (!searchTerm.trim()) return true;
@@ -1662,53 +1675,49 @@ const RegisterUser = () => {
                 {/* --- BLOCO COMPLETO PARA UPLOAD E VISUALIZAÇÃO DE MÚLTIPLOS ARQUIVOS --- */}
 
                 {/* Seção para mostrar os anexos que já existem no procedimento */}
-                {procedimentoData.arquivosExistentes && procedimentoData.arquivosExistentes.length > 0 && (
-                  <div className="form-group-anexo-existente">
-                    <label>Anexos Atuais:</label>
-                    {/* Itera sobre o array de arquivos existentes para criar um link para cada um */}
-                    {procedimentoData.arquivosExistentes.map((arquivo, index) => (
-                      <div key={index} className="anexo-preview-item">
-                        <a
-                          href={`${api.defaults.baseURL}/uploads/${arquivo}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="link-anexo"
-                        >
-                          Anexo {index + 1}
-                        </a>
-                      </div>
-                    ))}
-                    {/* Botão para remover todos os anexos existentes */}
-                    <button
-                      type="button"
-                      className="btn-remover-anexo"
-                      onClick={() => {
-                        // Limpa o array de arquivos existentes no estado do formulário
-                        setProcedimentoData(prev => ({ ...prev, arquivosExistentes: [] }));
-                      }}
-                    >
-                      Remover Todos os Anexos
-                    </button>
-                  </div>
-                )}
+                {/* --- BLOCO ATUALIZADO PARA ANEXOS INDIVIDUAIS --- */}
+{procedimentoData.arquivosExistentes && procedimentoData.arquivosExistentes.length > 0 && (
+    <div className="form-group-anexo-existente">
+        <label>Anexos Atuais:</label>
+        {/* Itera sobre o array para criar um link e um botão de remover para cada anexo */}
+        {procedimentoData.arquivosExistentes.map((arquivo, index) => (
+            <div key={index} className="anexo-preview-item">
+                <a 
+                    href={`${api.defaults.baseURL}/uploads/${arquivo}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="link-anexo"
+                >
+                    Anexo {index + 1}
+                </a>
+                {/* Botão 'X' para remover o anexo específico */}
+                <button 
+                    type="button"
+                    className="btn-remover-anexo-individual"
+                    title={`Remover ${arquivo}`}
+                    onClick={() => handleRemoverArquivoExistente(arquivo)}
+                >
+                    &times; {/* Este é o caractere 'X' */}
+                </button>
+            </div>
+        ))}
+    </div>
+)}
 
-                {/* Campo para fazer upload de novos arquivos */}
-                <div className="form-group">
-                  <label htmlFor="novo-arquivo">
-                    {procedimentoData.arquivosExistentes && procedimentoData.arquivosExistentes.length > 0
-                      ? 'Substituir Anexos (selecione os novos arquivos)'
-                      : 'Adicionar Anexos (pode selecionar vários)'
-                    }
-                  </label>
-                  <input
-                    type="file"
-                    id="novo-arquivo"
-                    name="arquivos"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => setArquivosProcedimento(Array.from(e.target.files))}
-                  />
-                </div>
+{/* O input de upload de arquivos continua o mesmo */}
+<div className="form-group">
+    <label htmlFor="novo-arquivo">
+        Adicionar mais anexos
+    </label>
+    <input
+        type="file"
+        id="novo-arquivo"
+        name="arquivos"
+        accept="image/*"
+        multiple
+        onChange={(e) => setArquivosProcedimento(Array.from(e.target.files))}
+    />
+</div>
 
                 <div className="form-group">
                   <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>
