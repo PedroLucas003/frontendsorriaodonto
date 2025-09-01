@@ -79,7 +79,8 @@ function formatValueForDisplay(valor) {
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showProcedimentoSection, setShowProcedimentoSection] = useState(true);
-  const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
+  // const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
+  const [procedimentoPrincipalEmEdicaoId, setProcedimentoPrincipalEmEdicaoId] = useState(null);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     cpf: "",
@@ -280,34 +281,102 @@ const RegisterUser = () => {
   const handleEditProcedimento = (procedimentoId) => {
     const procedimento = formData.procedimentos.find(p => p._id === procedimentoId);
     if (!procedimento) return;
-    setEditandoProcedimentoId(procedimentoId);
 
-    const dataOriginal = procedimento.dataProcedimento;
-    // Corrigindo a formatação de data para evitar erros com toLocaleDateString
-    const formattedDate = dataOriginal ? formatDateForDisplay(dataOriginal) : '';
+    // 1. Define o ID do procedimento que estamos editando
+    setProcedimentoPrincipalEmEdicaoId(procedimentoId);
 
-    const valorDisplay = formatValueForDisplay(procedimento.valor);
-
-    setProcedimentoData({
+    // 2. Popula os campos do formulário principal (formData)
+    setFormData(prev => ({
+      ...prev,
       procedimento: procedimento.procedimento || "",
       denteFace: procedimento.denteFace || "",
-      valor: procedimento.valor || 0,
+      valor: procedimento.valor || 0, // Guarda o valor numérico
+      valorFormatado: formatValueForDisplay(procedimento.valor), // Formata para exibição
       modalidadePagamento: procedimento.modalidadePagamento || "",
       profissional: procedimento.profissional || "",
-      dataProcedimento: formattedDate,
-      valorFormatado: valorDisplay || "",
-      // --- ADIÇÃO IMPORTANTE AQUI ---
-      // Guarda o nome do arquivo que já existe no estado do formulário
-      arquivosExistentes: procedimento.arquivos || []
-    });
+      dataProcedimento: formatDateForDisplay(procedimento.dataProcedimento) // Formata a data
+    }));
 
-    // Limpa qualquer arquivo selecionado anteriormente no input de "novo arquivo"
-    // Limpa o estado de novos arquivos e o input
-    setArquivosProcedimento([]);
-    const fileInput = document.getElementById('novo-arquivo');
-    if (fileInput) fileInput.value = null;
+    // 3. Garante que a seção do procedimento principal esteja visível
+    setShowProcedimentoSection(true);
+    // 4. Esconde o outro formulário, caso estivesse aberto
+    setShowProcedimentoForm(false);
 
-    setShowProcedimentoForm(true);
+    // 5. (Opcional, mas recomendado) Rola a página para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSalvarProcedimentoPrincipal = async () => {
+    if (!procedimentoPrincipalEmEdicaoId) return; // Se não houver ID, não faz nada
+
+    // Validações básicas (similares às que você já tem)
+    if (!formData.dataProcedimento || formData.dataProcedimento.length < 10) {
+      alert("A data do procedimento é obrigatória e deve estar no formato DD/MM/AAAA.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      // Converte a data para o formato ISO
+      const [day, month, year] = formData.dataProcedimento.split('/');
+      const dataISO = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+
+      // Monta o corpo da requisição
+      const procedimentoAtualizado = {
+        procedimento: formData.procedimento,
+        denteFace: formData.denteFace,
+        valor: convertValueToFloat(formData.valorFormatado), // Converte 'R$ 100,00' para 100.0
+        modalidadePagamento: formData.modalidadePagamento,
+        profissional: formData.profissional,
+        dataProcedimento: dataISO,
+      };
+
+      // Envia para a API (usando a rota de atualização de procedimento)
+      const response = await api.put(
+        `/api/users/${editandoId}/procedimento/${procedimentoPrincipalEmEdicaoId}`,
+        procedimentoAtualizado,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      alert("Procedimento atualizado com sucesso!");
+
+      // Limpa o estado de edição e o formulário
+      setProcedimentoPrincipalEmEdicaoId(null);
+      setFormData(prev => ({
+        ...prev,
+        procedimento: "",
+        denteFace: "",
+        valor: 0,
+        valorFormatado: "",
+        modalidadePagamento: "",
+        profissional: "",
+        dataProcedimento: ""
+      }));
+
+      // Atualiza a lista de usuários/procedimentos na tela
+      fetchUsuarios();
+
+    } catch (error) {
+      console.error("Erro ao atualizar procedimento:", error);
+      setError(error.response?.data?.message || "Erro ao salvar o procedimento. Tente novamente.");
+    }
+  };
+
+  const handleCancelarEdicaoPrincipal = () => {
+    setProcedimentoPrincipalEmEdicaoId(null);
+    setFormData(prev => ({
+      ...prev,
+      procedimento: "",
+      denteFace: "",
+      valor: 0,
+      valorFormatado: "",
+      modalidadePagamento: "",
+      profissional: "",
+      dataProcedimento: ""
+    }));
   };
 
   const handleProcedimentoChange = (e) => {
@@ -979,132 +1048,102 @@ const RegisterUser = () => {
     e.stopPropagation();
 
     try {
-      // ... (suas validações de data e valor continuam aqui) ...
-      const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
 
-      const dataProcedimentoInput = procedimentoData.dataProcedimento;
-      if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
-        return;
-      }
-
-      const [day, month, year] = dataProcedimentoInput.split('/');
-      const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-      if (isNaN(dataProcedimentoObjeto.getTime())) {
-        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
-        return;
-      }
-
-      let valorNumerico = 0;
-      if (procedimentoData.valorFormatado) {
-        valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-        if (isNaN(valorNumerico)) {
-          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-          return;
+        // 1. Validação da data
+        const dataProcedimentoInput = procedimentoData.dataProcedimento;
+        if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
+            return;
         }
-      } 
 
-      const formData = new FormData();
+        const [day, month, year] = dataProcedimentoInput.split('/');
+        const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+        if (isNaN(dataProcedimentoObjeto.getTime())) {
+            setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
+            return;
+        }
 
-      formData.append('procedimento', procedimentoData.procedimento || '');
-      formData.append('denteFace', procedimentoData.denteFace || '');
-      formData.append('valor', valorNumerico);
-      formData.append('modalidadePagamento', procedimentoData.modalidadePagamento || '');
-      formData.append('profissional', procedimentoData.profissional || '');
-      formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
+        // 2. Validação do valor
+        let valorNumerico = 0;
+        if (procedimentoData.valorFormatado) {
+            valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+            if (isNaN(valorNumerico)) {
+                setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+                return;
+            }
+        }
 
-      if (editandoProcedimentoId) {
-    // Se estamos editando, enviamos a lista de arquivos que sobraram no estado.
-    // O backend vai usar esta lista como a nova lista de arquivos.
-    procedimentoData.arquivosExistentes.forEach(arquivo => {
-        formData.append('arquivosMantidos', arquivo);
-    });
-}
+        // 3. Montagem dos dados para a API
+        const formData = new FormData();
+        formData.append('procedimento', procedimentoData.procedimento || '');
+        formData.append('denteFace', procedimentoData.denteFace || '');
+        formData.append('valor', valorNumerico);
+        formData.append('modalidadePagamento', procedimentoData.modalidadePagamento || '');
+        formData.append('profissional', procedimentoData.profissional || '');
+        formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
 
-// A lógica para adicionar novos arquivos continua a mesma
-if (arquivosProcedimento.length > 0) {
-    arquivosProcedimento.forEach(file => {
-        formData.append('arquivos', file); // 'arquivos' para os novos, 'arquivosMantidos' para os antigos
-    });
-}
+        // Adiciona novos arquivos, se houver
+        if (arquivosProcedimento.length > 0) {
+            arquivosProcedimento.forEach(file => {
+                formData.append('arquivos', file);
+            });
+        }
 
-      let response;
-      if (editandoProcedimentoId) {
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+        // 4. Envio para a API (sempre para adicionar um novo)
+        const response = await api.put(
+            `/api/users/${editandoId}/procedimento`,
+            formData,
+            { headers: { Authorization: `Bearer ${token}` } }
         );
-      } else {
-        response = await api.put(
-          `/api/users/${editandoId}/procedimento`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
 
-      // 6. Atualiza o estado da UI com a resposta do backend
-      if (editandoProcedimentoId) {
-        const procedimentoAtualizado = {
-          ...response.data.procedimento,
-          valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
-        };
-        setFormData(prev => ({
-          ...prev,
-          procedimentos: prev.procedimentos.map(p =>
-            String(p._id) === String(editandoProcedimentoId) ? procedimentoAtualizado : p
-          )
-        }));
-      } else {
+        // 5. Atualização do estado da UI com o novo procedimento
         const novoProcedimento = {
-          ...response.data.procedimento, // Usa a resposta do backend, que contém o _id e o nome do arquivo
-          valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
+            ...response.data.procedimento,
+            valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
         };
         setFormData(prev => ({
-          ...prev,
-          procedimentos: [...prev.procedimentos, novoProcedimento]
+            ...prev,
+            procedimentos: [...prev.procedimentos, novoProcedimento]
         }));
-      }
 
-      // 7. Limpa o formulário
-      setProcedimentoData({
-        procedimento: "", denteFace: "", valor: "", valorFormatado: "",
-        modalidadePagamento: "", profissional: "", dataProcedimento: "",
-        arquivosExistentes: [] // <-- Adicione esta linha para limpar os arquivos existentes
-      });
-      setArquivosProcedimento([]); // <-- Corrija para o nome do novo estado e para um array vazio
-      const fileInput = document.getElementById('novo-arquivo');
-      if (fileInput) fileInput.value = null;
+        // 6. Limpeza do formulário e estados
+        setProcedimentoData({
+            procedimento: "", denteFace: "", valor: "", valorFormatado: "",
+            modalidadePagamento: "", profissional: "", dataProcedimento: "",
+            arquivosExistentes: []
+        });
+        setArquivosProcedimento([]);
+        const fileInput = document.getElementById('novo-arquivo');
+        if (fileInput) fileInput.value = null;
 
+        setShowProcedimentoForm(false);
+        setError("");
+        setFieldErrors({});
+        alert(`Procedimento adicionado com sucesso!`);
 
-      setEditandoProcedimentoId(null);
-      setShowProcedimentoForm(false);
-      setError("");
-      setFieldErrors({});
-      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
-
-
-      fetchUsuarios();
+        // 7. Recarrega os dados para garantir consistência
+        fetchUsuarios();
 
     } catch (error) {
-      console.error("Erro ao adicionar/editar procedimento:", error);
-      const errorMessage = error.response?.data?.message || "Ocorreu um erro. Verifique os dados e o arquivo enviado (limite 5MB).";
-      setError(errorMessage);
-      if (error.response?.data?.errors) {
-        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
-      }
+        console.error("Erro ao adicionar procedimento:", error);
+        const errorMessage = error.response?.data?.message || "Ocorreu um erro. Verifique os dados e o arquivo enviado (limite 5MB).";
+        setError(errorMessage);
+        if (error.response?.data?.errors) {
+            setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+        }
     }
-  };
+};
 
   const handleRemoverArquivoExistente = (arquivoParaRemover) => {
     setProcedimentoData(prev => ({
-        ...prev,
-        // Filtra o array, mantendo apenas os arquivos que NÃO são o que queremos remover
-        arquivosExistentes: prev.arquivosExistentes.filter(
-            arquivo => arquivo !== arquivoParaRemover
-        )
+      ...prev,
+      // Filtra o array, mantendo apenas os arquivos que NÃO são o que queremos remover
+      arquivosExistentes: prev.arquivosExistentes.filter(
+        arquivo => arquivo !== arquivoParaRemover
+      )
     }));
-};
+  };
 
   const filteredUsuarios = usuarios.filter(usuario => {
     if (!searchTerm.trim()) return true;
@@ -1567,6 +1606,23 @@ if (arquivosProcedimento.length > 0) {
                   <span className="field-error">{fieldErrors.profissional}</span>
                 )}
               </div>
+
+              {procedimentoPrincipalEmEdicaoId && (
+                <div className="form-actions-inline">
+                  <button
+                    type="button"
+                    className="btn btn-cancel"
+                    onClick={handleCancelarEdicaoPrincipal}>
+                    Cancelar Edição
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleSalvarProcedimentoPrincipal}>
+                    Salvar Procedimento
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1676,48 +1732,48 @@ if (arquivosProcedimento.length > 0) {
 
                 {/* Seção para mostrar os anexos que já existem no procedimento */}
                 {/* --- BLOCO ATUALIZADO PARA ANEXOS INDIVIDUAIS --- */}
-{procedimentoData.arquivosExistentes && procedimentoData.arquivosExistentes.length > 0 && (
-    <div className="form-group-anexo-existente">
-        <label>Anexos Atuais:</label>
-        {/* Itera sobre o array para criar um link e um botão de remover para cada anexo */}
-        {procedimentoData.arquivosExistentes.map((arquivo, index) => (
-            <div key={index} className="anexo-preview-item">
-                <a 
-                    href={`${api.defaults.baseURL}/uploads/${arquivo}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="link-anexo"
-                >
-                    Anexo {index + 1}
-                </a>
-                {/* Botão 'X' para remover o anexo específico */}
-                <button 
-                    type="button"
-                    className="btn-remover-anexo-individual"
-                    title={`Remover ${arquivo}`}
-                    onClick={() => handleRemoverArquivoExistente(arquivo)}
-                >
-                    &times; {/* Este é o caractere 'X' */}
-                </button>
-            </div>
-        ))}
-    </div>
-)}
+                {procedimentoData.arquivosExistentes && procedimentoData.arquivosExistentes.length > 0 && (
+                  <div className="form-group-anexo-existente">
+                    <label>Anexos Atuais:</label>
+                    {/* Itera sobre o array para criar um link e um botão de remover para cada anexo */}
+                    {procedimentoData.arquivosExistentes.map((arquivo, index) => (
+                      <div key={index} className="anexo-preview-item">
+                        <a
+                          href={`${api.defaults.baseURL}/uploads/${arquivo}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link-anexo"
+                        >
+                          Anexo {index + 1}
+                        </a>
+                        {/* Botão 'X' para remover o anexo específico */}
+                        <button
+                          type="button"
+                          className="btn-remover-anexo-individual"
+                          title={`Remover ${arquivo}`}
+                          onClick={() => handleRemoverArquivoExistente(arquivo)}
+                        >
+                          &times; {/* Este é o caractere 'X' */}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-{/* O input de upload de arquivos continua o mesmo */}
-<div className="form-group">
-    <label htmlFor="novo-arquivo">
-        Adicionar mais anexos
-    </label>
-    <input
-        type="file"
-        id="novo-arquivo"
-        name="arquivos"
-        accept="image/*"
-        multiple
-        onChange={(e) => setArquivosProcedimento(Array.from(e.target.files))}
-    />
-</div>
+                {/* O input de upload de arquivos continua o mesmo */}
+                <div className="form-group">
+                  <label htmlFor="novo-arquivo">
+                    Adicionar mais anexos
+                  </label>
+                  <input
+                    type="file"
+                    id="novo-arquivo"
+                    name="arquivos"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setArquivosProcedimento(Array.from(e.target.files))}
+                  />
+                </div>
 
                 <div className="form-group">
                   <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>

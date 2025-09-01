@@ -566,3 +566,10 @@ tr:nth-child(even) {
     align-items: center;
     flex-grow: 1;
 }
+.form-actions-inline {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
