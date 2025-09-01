@@ -79,7 +79,7 @@ function formatValueForDisplay(valor) {
 const RegisterUser = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [showProcedimentoSection, setShowProcedimentoSection] = useState(true);
-  // const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
+  const [editandoProcedimentoId, setEditandoProcedimentoId] = useState(null);
   const [procedimentoPrincipalEmEdicaoId, setProcedimentoPrincipalEmEdicaoId] = useState(null);
   const [formData, setFormData] = useState({
     nomeCompleto: "",
@@ -1048,92 +1048,122 @@ const RegisterUser = () => {
     e.stopPropagation();
 
     try {
-        const token = localStorage.getItem("token");
+      // ... (suas validações de data e valor continuam aqui) ...
+      const token = localStorage.getItem("token");
 
-        // 1. Validação da data
-        const dataProcedimentoInput = procedimentoData.dataProcedimento;
-        if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
-            setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
-            return;
+      const dataProcedimentoInput = procedimentoData.dataProcedimento;
+      if (!dataProcedimentoInput || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataProcedimentoInput)) {
+        setFieldErrors({ ...fieldErrors, dataProcedimento: "Formato de data inválido (DD/MM/AAAA) ou campo vazio" });
+        return;
+      }
+
+      const [day, month, year] = dataProcedimentoInput.split('/');
+      const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+      if (isNaN(dataProcedimentoObjeto.getTime())) {
+        setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
+        return;
+      }
+
+      let valorNumerico = 0;
+      if (procedimentoData.valorFormatado) {
+        valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
+        if (isNaN(valorNumerico)) {
+          setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
+          return;
         }
+      }
 
-        const [day, month, year] = dataProcedimentoInput.split('/');
-        const dataProcedimentoObjeto = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-        if (isNaN(dataProcedimentoObjeto.getTime())) {
-            setFieldErrors({ ...fieldErrors, dataProcedimento: "Data inválida" });
-            return;
-        }
+      const formData = new FormData();
 
-        // 2. Validação do valor
-        let valorNumerico = 0;
-        if (procedimentoData.valorFormatado) {
-            valorNumerico = convertValueToFloat(procedimentoData.valorFormatado);
-            if (isNaN(valorNumerico)) {
-                setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
-                return;
-            }
-        }
+      formData.append('procedimento', procedimentoData.procedimento || '');
+      formData.append('denteFace', procedimentoData.denteFace || '');
+      formData.append('valor', valorNumerico);
+      formData.append('modalidadePagamento', procedimentoData.modalidadePagamento || '');
+      formData.append('profissional', procedimentoData.profissional || '');
+      formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
 
-        // 3. Montagem dos dados para a API
-        const formData = new FormData();
-        formData.append('procedimento', procedimentoData.procedimento || '');
-        formData.append('denteFace', procedimentoData.denteFace || '');
-        formData.append('valor', valorNumerico);
-        formData.append('modalidadePagamento', procedimentoData.modalidadePagamento || '');
-        formData.append('profissional', procedimentoData.profissional || '');
-        formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
+      if (editandoProcedimentoId) {
+        // Se estamos editando, enviamos a lista de arquivos que sobraram no estado.
+        // O backend vai usar esta lista como a nova lista de arquivos.
+        procedimentoData.arquivosExistentes.forEach(arquivo => {
+          formData.append('arquivosMantidos', arquivo);
+        });
+      }
 
-        // Adiciona novos arquivos, se houver
-        if (arquivosProcedimento.length > 0) {
-            arquivosProcedimento.forEach(file => {
-                formData.append('arquivos', file);
-            });
-        }
+      // A lógica para adicionar novos arquivos continua a mesma
+      if (arquivosProcedimento.length > 0) {
+        arquivosProcedimento.forEach(file => {
+          formData.append('arquivos', file); // 'arquivos' para os novos, 'arquivosMantidos' para os antigos
+        });
+      }
 
-        // 4. Envio para a API (sempre para adicionar um novo)
-        const response = await api.put(
-            `/api/users/${editandoId}/procedimento`,
-            formData,
-            { headers: { Authorization: `Bearer ${token}` } }
+      let response;
+      if (editandoProcedimentoId) {
+        response = await api.put(
+          `/api/users/${editandoId}/procedimento/${editandoProcedimentoId}`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
+      } else {
+        response = await api.put(
+          `/api/users/${editandoId}/procedimento`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
-        // 5. Atualização do estado da UI com o novo procedimento
-        const novoProcedimento = {
-            ...response.data.procedimento,
-            valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
+      // 6. Atualiza o estado da UI com a resposta do backend
+      if (editandoProcedimentoId) {
+        const procedimentoAtualizado = {
+          ...response.data.procedimento,
+          valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
         };
         setFormData(prev => ({
-            ...prev,
-            procedimentos: [...prev.procedimentos, novoProcedimento]
+          ...prev,
+          procedimentos: prev.procedimentos.map(p =>
+            String(p._id) === String(editandoProcedimentoId) ? procedimentoAtualizado : p
+          )
         }));
+      } else {
+        const novoProcedimento = {
+          ...response.data.procedimento, // Usa a resposta do backend, que contém o _id e o nome do arquivo
+          valorFormatado: formatValueForDisplay(response.data.procedimento.valor),
+        };
+        setFormData(prev => ({
+          ...prev,
+          procedimentos: [...prev.procedimentos, novoProcedimento]
+        }));
+      }
 
-        // 6. Limpeza do formulário e estados
-        setProcedimentoData({
-            procedimento: "", denteFace: "", valor: "", valorFormatado: "",
-            modalidadePagamento: "", profissional: "", dataProcedimento: "",
-            arquivosExistentes: []
-        });
-        setArquivosProcedimento([]);
-        const fileInput = document.getElementById('novo-arquivo');
-        if (fileInput) fileInput.value = null;
+      // 7. Limpa o formulário
+      setProcedimentoData({
+        procedimento: "", denteFace: "", valor: "", valorFormatado: "",
+        modalidadePagamento: "", profissional: "", dataProcedimento: "",
+        arquivosExistentes: [] // <-- Adicione esta linha para limpar os arquivos existentes
+      });
+      setArquivosProcedimento([]); // <-- Corrija para o nome do novo estado e para um array vazio
+      const fileInput = document.getElementById('novo-arquivo');
+      if (fileInput) fileInput.value = null;
 
-        setShowProcedimentoForm(false);
-        setError("");
-        setFieldErrors({});
-        alert(`Procedimento adicionado com sucesso!`);
 
-        // 7. Recarrega os dados para garantir consistência
-        fetchUsuarios();
+      setEditandoProcedimentoId(null);
+      setShowProcedimentoForm(false);
+      setError("");
+      setFieldErrors({});
+      alert(`Procedimento ${editandoProcedimentoId ? 'atualizado' : 'adicionado'} com sucesso!`);
+
+
+      fetchUsuarios();
 
     } catch (error) {
-        console.error("Erro ao adicionar procedimento:", error);
-        const errorMessage = error.response?.data?.message || "Ocorreu um erro. Verifique os dados e o arquivo enviado (limite 5MB).";
-        setError(errorMessage);
-        if (error.response?.data?.errors) {
-            setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
-        }
+      console.error("Erro ao adicionar/editar procedimento:", error);
+      const errorMessage = error.response?.data?.message || "Ocorreu um erro. Verifique os dados e o arquivo enviado (limite 5MB).";
+      setError(errorMessage);
+      if (error.response?.data?.errors) {
+        setFieldErrors({ ...fieldErrors, ...error.response.data.errors });
+      }
     }
-};
+  };
 
   const handleRemoverArquivoExistente = (arquivoParaRemover) => {
     setProcedimentoData(prev => ({
