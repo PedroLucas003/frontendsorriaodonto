@@ -1002,7 +1002,7 @@ const RegisterUser = () => {
           setFieldErrors({ ...fieldErrors, valor: "Valor monetário inválido" });
           return;
         }
-      }
+      } 
 
       const formData = new FormData();
 
@@ -1014,19 +1014,19 @@ const RegisterUser = () => {
       formData.append('dataProcedimento', dataProcedimentoObjeto.toISOString());
 
       if (editandoProcedimentoId) {
-        // Se estamos editando, enviamos a lista de arquivos que sobraram no estado.
-        // O backend vai usar esta lista como a nova lista de arquivos.
-        procedimentoData.arquivosExistentes.forEach(arquivo => {
-          formData.append('arquivosMantidos', arquivo);
-        });
-      }
+    // Se estamos editando, enviamos a lista de arquivos que sobraram no estado.
+    // O backend vai usar esta lista como a nova lista de arquivos.
+    procedimentoData.arquivosExistentes.forEach(arquivo => {
+        formData.append('arquivosMantidos', arquivo);
+    });
+}
 
-      // A lógica para adicionar novos arquivos continua a mesma
-      if (arquivosProcedimento.length > 0) {
-        arquivosProcedimento.forEach(file => {
-          formData.append('arquivos', file); // 'arquivos' para os novos, 'arquivosMantidos' para os antigos
-        });
-      }
+// A lógica para adicionar novos arquivos continua a mesma
+if (arquivosProcedimento.length > 0) {
+    arquivosProcedimento.forEach(file => {
+        formData.append('arquivos', file); // 'arquivos' para os novos, 'arquivosMantidos' para os antigos
+    });
+}
 
       let response;
       if (editandoProcedimentoId) {
@@ -1098,13 +1098,13 @@ const RegisterUser = () => {
 
   const handleRemoverArquivoExistente = (arquivoParaRemover) => {
     setProcedimentoData(prev => ({
-      ...prev,
-      // Filtra o array, mantendo apenas os arquivos que NÃO são o que queremos remover
-      arquivosExistentes: prev.arquivosExistentes.filter(
-        arquivo => arquivo !== arquivoParaRemover
-      )
+        ...prev,
+        // Filtra o array, mantendo apenas os arquivos que NÃO são o que queremos remover
+        arquivosExistentes: prev.arquivosExistentes.filter(
+            arquivo => arquivo !== arquivoParaRemover
+        )
     }));
-  };
+};
 
   const filteredUsuarios = usuarios.filter(usuario => {
     if (!searchTerm.trim()) return true;
@@ -1165,159 +1165,774 @@ const RegisterUser = () => {
   };
 
   return (
-    <>
+    <div className={`container ${darkMode ? 'dark-mode' : ''}`}>
+      <div className="theme-toggle">
+        <button onClick={toggleDarkMode} className="theme-btn">
+          {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        </button>
+      </div>
+
       {modoVisualizacao && (
-        <div className="panel-btn-group" style={{ marginBottom: '1.5rem' }}>
-          <button onClick={handleVoltar} className="panel-btn panel-btn-secondary">
-             Voltar para Lista
-          </button>
+        <button onClick={handleVoltar} className="btn-voltar">
+          <i className="bi bi-arrow-left"></i> Voltar
+        </button>
+      )}
+
+      <h1>Cadastro de Usuário</h1>
+
+      {error && <div className="error-message">{error}</div>}
+
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
+        <div className="form-section">
+          <h2>Dados Pessoais</h2>
+          <div className="form-grid">
+            {['nomeCompleto', 'cpf', 'telefone', 'password', 'confirmPassword'].map((key) => (
+              <div key={key} className="form-group">
+                <label htmlFor={key}>{labels[key]}</label>
+                <input
+                  type={key.includes("password") ? "password" : "text"}
+                  id={key}
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className={fieldErrors[key] ? 'error-field' : ''}
+                />
+                {fieldErrors[key] && <span className="field-error">{fieldErrors[key]}</span>}
+              </div>
+            ))}
+
+            {/* Campo dataNascimento separado com tratamento especial */}
+            <div className="form-group">
+              <label htmlFor="dataNascimento">{labels.dataNascimento}</label>
+              <input
+                type="text"
+                id="dataNascimento"
+                name="dataNascimento"
+                value={formData.dataNascimento}
+                onChange={handleChange}
+                onKeyDown={(e) => {
+                  // Permite apenas números e teclas de controle
+                  if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                className={fieldErrors.dataNascimento ? 'error-field' : ''}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+              />
+              {fieldErrors.dataNascimento && (
+                <span className="field-error">{fieldErrors.dataNascimento}</span>
+              )}
+            </div>
+
+
+            <div className="form-group">
+              <label htmlFor="endereco">{labels.endereco}</label>
+              <textarea
+                id="endereco"
+                name="endereco"
+                value={formData.endereco}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.endereco ? 'error-field' : ''}`}
+                rows={3}
+              />
+              {fieldErrors.endereco && <span className="field-error">{fieldErrors.endereco}</span>}
+            </div>
+          </div>
         </div>
-      )}
 
-      {error && (
-          <div className="error-message" style={{backgroundColor: 'hsl(var(--destructive)/.1)', color: 'hsl(var(--destructive))', border: '1px solid hsl(var(--destructive))', padding: '1rem', borderRadius: 'var(--radius)', marginBottom: '1.5rem'}}>
-              {error}
-          </div>
-      )}
+        <div className="form-section">
+          <h2>Histórico de Saúde</h2>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="detalhesDoencas">{labels.detalhesDoencas}</label>
+              <textarea
+                id="detalhesDoencas"
+                name="detalhesDoencas"
+                value={formData.detalhesDoencas}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.detalhesDoencas ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
 
-      {/* CARD DO FORMULÁRIO - só aparece se não estiver no modo de visualização */}
-      {!modoVisualizacao && (
-        <div className="panel-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="panel-card-header">
-            <h3 className="panel-card-title">
-              Formulário de Cadastro
-            </h3>
+            <div className="form-group">
+              <label htmlFor="quaisRemedios">{labels.quaisRemedios}</label>
+              <textarea
+                id="quaisRemedios"
+                name="quaisRemedios"
+                value={formData.quaisRemedios}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisRemedios ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="quaisMedicamentos">{labels.quaisMedicamentos}</label>
+              <textarea
+                id="quaisMedicamentos"
+                name="quaisMedicamentos"
+                value={formData.quaisMedicamentos}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisMedicamentos ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="quaisAnestesias">{labels.quaisAnestesias}</label>
+              <textarea
+                id="quaisAnestesias"
+                name="quaisAnestesias"
+                value={formData.quaisAnestesias}
+                onChange={handleChange}
+                className={`resizable-textarea ${fieldErrors.quaisAnestesias ? 'error-field' : ''}`}
+                rows={3}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="frequenciaFumo">{labels.frequenciaFumo}</label>
+              <select
+                id="frequenciaFumo"
+                name="frequenciaFumo"
+                value={formData.frequenciaFumo}
+                onChange={handleChange}
+              >
+                {frequencias.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="frequenciaAlcool">{labels.frequenciaAlcool}</label>
+              <select
+                id="frequenciaAlcool"
+                name="frequenciaAlcool"
+                value={formData.frequenciaAlcool}
+                onChange={handleChange}
+              >
+                {frequencias.map((opcao) => (
+                  <option key={opcao} value={opcao}>{opcao}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="respiracao">{labels.respiracao}</label>
+              <input
+                type="text"
+                id="respiracao"
+                name="respiracao"
+                value={formData.respiracao}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="peso">{labels.peso}</label>
+              <input
+                type="number"
+                id="peso"
+                name="peso"
+                value={formData.peso}
+                onChange={handleChange}
+                step="0.1"
+              />
+            </div>
           </div>
-          <div className="panel-card-content">
-            <form onSubmit={handleSubmit}>
-              <div className="panel-form-grid">
-                {['nomeCompleto', 'cpf', 'telefone'].map((key) => (
-                  <div key={key} className="panel-form-group">
-                    <label htmlFor={key} className="panel-form-label">{labels[key]}</label>
+        </div>
+
+        <div className="form-section">
+          <h2>Exames e Sangramento</h2>
+          <div className="form-grid">
+            <div className="form-group full-width">
+              <label htmlFor="exameSangue">Exame de Sangue</label>
+              <textarea
+                id="exameSangue"
+                name="exameSangue"
+                className="large-text-area"
+                rows={5}
+                value={formData.exameSangue}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="small-fields-container">
+              <div className="form-group">
+                <label htmlFor="coagulacao">Coagulação</label>
+                <textarea
+                  id="coagulacao"
+                  name="coagulacao"
+                  className="small-text-field"
+                  value={formData.coagulacao}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cicatrizacao">Cicatrização</label>
+                <textarea
+                  id="cicatrizacao"
+                  name="cicatrizacao"
+                  className="small-text-field"
+                  value={formData.cicatrizacao}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="sangramentoPosProcedimento">Sangramento Pós-Procedimento</label>
+                <textarea
+                  id="sangramentoPosProcedimento"
+                  name="sangramentoPosProcedimento"
+                  className="small-text-field"
+                  value={formData.sangramentoPosProcedimento}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>Histórico Médico e Odontológico</h2>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="historicoCirurgia">{labels.historicoCirurgia}</label>
+              <textarea
+                id="historicoCirurgia"
+                name="historicoCirurgia"
+                value={formData.historicoCirurgia}
+                onChange={handleChange}
+                rows={2}
+                className="medium-text-area"
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label htmlFor="historicoOdontologico">{labels.historicoOdontologico}</label>
+              <textarea
+                id="historicoOdontologico"
+                name="historicoOdontologico"
+                value={formData.historicoOdontologico}
+                onChange={handleChange}
+                rows={3}
+                className="large-text-area"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div
+            className="section-header"
+            onClick={() => setShowProcedimentoSection(!showProcedimentoSection)}
+            style={{ cursor: 'pointer' }}
+          >
+            <h2>Dados do Procedimento</h2>
+            <span className="toggle-arrow">
+              {showProcedimentoSection ? '▼' : '►'}
+            </span>
+          </div>
+
+          {showProcedimentoSection && (
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="procedimento">{labels.procedimento}</label>
+                <input
+                  type="text"
+                  id="procedimento"
+                  name="procedimento"
+                  value={formData.procedimento}
+                  onChange={handleChange}
+                  placeholder="Digite o procedimento realizado"
+                  className={fieldErrors.procedimento ? 'error-field' : ''}
+                />
+                {fieldErrors.procedimento && (
+                  <span className="field-error">{fieldErrors.procedimento}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="denteFace">{labels.denteFace}</label>
+                <input
+                  type="text"
+                  id="denteFace"
+                  name="denteFace"
+                  value={formData.denteFace}
+                  onChange={handleChange}
+                  placeholder="Ex: 11, 22, Face Lingual, etc."
+                  className={fieldErrors.denteFace ? 'error-field' : ''}
+                />
+                {fieldErrors.denteFace && (
+                  <span className="field-error">{fieldErrors.denteFace}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="dataProcedimento">Data do Procedimento</label>
+                <input
+                  type="text"
+                  id="dataProcedimento"
+                  name="dataProcedimento"
+                  value={formData.dataProcedimento}
+                  onChange={handleChange}
+                  placeholder="DD/MM/AAAA"
+                  maxLength={10}
+                  className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+                  onKeyDown={(e) => {
+                    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+                {fieldErrors.dataProcedimento && (
+                  <span className="field-error">{fieldErrors.dataProcedimento}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="valor">{labels.valor}</label>
+                <input
+                  type="text"
+                  id="valor"
+                  name="valor"
+                  value={formData.valorFormatado || ''}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/\D/g, '');
+                    const numericValue = rawValue ? parseFloat(rawValue) / 100 : 0;
+                    const formattedValue = numericValue.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    });
+
+                    setFormData(prev => ({
+                      ...prev,
+                      valor: numericValue,
+                      valorFormatado: formattedValue
+                    }));
+                  }}
+                  onBlur={() => {
+                    if (!formData.valorFormatado) {
+                      setFormData(prev => ({
+                        ...prev,
+                        valor: 0,
+                        valorFormatado: 'R$ 0,00'
+                      }));
+                    }
+                  }}
+                  placeholder="R$ 0,00"
+                  className={fieldErrors.valor ? 'error-field' : ''}
+                />
+                {fieldErrors.valor && (
+                  <span className="field-error">{fieldErrors.valor}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="modalidadePagamento">{labels.modalidadePagamento}</label>
+                <select
+                  id="modalidadePagamento"
+                  name="modalidadePagamento"
+                  value={formData.modalidadePagamento}
+                  onChange={handleChange}
+                  className={fieldErrors.modalidadePagamento ? 'error-field' : ''}
+                >
+                  <option value="">Selecione...</option>
+                  {modalidadesPagamento.map((opcao) => (
+                    <option key={opcao} value={opcao}>{opcao}</option>
+                  ))}
+                </select>
+                {fieldErrors.modalidadePagamento && (
+                  <span className="field-error">{fieldErrors.modalidadePagamento}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="profissional">{labels.profissional}</label>
+                <input
+                  type="text"
+                  id="profissional"
+                  name="profissional"
+                  value={formData.profissional}
+                  onChange={handleChange}
+                  className={fieldErrors.profissional ? 'error-field' : ''}
+                />
+                {fieldErrors.profissional && (
+                  <span className="field-error">{fieldErrors.profissional}</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {editandoId && (
+          <div className="form-section">
+            <h2>Histórico de Procedimentos</h2>
+
+            <button
+              type="button"
+              onClick={() => {
+                // Ao clicar para ADICIONAR NOVO, limpa os campos antes de mostrar o formulário.
+                setProcedimentoData({
+                  procedimento: "",
+                  denteFace: "",
+                  valor: "",
+                  modalidadePagamento: "",
+                  profissional: "",
+                  dataProcedimento: ""
+                });
+                setEditandoProcedimentoId(null);
+                setShowProcedimentoForm(!showProcedimentoForm);
+              }}
+              className="btn-add-procedimento"
+            >
+              {showProcedimentoForm ? 'Cancelar' : 'Adicionar Novo Procedimento'}
+            </button>
+
+            {showProcedimentoForm && (
+              <div className="procedimento-form">
+                <h3>{editandoProcedimentoId ? 'Editar Procedimento' : 'Adicionar Novo Procedimento'}</h3>
+
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="novo-procedimento">Procedimento</label>
                     <input
                       type="text"
-                      id={key} name={key}
-                      value={formData[key]}
-                      onChange={handleChange}
-                      className={`panel-form-input ${fieldErrors[key] ? 'error' : ''}`}
+                      id="novo-procedimento"
+                      name="procedimento"
+                      value={procedimentoData.procedimento}
+                      onChange={handleProcedimentoChange}
+                      placeholder="Digite o procedimento realizado"
                     />
-                    {fieldErrors[key] && <span className="panel-form-error">{fieldErrors[key]}</span>}
                   </div>
-                ))}
-                {/* Adicione outros campos do formulário aqui se necessário */}
-              </div>
-              <div className="panel-btn-group" style={{ marginTop: '1.5rem' }}>
-                <button type="submit" className="panel-btn panel-btn-primary">
-                  {editandoId ? "Atualizar Dados" : "Cadastrar Paciente"}
+
+                  <div className="form-group">
+                    <label htmlFor="novo-denteFace">Dente/Face</label>
+                    <input
+                      type="text"
+                      id="novo-denteFace"
+                      name="denteFace"
+                      value={procedimentoData.denteFace}
+                      onChange={handleProcedimentoChange}
+                      placeholder="Ex: 11, 22, Face Lingual, etc."
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="novo-valor">Valor</label>
+                    <input
+                      type="text"
+                      id="novo-valor"
+                      name="valor"
+                      value={procedimentoData.valorFormatado || ''}
+                      onChange={handleProcedimentoChange}
+                      onBlur={() => {
+                        if (!procedimentoData.valorFormatado) {
+                          setProcedimentoData(prev => ({
+                            ...prev,
+                            valor: 0,
+                            valorFormatado: 'R$ 0,00'
+                          }));
+                        }
+                      }}
+                      placeholder="R$ 0,00"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="novo-modalidadePagamento">Modalidade de Pagamento</label>
+                    <select
+                      id="novo-modalidadePagamento"
+                      name="modalidadePagamento"
+                      value={procedimentoData.modalidadePagamento}
+                      onChange={handleProcedimentoChange}
+                    >
+                      <option value="">Selecione...</option>
+                      {modalidadesPagamento.map((opcao) => (
+                        <option key={opcao} value={opcao}>{opcao}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="novo-profissional">Profissional</label>
+                    <input
+                      type="text"
+                      id="novo-profissional"
+                      name="profissional"
+                      value={procedimentoData.profissional}
+                      onChange={handleProcedimentoChange}
+                    />
+                  </div>
+                </div>
+
+                {/* --- BLOCO COMPLETO PARA UPLOAD E VISUALIZAÇÃO DE MÚLTIPLOS ARQUIVOS --- */}
+
+                {/* Seção para mostrar os anexos que já existem no procedimento */}
+                {/* --- BLOCO ATUALIZADO PARA ANEXOS INDIVIDUAIS --- */}
+{procedimentoData.arquivosExistentes && procedimentoData.arquivosExistentes.length > 0 && (
+    <div className="form-group-anexo-existente">
+        <label>Anexos Atuais:</label>
+        {/* Itera sobre o array para criar um link e um botão de remover para cada anexo */}
+        {procedimentoData.arquivosExistentes.map((arquivo, index) => (
+            <div key={index} className="anexo-preview-item">
+                <a 
+                    href={`${api.defaults.baseURL}/uploads/${arquivo}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="link-anexo"
+                >
+                    Anexo {index + 1}
+                </a>
+                {/* Botão 'X' para remover o anexo específico */}
+                <button 
+                    type="button"
+                    className="btn-remover-anexo-individual"
+                    title={`Remover ${arquivo}`}
+                    onClick={() => handleRemoverArquivoExistente(arquivo)}
+                >
+                    &times; {/* Este é o caractere 'X' */}
                 </button>
+            </div>
+        ))}
+    </div>
+)}
+
+{/* O input de upload de arquivos continua o mesmo */}
+<div className="form-group">
+    <label htmlFor="novo-arquivo">
+        Adicionar mais anexos
+    </label>
+    <input
+        type="file"
+        id="novo-arquivo"
+        name="arquivos"
+        accept="image/*"
+        multiple
+        onChange={(e) => setArquivosProcedimento(Array.from(e.target.files))}
+    />
+</div>
+
+                <div className="form-group">
+                  <label htmlFor="novo-dataProcedimento">Data do Procedimento</label>
+                  <input
+                    type="text"
+                    id="novo-dataProcedimento"
+                    name="dataProcedimento"
+                    value={procedimentoData.dataProcedimento}
+                    onChange={handleProcedimentoChange}
+                    placeholder="DD/MM/AAAA"
+                    maxLength={10}
+                    className={fieldErrors.dataProcedimento ? 'error-field' : ''}
+                  />
+                  {fieldErrors.dataProcedimento && (
+                    <span className="field-error">{fieldErrors.dataProcedimento}</span>
+                  )}
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProcedimentoData({
+                        procedimento: "",
+                        denteFace: "",
+                        valor: "",
+                        modalidadePagamento: "",
+                        profissional: "",
+                        dataProcedimento: ""
+                      });
+                      setShowProcedimentoForm(false);
+                      setEditandoProcedimentoId(null);
+                    }}
+                    className="btn btn-cancel"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAddProcedimento}
+                    className="btn btn-primary"
+                  >
+                    {editandoProcedimentoId ? 'Salvar Alterações' : 'Adicionar Procedimento'}
+                  </button>
+                </div>
               </div>
-            </form>
+            )}
+
+            <div className="procedimentos-list">
+              {Array.isArray(formData.procedimentos) && formData.procedimentos.length > 0 ? (
+                formData.procedimentos
+                  .sort((a, b) => {
+                    return new Date(b.dataProcedimento) - new Date(a.dataProcedimento);
+                  })
+                  .map((proc, index) => (
+                    <div key={proc._id || `proc-${index}`} className="procedimento-item">
+                      <div className="procedimento-details ">
+                        {proc.dataProcedimento && (
+                          <span><strong>Data:</strong> {formatDateForDisplay(proc.dataProcedimento)}</span>
+                        )}
+                        <span><strong>Procedimento:</strong> {proc.procedimento || "Não especificado"}</span>
+                        <span><strong>Dente/Face:</strong> {proc.denteFace || "Não especificado"}</span>
+                        <span><strong>Valor:</strong> {formatValueForDisplay(proc.valor)}</span>
+                        <span><strong>Pagamento:</strong> {proc.modalidadePagamento || "Não especificado"}</span>
+                        <span><strong>Profissional:</strong> {proc.profissional || "Não especificado"}</span>
+                        {/* NOVO SPAN PARA EXIBIR O LINK DO ARQUIVO */}
+                        {proc.arquivos && proc.arquivos.length > 0 && (
+                          <div className="anexos-list-item">
+                            <strong>Anexos:</strong>
+                            {proc.arquivos.map((arquivo, i) => (
+                              <a
+                                key={i}
+                                href={`${api.defaults.baseURL}/uploads/${arquivo}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="link-anexo"
+                              >
+                                Anexo {i + 1}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        <div className="procedimento-actions">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleEditProcedimento(proc._id);
+                            }}
+                            className="btn-tabela btn-edit-procedimento"
+                            title="Editar procedimento"
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteProcedimento(proc._id);
+                            }}
+                            className="btn-tabela btn-delete-procedimento"
+                            title="Excluir procedimento"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="no-procedimentos">
+                  <i className="bi bi-clipboard-x"></i>
+                  <p>Nenhum procedimento cadastrado ainda.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        <button type="submit" className="btn btn-primary">
+          <span className="btnText">{editandoId ? "Atualizar" : "Cadastrar"}</span>
+          <i className="bi bi-cloud-upload"></i>
+        </button>
+      </form>
+
+      {!modoVisualizacao && (
+        <>
+          <h2>Usuários Cadastrados</h2>
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Pesquisar por nome ou CPF..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th><i className="bi bi-person"></i> Nome</th>
+                  <th><i className="bi bi-credit-card"></i> CPF</th>
+                  <th><i className="bi bi-telephone"></i> Telefone</th>
+                  <th><i className="bi bi-image"></i> Imagem</th>
+                  <th><i className="bi bi-gear"></i> Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsuarios.length > 0 ? (
+                  filteredUsuarios.map((usuario) => (
+                    <tr key={usuario._id}>
+                      <td>{usuario.nomeCompleto || 'N/A'}</td>
+                      <td>{usuario.cpf ? formatCPF(usuario.cpf) : 'N/A'}</td>
+                      <td>{usuario.telefone ? formatFone(usuario.telefone) : 'N/A'}</td>
+                      <td>
+                        {usuario.image && (
+                          <button
+                            onClick={() => handleViewImage(usuario.image)}
+                            className="btn-view"
+                            aria-label="Visualizar imagem"
+                          >
+                            Imagem
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        <div className="actions">
+                          <button
+                            onClick={() => handleEdit(usuario)}
+                            className="btn btn-edit"
+                            aria-label="Editar usuário"
+                          >
+                            <span className="btnText">Editar</span>
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(usuario._id)}
+                            className="btn btn-delete"
+                            aria-label="Excluir usuário"
+                          >
+                            <span className="btnText">Excluir</span>
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="no-data">
+                      {usuarios.length === 0 ? "Nenhum paciente cadastrado" : "Nenhum resultado encontrado"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
-      {/* SEÇÃO DA TABELA DE USUÁRIOS */}
-      {!modoVisualizacao && (
-        <div className="panel-card">
-          <div className="panel-card-header">
-            <h3 className="panel-card-title">
-              Pacientes Cadastrados
-            </h3>
-          </div>
-          <div className="panel-card-content">
-            <div className="panel-search-container">
-               <input
-                  type="text"
-                  placeholder="Pesquisar por nome, CPF ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="panel-search-input"
-                />
-            </div>
-            <div className="panel-table-container">
-              <table className="panel-table">
-                <thead className="panel-table-header">
-                  <tr>
-                    <th>Nome</th>
-                    <th>CPF</th>
-                    <th>Telefone</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="panel-table-body">
-                   {filteredUsuarios.length > 0 ? (
-                    filteredUsuarios.map((usuario) => (
-                      <tr key={usuario._id}>
-                        <td>{usuario.nomeCompleto || 'N/A'}</td>
-                        <td>{usuario.cpf ? formatCPF(usuario.cpf) : 'N/A'}</td>
-                        <td>{usuario.telefone ? formatFone(usuario.telefone) : 'N/A'}</td>
-                        <td>
-                          <div className="panel-btn-group">
-                            <button onClick={() => handleEdit(usuario)} className="panel-btn panel-btn-secondary panel-btn-sm">
-                              Editar
-                            </button>
-                            <button onClick={() => handleDelete(usuario._id)} className="panel-btn panel-btn-danger panel-btn-sm">
-                              Excluir
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Nenhum resultado encontrado</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+      {imagemModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close" onClick={closeModal}>×</span>
+            <img
+              src={`${api.defaults.baseURL}/uploads/${imagemModal}`}
+              alt="Imagem do usuário"
+            />
           </div>
         </div>
       )}
-      
-      {/* Seção de edição/visualização completa */}
-      {modoVisualizacao && (
-          <div className="panel-card">
-              <div className="panel-card-header">
-                  <h3 className="panel-card-title">Detalhes do Paciente</h3>
-              </div>
-              <div className="panel-card-content">
-                {/* Aqui você vai renderizar todos os detalhes do paciente quando clicar em "Editar" */}
-                {/* Por simplicidade, estou apenas mostrando um exemplo. Você deve adaptar esta parte */}
-                {/* para mostrar o formulário completo de edição como você tinha antes */}
-                 <form onSubmit={handleSubmit}>
-                    <h4 className="panel-form-section-title">Dados Pessoais</h4>
-                     <div className="panel-form-grid">
-                        {['nomeCompleto', 'cpf', 'telefone', 'dataNascimento'].map((key) => (
-                          <div key={key} className="panel-form-group">
-                              <label htmlFor={key} className="panel-form-label">{labels[key]}</label>
-                              <input
-                                  type="text" id={key} name={key}
-                                  value={formData[key]} onChange={handleChange}
-                                  className={`panel-form-input ${fieldErrors[key] ? 'error' : ''}`}
-                              />
-                              {fieldErrors[key] && <span className="panel-form-error">{fieldErrors[key]}</span>}
-                          </div>
-                        ))}
-                         <div className="panel-form-group full-width">
-                            <label htmlFor="endereco" className="panel-form-label">{labels.endereco}</label>
-                            <textarea id="endereco" name="endereco" value={formData.endereco} onChange={handleChange} className={`panel-form-textarea ${fieldErrors.endereco ? 'error' : ''}`} rows={3}/>
-                            {fieldErrors.endereco && <span className="panel-form-error">{fieldErrors.endereco}</span>}
-                        </div>
-                     </div>
-                     
-                     {/* Adicione as outras seções do formulário aqui (Histórico de Saúde, etc.) */}
-                     
-                     <div className="panel-btn-group" style={{ marginTop: '1.5rem' }}>
-                        <button type="submit" className="panel-btn panel-btn-primary">
-                            Salvar Alterações
-                        </button>
-                    </div>
-                 </form>
-              </div>
-          </div>
-      )}
-    </>
+    </div>
   );
 };
 
