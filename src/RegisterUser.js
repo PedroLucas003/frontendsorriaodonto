@@ -848,95 +848,85 @@ const RegisterUser = () => {
   };
 
   const handleEdit = (usuario) => {
-    setEditandoId(usuario._id);
-    setModoVisualizacao(true);
-    setShowProcedimentoSection(false);
+  setEditandoId(usuario._id);
+  setModoVisualizacao(true);
+  setShowProcedimentoSection(true); // Garante que a seção de procedimento principal seja exibida
 
-    // Sua função auxiliar para formatar datas (mantida, pois é útil)
-    const formatDateWithoutTimezone = (dateString) => {
-      if (!dateString) return '';
-      try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = date.getUTCFullYear();
-        return `${day}/${month}/${year}`;
-      } catch (e) {
-        console.error("Erro ao formatar data:", e);
-        return '';
-      }
-    };
-
-    // Formata a data de nascimento
-    let dataNascimentoFormatada = formatDateWithoutTimezone(usuario.dataNascimento);
-
-    // --- INÍCIO DA CORREÇÃO ---
-
-    // 1. Removemos a criação do "procedimentoPrincipal".
-    //    Agora, todos os procedimentos vêm de um só lugar: o histórico.
-
-    // 2. Processamos a lista de procedimentos diretamente do histórico do usuário.
-    //    Isso garante que cada procedimento listado tenha um _id real do banco de dados.
-    const procedimentosFormatados = (usuario.historicoProcedimentos || [])
-      .map(p => {
-        // Formatamos o valor para cada procedimento individualmente
-        let valorProcFormatado = '';
-        if (p.valor !== undefined && p.valor !== null) {
-          const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
-          if (!isNaN(numericValue)) {
-            valorProcFormatado = numericValue.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            });
-          }
-        }
-
-        return {
-          ...p, // Inclui todos os dados do procedimento, inclusive o _id
-          valorFormatado: valorProcFormatado,
-          dataProcedimento: p.dataProcedimento || p.createdAt, // Fallback para data
-        };
-      })
-      .sort((a, b) => {
-        // Ordenamos pela data do mais recente para o mais antigo
-        const dateA = new Date(a.dataProcedimento || 0);
-        const dateB = new Date(b.dataProcedimento || 0);
-        return dateB - dateA;
-      });
-
-    // --- FIM DA CORREÇÃO ---
-
-    setFormData({
-      ...usuario,
-      cpf: formatCPF(usuario.cpf),
-      telefone: formatFone(usuario.telefone),
-      dataNascimento: dataNascimentoFormatada,
-
-      // 3. Limpamos os campos de procedimento do nível superior do formulário.
-      //    Eles eram usados pelo "procedimento principal" e não são mais necessários aqui.
-      procedimento: "",
-      denteFace: "",
-      valor: "",
-      valorFormatado: "",
-      modalidadePagamento: "",
-      profissional: "",
-      dataProcedimento: "",
-      dataNovoProcedimento: "",
-
-      // 4. Usamos a lista de procedimentos correta e formatada.
-      procedimentos: procedimentosFormatados,
-
-      // O resto dos dados é preenchido normalmente
-      frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
-      frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
-      exameSangue: usuario.exames?.exameSangue || "",
-      coagulacao: usuario.exames?.coagulacao || "",
-      cicatrizacao: usuario.exames?.cicatrizacao || "",
-      password: "",
-      confirmPassword: ""
-    });
+  // Sua função auxiliar para formatar datas (mantida, pois é útil)
+  const formatDateWithoutTimezone = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      console.error("Erro ao formatar data:", e);
+      return '';
+    }
   };
+
+  // 1. Encontra o procedimento mais recente para preencher os campos do formulário principal
+  const procedimentoMaisRecente = (usuario.historicoProcedimentos || [])
+    .sort((a, b) => new Date(b.dataProcedimento) - new Date(a.dataProcedimento))[0];
+
+  // 2. Mapeia o histórico de procedimentos para a lista, já com o valor formatado
+  const procedimentosFormatados = (usuario.historicoProcedimentos || [])
+    .map(p => {
+      let valorProcFormatado = '';
+      if (p.valor !== undefined && p.valor !== null) {
+        const numericValue = typeof p.valor === 'number' ? p.valor : parseFloat(p.valor);
+        if (!isNaN(numericValue)) {
+          valorProcFormatado = numericValue.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          });
+        }
+      }
+      return {
+        ...p,
+        valorFormatado: valorProcFormatado,
+        dataProcedimento: p.dataProcedimento || p.createdAt,
+      };
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.dataProcedimento || 0);
+      const dateB = new Date(b.dataProcedimento || 0);
+      return dateB - dateA;
+    });
+
+  setFormData({
+    ...usuario,
+    cpf: formatCPF(usuario.cpf),
+    telefone: formatFone(usuario.telefone),
+    dataNascimento: formatDateWithoutTimezone(usuario.dataNascimento),
+
+    // --- CORREÇÃO AQUI: POPULANDO OS CAMPOS PRINCIPAIS ---
+    // Usamos o procedimento mais recente para preencher os campos.
+    procedimento: procedimentoMaisRecente?.procedimento || "",
+    denteFace: procedimentoMaisRecente?.denteFace || "",
+    valor: procedimentoMaisRecente?.valor || 0,
+    valorFormatado: formatValueForDisplay(procedimentoMaisRecente?.valor),
+    modalidadePagamento: procedimentoMaisRecente?.modalidadePagamento || "",
+    profissional: procedimentoMaisRecente?.profissional || "",
+    dataProcedimento: formatDateWithoutTimezone(procedimentoMaisRecente?.dataProcedimento),
+    dataNovoProcedimento: "", // Este campo é para novo procedimento, deve ser limpo.
+
+    // 4. Usa a lista de procedimentos correta e formatada.
+    procedimentos: procedimentosFormatados,
+
+    // O resto dos dados é preenchido normalmente
+    frequenciaFumo: usuario.habitos?.frequenciaFumo || "Nunca",
+    frequenciaAlcool: usuario.habitos?.frequenciaAlcool || "Nunca",
+    exameSangue: usuario.exames?.exameSangue || "",
+    coagulacao: usuario.exames?.coagulacao || "",
+    cicatrizacao: usuario.exames?.cicatrizacao || "",
+    password: "",
+    confirmPassword: ""
+  });
+};
 
   const handleVoltar = () => {
     setEditandoId(null);
